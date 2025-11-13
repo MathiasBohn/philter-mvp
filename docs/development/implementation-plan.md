@@ -1,0 +1,992 @@
+# philter MVP - Implementation Plan
+
+## Overview
+
+This implementation plan breaks down the philter MVP UI development into actionable phases. Each phase contains specific tasks with checkboxes to track progress. Focus is on UI components only, with no back-end integration.
+
+**Technology Stack:**
+- Next.js 16 (App Router)
+- React 19
+- shadcn/ui + Radix UI
+- Tailwind CSS v4
+- TypeScript 5
+- Zod (validation)
+- PDF.js (document viewing)
+
+---
+
+## Phase 0: Setup & Cleanup (Foundation)
+
+**Goal:** Clean up boilerplate and establish project foundation
+
+### 0.1 Remove Boilerplate Content
+- [ ] Delete boilerplate content from `app/page.tsx`
+- [ ] Remove `public/next.svg`
+- [ ] Remove `public/vercel.svg`
+- [ ] Clean up boilerplate styles in `app/globals.css` (keep Tailwind imports)
+- [ ] Update `app/layout.tsx` metadata to reflect philter branding
+
+### 0.2 Install shadcn/ui
+- [ ] Run `npx shadcn@latest init`
+  - Choose New York style
+  - Use CSS variables for theming
+  - Configure path aliases (@/components, @/lib, etc.)
+- [ ] Verify `components.json` created with correct configuration
+- [ ] Install additional dependencies: `npm install class-variance-authority clsx tailwind-merge`
+- [ ] Install Zod: `npm install zod`
+- [ ] Verify all dependencies installed successfully
+
+### 0.3 Create Project Folder Structure
+- [ ] Create `app/(marketing)/` directory (route group for public pages)
+- [ ] Create `app/(marketing)/page.tsx` (landing page)
+- [ ] Create `app/(auth)/` directory (route group for auth flows)
+- [ ] Create `app/(auth)/sign-in/page.tsx`
+- [ ] Create `app/(dashboard)/` directory (route group for protected routes)
+- [ ] Create `app/(dashboard)/layout.tsx` (dashboard shell)
+- [ ] Create `components/ui/` directory (shadcn/ui components)
+- [ ] Create `components/forms/` directory (custom form components)
+- [ ] Create `components/layout/` directory (layout components)
+- [ ] Create `components/features/` directory (feature-specific components)
+- [ ] Create `components/features/application/` directory
+- [ ] Create `components/features/broker/` directory
+- [ ] Create `components/features/admin/` directory
+- [ ] Create `components/features/board/` directory
+- [ ] Create `lib/` directory (utilities and helpers)
+- [ ] Create `lib/mock-data/` directory (fixtures)
+- [ ] Create `lib/types.ts` file
+- [ ] Create `lib/utils.ts` file (if not created by shadcn)
+- [ ] Create `lib/validators.ts` file
+
+### 0.4 Define TypeScript Types
+- [ ] Create `lib/types.ts` with core entity types:
+  - [ ] `User` type (id, name, email, role)
+  - [ ] `Role` enum (APPLICANT, CO_APPLICANT, GUARANTOR, BROKER, ADMIN, BOARD)
+  - [ ] `TransactionType` enum (COOP_PURCHASE, CONDO_PURCHASE, COOP_SUBLET, CONDO_LEASE)
+  - [ ] `ApplicationStatus` enum (IN_PROGRESS, SUBMITTED, IN_REVIEW, RFI, APPROVED, CONDITIONAL, DENIED)
+  - [ ] `Building` type (id, name, code, type, address)
+  - [ ] `Application` type (id, buildingId, type, status, createdBy, submittedAt)
+  - [ ] `ApplicationSection` type (key, data, isComplete)
+  - [ ] `Person` type (id, fullName, email, phone, dob, ssnLast4, addressHistory)
+  - [ ] `EmploymentRecord` type (id, employer, title, startDate, income)
+  - [ ] `FinancialEntry` type (id, entryType, category, institution, amount)
+  - [ ] `Document` type (id, category, filename, size, uploadedAt, status)
+  - [ ] `RFI` type (id, sectionKey, status, assigneeRole, createdBy, messages)
+  - [ ] `Decision` type (id, decision, reasonCodes, notes, decidedAt)
+  - [ ] `Disclosure` type (id, type, acknowledged, documentUploadId)
+
+### 0.5 Create Mock Data Fixtures
+- [ ] Create `lib/mock-data/users.ts` with sample users (1 applicant, 1 broker, 1 admin, 1 board member)
+- [ ] Create `lib/mock-data/buildings.ts` with 3 sample buildings (1 rental, 1 co-op, 1 condo)
+- [ ] Create `lib/mock-data/applications.ts` with 5-10 sample applications in various states
+- [ ] Create `lib/mock-data/documents.ts` with sample document metadata
+- [ ] Create `lib/mock-data/rfis.ts` with sample RFI threads
+- [ ] Create `lib/mock-data/index.ts` to export all fixtures
+- [ ] Add sample PDF files to `public/samples/` directory
+
+### 0.6 Create Utility Functions
+- [ ] Create `lib/utils.ts` with helper functions:
+  - [ ] `cn()` function for classname merging (if not from shadcn)
+  - [ ] `formatCurrency()` function
+  - [ ] `formatDate()` function
+  - [ ] `formatSSN()` function (full, last4, redacted)
+  - [ ] `calculateDTI()` function
+  - [ ] `calculateNetWorth()` function
+  - [ ] `calculateCompletionPercentage()` function
+- [ ] Create `lib/validators.ts` with Zod schemas for forms
+
+### 0.7 Verification
+- [ ] Run `npm run dev` and verify app starts without errors
+- [ ] Run `npm run build` and verify successful build
+- [ ] Run `npm run lint` and fix any linting issues
+- [ ] Verify TypeScript compilation succeeds
+
+---
+
+## Phase 1: Applicant Flow (A0-A7)
+
+**Goal:** Implement complete applicant workflow with all screens
+
+### 1.1 Install Core shadcn/ui Components
+- [ ] `npx shadcn@latest add button`
+- [ ] `npx shadcn@latest add input`
+- [ ] `npx shadcn@latest add label`
+- [ ] `npx shadcn@latest add card`
+- [ ] `npx shadcn@latest add form`
+- [ ] `npx shadcn@latest add select`
+- [ ] `npx shadcn@latest add textarea`
+- [ ] `npx shadcn@latest add dropdown-menu`
+- [ ] `npx shadcn@latest add dialog`
+- [ ] `npx shadcn@latest add alert`
+- [ ] `npx shadcn@latest add badge`
+- [ ] `npx shadcn@latest add progress`
+- [ ] `npx shadcn@latest add tabs`
+- [ ] `npx shadcn@latest add breadcrumb`
+- [ ] `npx shadcn@latest add separator`
+
+### 1.2 Create Core Layout Components
+- [ ] Create `components/layout/app-shell.tsx` (main application shell)
+- [ ] Create `components/layout/top-bar.tsx` (header with logo, role pill, user menu)
+- [ ] Create `components/layout/sidebar.tsx` (contextual navigation)
+- [ ] Create `components/layout/mobile-nav.tsx` (hamburger menu for mobile)
+- [ ] Create `components/layout/breadcrumbs.tsx` (breadcrumb navigation)
+- [ ] Create `components/layout/progress-indicator.tsx` (overall progress bar)
+- [ ] Update `app/(dashboard)/layout.tsx` to use AppShell
+
+### 1.3 Create Reusable Form Components
+- [ ] Create `components/forms/field-row.tsx` (label + input + error wrapper)
+- [ ] Create `components/forms/error-summary.tsx` (page-top error list with anchor links)
+- [ ] Create `components/forms/form-actions.tsx` (save/cancel button group)
+- [ ] Create `components/forms/masked-ssn-input.tsx` (SSN input with masking)
+- [ ] Create `components/forms/date-input.tsx` (date picker)
+- [ ] Create `components/forms/money-input.tsx` (currency formatted input)
+- [ ] Create `components/forms/repeatable-group.tsx` (add/remove items)
+
+### 1.4 Application Routes Setup
+- [ ] Create `app/(dashboard)/applications/[id]/page.tsx` (A1: Overview)
+- [ ] Create `app/(dashboard)/applications/[id]/profile/page.tsx` (A2)
+- [ ] Create `app/(dashboard)/applications/[id]/income/page.tsx` (A3)
+- [ ] Create `app/(dashboard)/applications/[id]/financials/page.tsx` (A4)
+- [ ] Create `app/(dashboard)/applications/[id]/documents/page.tsx` (A5)
+- [ ] Create `app/(dashboard)/applications/[id]/disclosures/page.tsx` (A6)
+- [ ] Create `app/(dashboard)/applications/[id]/review/page.tsx` (A7)
+- [ ] Create `app/(dashboard)/applications/new/page.tsx` (A0: Building code entry)
+
+### 1.5 Screen: A0 - Welcome & Building Code Entry
+- [ ] Create `components/features/application/building-code-input.tsx`
+- [ ] Create `components/features/application/transaction-type-tiles.tsx`
+- [ ] Implement form validation (non-empty, format check)
+- [ ] Add error handling UI (inline + page-top summary)
+- [ ] Add "Don't have a code?" help text
+- [ ] Add loading state
+- [ ] Implement mock building code validation (accept any 6-character code)
+- [ ] On success, navigate to A1 with new application ID
+- [ ] Make responsive for mobile/tablet/desktop
+
+### 1.6 Screen: A1 - Application Overview Hub
+- [ ] Create `components/features/application/section-list.tsx`
+- [ ] Create `components/features/application/section-card.tsx` with status pill
+- [ ] Create `components/features/application/invite-widget.tsx`
+- [ ] Create `components/features/application/rfi-banner.tsx`
+- [ ] Implement progress calculation from mock data
+- [ ] Add navigation to incomplete sections
+- [ ] Add "Invite Co-applicant/Guarantor" functionality (adds to mock data)
+- [ ] Display RFI banner if RFIs present
+- [ ] Make responsive
+
+### 1.7 Screen: A2 - Profile Section
+- [ ] Create Zod validation schema for profile in `lib/validators.ts`
+- [ ] Implement profile form with all fields:
+  - [ ] Full name (required)
+  - [ ] Email (required, email format)
+  - [ ] Phone (required)
+  - [ ] Date of birth (required, ≥18 years)
+  - [ ] SSN (masked input, format validation)
+  - [ ] Address history section
+- [ ] Create `components/features/application/address-history-list.tsx`
+- [ ] Add address history entry (address, from date, to date)
+- [ ] Validate minimum 2 years address history
+- [ ] Create `components/features/application/add-person-button.tsx`
+- [ ] Implement "Add Co-applicant/Guarantor" functionality
+- [ ] Implement inline validation errors
+- [ ] Implement error summary at page top with anchor links
+- [ ] Add autosave indicator (simulated)
+- [ ] Save data to localStorage
+- [ ] Add "Save & Continue" button to navigate to A3
+- [ ] Make responsive
+
+### 1.8 Screen: A3 - Employment & Income
+- [ ] Create Zod validation schema for employment
+- [ ] Create `components/features/application/employer-entry.tsx`
+- [ ] Implement repeatable employer group (add/remove)
+- [ ] Add employer fields:
+  - [ ] Employer name (required if employed)
+  - [ ] Title (required if employed)
+  - [ ] Start date (required if employed)
+  - [ ] Pay cadence (dropdown: Annual, Monthly, Bi-weekly, Weekly)
+  - [ ] Annual income (required, numeric, ≥0)
+- [ ] Create `components/features/application/upload-dropzone.tsx`
+- [ ] Create `components/features/application/document-card.tsx`
+- [ ] Implement file upload UI (drag-and-drop + file picker)
+- [ ] Add upload progress indicator (simulated)
+- [ ] Implement file validation (type: PDF/JPG/PNG/DOC/DOCX, size ≤25MB)
+- [ ] Store uploaded files in localStorage (base64 or File API)
+- [ ] Add preview/delete actions for documents
+- [ ] Save data to localStorage
+- [ ] Add "Save & Continue" button
+- [ ] Make responsive
+
+### 1.9 Screen: A4 - Financial Summary (REBNY-aligned)
+- [ ] Create Zod validation schema for financial entries
+- [ ] Create `components/features/application/financial-table.tsx`
+- [ ] Implement tabs for 4 categories:
+  - [ ] Assets
+  - [ ] Liabilities
+  - [ ] Monthly Income
+  - [ ] Monthly Expenses
+- [ ] Create `components/features/application/financial-entry-row.tsx`
+- [ ] Implement add/edit/delete entry functionality
+- [ ] Add category dropdowns per entry type:
+  - [ ] Assets: Checking, Savings, Investment, Real Estate, Other
+  - [ ] Liabilities: Mortgage, Auto Loan, Credit Card, Student Loan, Other
+  - [ ] Monthly Income: Employment, Rental, Investment, Other
+  - [ ] Monthly Expenses: Rent/Mortgage, Utilities, Insurance, Other
+- [ ] Implement amount validation (required, numeric)
+- [ ] Create `components/features/application/totals-bar.tsx`
+- [ ] Calculate and display Net Worth (Assets - Liabilities)
+- [ ] Calculate and display DTI (Monthly Expenses / Monthly Income)
+- [ ] Save data to localStorage
+- [ ] Add "Save & Continue" button
+- [ ] Make responsive (card view on mobile)
+
+### 1.10 Screen: A5 - Documents Upload & Preview
+- [ ] Create `components/features/application/document-checklist.tsx`
+- [ ] Define document categories:
+  - [ ] Government-issued ID (required)
+  - [ ] Bank letters/statements
+  - [ ] Tax returns
+  - [ ] Reference letters
+  - [ ] Building-specific forms
+- [ ] Implement upload dropzone per category
+- [ ] Create `components/features/application/document-preview.tsx`
+- [ ] Integrate PDF preview (using basic `<iframe>` or prepare for PDF.js later)
+- [ ] Add file replace/delete functionality
+- [ ] Create "I don't have this" option with reason textarea
+- [ ] Implement validation: At least 1 govt ID required
+- [ ] Store documents in localStorage
+- [ ] Save metadata to mock data
+- [ ] Add "Save & Continue" button
+- [ ] Make responsive
+
+### 1.11 Screen: A6 - Disclosures (Lease/Sublet Only)
+- [ ] Create `components/features/application/disclosure-card.tsx`
+- [ ] Implement conditional rendering (only for CONDO_LEASE and COOP_SUBLET)
+- [ ] Add Local Law 55 Indoor Allergen disclosure:
+  - [ ] Display title and description
+  - [ ] Add download link for disclosure PDF (mock)
+  - [ ] Add acknowledgment checkbox
+- [ ] Add Window Guard lease notice disclosure:
+  - [ ] Display title and description
+  - [ ] Add download link for disclosure PDF (mock)
+  - [ ] Add acknowledgment checkbox
+  - [ ] Add upload field for signed form (optional)
+- [ ] Implement validation: All enabled disclosures must be acknowledged
+- [ ] Save acknowledgments to localStorage
+- [ ] Add "Save & Continue" button
+- [ ] Make responsive
+
+### 1.12 Screen: A7 - Review & Submit
+- [ ] Create `components/features/application/validation-summary.tsx`
+- [ ] Implement comprehensive validation check across all sections
+- [ ] Display checklist of requirements with status:
+  - [ ] Profile complete
+  - [ ] At least 1 employer or income source
+  - [ ] Financial summary complete
+  - [ ] At least 1 govt ID uploaded
+  - [ ] All disclosures acknowledged (if applicable)
+- [ ] Add anchor links to incomplete sections (using hash navigation)
+- [ ] Create mock compiled PDF preview
+- [ ] Display PDF preview using `<iframe>` or PDF viewer component
+- [ ] Disable submit button until all requirements met
+- [ ] Implement submit action:
+  - [ ] Show loading state
+  - [ ] Update application status to SUBMITTED in localStorage
+  - [ ] Lock editing (set readonly flag)
+  - [ ] Display timestamp
+- [ ] Create post-submit success state:
+  - [ ] Show confirmation message
+  - [ ] Display "What's next" information
+  - [ ] Prevent further editing
+- [ ] Make responsive
+
+### 1.13 Phase 1 Verification
+- [ ] Navigate through complete A0-A7 flow
+- [ ] Verify all form validations work
+- [ ] Test responsive layouts on mobile, tablet, desktop
+- [ ] Check localStorage persistence
+- [ ] Verify error summaries with anchor links
+- [ ] Test keyboard navigation
+- [ ] Verify all "Save & Continue" buttons work
+- [ ] Test submit flow from start to finish
+
+---
+
+## Phase 2: Broker Flow (BK1-BK3)
+
+**Goal:** Implement broker pipeline and QA workspace
+
+### 2.1 Install Additional shadcn/ui Components
+- [ ] `npx shadcn@latest add table`
+- [ ] `npx shadcn@latest add checkbox`
+- [ ] `npx shadcn@latest add sheet`
+- [ ] `npx shadcn@latest add tooltip`
+- [ ] `npx shadcn@latest add command`
+- [ ] `npx shadcn@latest add popover`
+- [ ] `npx shadcn@latest add calendar`
+
+### 2.2 Broker Routes Setup
+- [ ] Create `app/(dashboard)/broker/page.tsx` (BK1: Pipeline)
+- [ ] Create `app/(dashboard)/broker/[id]/qa/page.tsx` (BK2: QA workspace)
+- [ ] Create `app/(dashboard)/broker/[id]/submit/page.tsx` (BK3: Submission confirm)
+
+### 2.3 Create Broker-Specific Components
+- [ ] Create `components/features/broker/application-table.tsx`
+- [ ] Create `components/features/broker/filter-bar.tsx`
+- [ ] Create `components/features/broker/status-tag.tsx`
+- [ ] Create `components/features/broker/qa-panel.tsx`
+- [ ] Create `components/features/broker/completeness-checklist.tsx`
+- [ ] Create `components/features/broker/request-info-dialog.tsx`
+
+### 2.4 Screen: BK1 - Broker Pipeline
+- [ ] Implement data table with columns:
+  - [ ] Applicant name(s)
+  - [ ] Building
+  - [ ] Transaction type
+  - [ ] Completion % (with progress bar)
+  - [ ] Last activity (relative time)
+  - [ ] Status (with colored badge)
+- [ ] Add column sorting functionality
+- [ ] Implement filter bar:
+  - [ ] Status filter (dropdown)
+  - [ ] Date range filter (calendar)
+  - [ ] Building filter (dropdown)
+- [ ] Add row actions dropdown:
+  - [ ] Open QA workspace
+  - [ ] Invite applicant
+  - [ ] View details
+- [ ] Create empty state with "Start New Application" CTA
+- [ ] Add "Start New Application" button in header
+- [ ] Link to A0 for new application
+- [ ] Make table responsive (card view on mobile)
+
+### 2.5 Screen: BK2 - Pre-fill & QA Workspace
+- [ ] Implement 3-column layout:
+  - [ ] Left: Section navigator (30% width)
+  - [ ] Center: Form/document view (45% width)
+  - [ ] Right: QA panel (25% width)
+- [ ] Create section navigator showing all application sections
+- [ ] Implement center panel to display:
+  - [ ] Form data from selected section (read-only with masked PII)
+  - [ ] Document previews
+- [ ] Implement SSN masking (show last-4 only) in center panel
+- [ ] Create QA panel with:
+  - [ ] Completeness checklist
+  - [ ] Blocker alerts (missing required items)
+  - [ ] "Request Info" button
+- [ ] Implement "Request Info" functionality:
+  - [ ] Open dialog
+  - [ ] Select section
+  - [ ] Add message
+  - [ ] Create RFI in mock data
+- [ ] Add "Upload on behalf" functionality (same as applicant upload)
+- [ ] Add "Mark Ready for Submit" button (enables when all complete)
+- [ ] Make responsive (stack columns on mobile)
+
+### 2.6 Screen: BK3 - Submission Confirm
+- [ ] Create deliverables checklist:
+  - [ ] Profile complete
+  - [ ] Employment/income documented
+  - [ ] Financials complete
+  - [ ] All required documents uploaded
+  - [ ] Disclosures acknowledged (if applicable)
+- [ ] Display compiled board package preview (mock PDF)
+- [ ] Create audit trail component:
+  - [ ] List of key actions with timestamps
+  - [ ] User who performed action
+  - [ ] Action type (e.g., "Profile updated", "Document uploaded")
+- [ ] Add "Submit to Building" button
+- [ ] Implement submit action:
+  - [ ] Update status to SUBMITTED
+  - [ ] Add submitted timestamp
+  - [ ] Show confirmation message
+- [ ] Make responsive
+
+### 2.7 Phase 2 Verification
+- [ ] Navigate BK1 pipeline view
+- [ ] Test table sorting and filtering
+- [ ] Open QA workspace from pipeline
+- [ ] Navigate between sections in QA workspace
+- [ ] Verify SSN masking (last-4 only)
+- [ ] Create test RFI using "Request Info"
+- [ ] Upload document on behalf
+- [ ] Mark application ready and submit
+- [ ] Verify responsive layouts
+
+---
+
+## Phase 3: Admin Flow (AD1-AD5)
+
+**Goal:** Implement admin template wizard, inbox, review workspace, RFI management, and decision panel
+
+### 3.1 Install Additional shadcn/ui Components
+- [ ] `npx shadcn@latest add stepper` (if available, or create custom)
+- [ ] `npx shadcn@latest add toggle`
+- [ ] `npx shadcn@latest add switch`
+- [ ] `npx shadcn@latest add radio-group`
+- [ ] `npx shadcn@latest add avatar`
+
+### 3.2 Admin Routes Setup
+- [ ] Create `app/(dashboard)/admin/templates/page.tsx` (AD1: Template wizard)
+- [ ] Create `app/(dashboard)/admin/templates/new/page.tsx` (AD1: New template wizard)
+- [ ] Create `app/(dashboard)/admin/inbox/page.tsx` (AD2: Intake inbox)
+- [ ] Create `app/(dashboard)/admin/review/[id]/page.tsx` (AD3: Review workspace)
+
+### 3.3 Create Admin-Specific Components
+- [ ] Create `components/features/admin/template-wizard.tsx`
+- [ ] Create `components/features/admin/stepper.tsx` (if not from shadcn)
+- [ ] Create `components/features/admin/section-toggle-list.tsx`
+- [ ] Create `components/features/admin/document-toggle-list.tsx`
+- [ ] Create `components/features/admin/compliance-toggles.tsx`
+- [ ] Create `components/features/admin/template-preview.tsx`
+- [ ] Create `components/features/admin/review-navigator.tsx`
+- [ ] Create `components/features/admin/data-panel.tsx`
+- [ ] Create `components/features/admin/rfi-thread.tsx`
+- [ ] Create `components/features/admin/rfi-composer.tsx`
+- [ ] Create `components/features/admin/activity-log.tsx`
+- [ ] Create `components/features/admin/decision-panel.tsx`
+- [ ] Create `components/features/admin/reason-tags.tsx`
+
+### 3.4 Screen: AD1 - Template Wizard
+- [ ] Create stepper component showing 6 steps:
+  1. [ ] Basics
+  2. [ ] Sections
+  3. [ ] Documents
+  4. [ ] Compliance
+  5. [ ] Review
+  6. [ ] Publish
+- [ ] Implement Step 1 - Basics:
+  - [ ] Building selection (dropdown)
+  - [ ] Template name input
+  - [ ] Description textarea
+- [ ] Implement Step 2 - Sections:
+  - [ ] Toggle switches for each section (Profile, Income, Financials, Documents, Disclosures)
+  - [ ] Mark sections as required or optional
+- [ ] Implement Step 3 - Documents:
+  - [ ] Checklist of document categories
+  - [ ] Toggle required/optional per category
+  - [ ] Add custom categories option
+- [ ] Implement Step 4 - Compliance:
+  - [ ] Toggle Local Law 55 disclosure (lease/sublet only)
+  - [ ] Toggle Window Guard disclosure (lease/sublet only)
+- [ ] Implement Step 5 - Review:
+  - [ ] Display summary of all selections
+  - [ ] Show which sections are required
+  - [ ] Show which documents are required
+  - [ ] Show compliance settings
+- [ ] Implement Step 6 - Publish:
+  - [ ] Version number display
+  - [ ] Publish button
+  - [ ] Save template to mock data
+  - [ ] Show success confirmation
+- [ ] Add navigation between steps (Next/Previous buttons)
+- [ ] Add "Save Draft" functionality
+- [ ] Make responsive
+
+### 3.5 Screen: AD2 - Intake Inbox
+- [ ] Implement data table with columns:
+  - [ ] Applicant(s) name
+  - [ ] Unit (if available)
+  - [ ] Transaction type
+  - [ ] Stage/Status
+  - [ ] Age (days since submission)
+  - [ ] Last activity (relative time)
+- [ ] Add filter bar:
+  - [ ] Status filter
+  - [ ] Date submitted filter
+  - [ ] Building filter
+- [ ] Add row actions:
+  - [ ] Open review workspace
+  - [ ] Assign to reviewer
+  - [ ] Set status
+- [ ] Add quick status update dropdown
+- [ ] Load applications from mock data (filter by status: SUBMITTED, IN_REVIEW, RFI)
+- [ ] Make table responsive
+
+### 3.6 Screen: AD3 - Review Workspace
+- [ ] Implement 3-column layout:
+  - [ ] Left: Section navigator with flags (25% width)
+  - [ ] Center: PDF viewer + data panel toggle (50% width)
+  - [ ] Right: RFI thread + activity log (25% width)
+- [ ] Create section navigator:
+  - [ ] List all sections
+  - [ ] Show completion status per section
+  - [ ] Show flags (e.g., needs attention)
+  - [ ] Click to navigate to section
+- [ ] Implement center panel with toggle:
+  - [ ] PDF viewer mode: Display document previews
+  - [ ] Data panel mode: Display form data in read-only view
+  - [ ] Toggle button to switch between modes
+- [ ] Display full PII (no masking) for admin role
+- [ ] Create RFI thread in right panel:
+  - [ ] Display existing RFI messages
+  - [ ] Author avatar and name
+  - [ ] Role chip (e.g., "Admin", "Applicant")
+  - [ ] Timestamp
+  - [ ] Message content
+- [ ] Create activity log:
+  - [ ] Timeline of all actions
+  - [ ] Action type and description
+  - [ ] User who performed action
+  - [ ] Timestamp
+- [ ] Add "Mark Complete" / "Needs Info" buttons per section
+- [ ] Add "Create RFI" button that opens composer
+- [ ] Make responsive (stack columns on mobile)
+
+### 3.7 Screen: AD4 - RFI Management (within AD3)
+- [ ] Create RFI composer dialog:
+  - [ ] Section selection dropdown
+  - [ ] Assign to (Applicant or Broker) radio buttons
+  - [ ] Message textarea
+  - [ ] Attach document reference (optional)
+  - [ ] Send button
+- [ ] Implement RFI creation:
+  - [ ] Add RFI to mock data
+  - [ ] Update application status to RFI if needed
+  - [ ] Add first message to thread
+- [ ] Create RFI thread display:
+  - [ ] Message bubbles (different alignment for admin vs applicant/broker)
+  - [ ] Author information
+  - [ ] Timestamp
+  - [ ] Attached document references
+- [ ] Add reply functionality:
+  - [ ] Reply textarea
+  - [ ] Send reply button
+  - [ ] Add message to thread in mock data
+- [ ] Add "Resolve" button:
+  - [ ] Mark RFI as resolved
+  - [ ] Update status in mock data
+  - [ ] Visual indication (grayed out or moved to resolved section)
+- [ ] Make responsive
+
+### 3.8 Screen: AD5 - Decision Panel (within AD3 or separate)
+- [ ] Create decision panel with radio group:
+  - [ ] Approve
+  - [ ] Approve with Conditions
+  - [ ] Deny
+- [ ] Create reason tags component:
+  - [ ] Multi-select checkboxes for common reasons:
+    - [ ] Income insufficient
+    - [ ] DTI too high
+    - [ ] Incomplete documentation
+    - [ ] Unsatisfactory references
+    - [ ] Board policy criteria not met
+    - [ ] Other
+  - [ ] Free-text notes textarea
+- [ ] Add "Uses consumer report" checkbox
+- [ ] Implement conditional logic:
+  - [ ] If "Uses consumer report" checked AND (Deny or Conditional selected)
+  - [ ] Show required field: "Adverse action notice required"
+  - [ ] Require adverse action payload before enabling submit
+- [ ] Create decision email preview:
+  - [ ] Show to: applicant email
+  - [ ] Show subject based on decision
+  - [ ] Show email body with decision details
+  - [ ] Include reason codes if applicable
+  - [ ] Include adverse action notice if applicable
+- [ ] Add confirmation modal before submitting decision
+- [ ] Implement submit decision:
+  - [ ] Save decision to mock data
+  - [ ] Update application status (APPROVED, CONDITIONAL, or DENIED)
+  - [ ] Add decided timestamp
+  - [ ] Show success confirmation
+- [ ] Make responsive
+
+### 3.9 Phase 3 Verification
+- [ ] Complete template wizard flow
+- [ ] Navigate intake inbox
+- [ ] Open review workspace
+- [ ] Navigate between sections
+- [ ] Verify full SSN visibility (no masking)
+- [ ] Create test RFI
+- [ ] Reply to RFI
+- [ ] Resolve RFI
+- [ ] Mark sections as complete/needs info
+- [ ] Record decision (all 3 types)
+- [ ] Test conditional logic (consumer report + deny/conditional)
+- [ ] Verify responsive layouts
+
+---
+
+## Phase 4: Board Reviewer Flow (BR1)
+
+**Goal:** Implement read-only review workspace for board members
+
+### 4.1 Board Routes Setup
+- [ ] Create `app/(dashboard)/board/review/[id]/page.tsx` (BR1: Read-only review)
+
+### 4.2 Create Board-Specific Components
+- [ ] Create `components/features/board/read-only-viewer.tsx`
+- [ ] Create `components/features/board/private-notes.tsx`
+- [ ] Create `components/features/board/download-notice.tsx`
+
+### 4.3 Screen: BR1 - Read-only Review
+- [ ] Implement read-only layout:
+  - [ ] PDF viewer (main area)
+  - [ ] Private notes panel (sidebar or below)
+- [ ] Display compiled package PDF preview
+- [ ] Add watermark to PDF viewer (optional, "Board Review Copy")
+- [ ] Create private notes component:
+  - [ ] Textarea for notes
+  - [ ] Save to localStorage (keyed by board member user ID)
+  - [ ] Explicitly label as "Private - Not shared with applicant or admin"
+  - [ ] Load notes on page load
+- [ ] Implement SSN redaction:
+  - [ ] Replace SSN fields with "••••" or "—"
+  - [ ] Verify no full SSN visible anywhere
+- [ ] Add "Mark as Reviewed" button:
+  - [ ] Save reviewed status to localStorage
+  - [ ] Show timestamp of review
+  - [ ] Disable button after marked
+- [ ] Create download button:
+  - [ ] Add "Download Compiled Package" button
+  - [ ] Show expiry notice: "Link expires soon to protect your privacy"
+  - [ ] Trigger download of mock PDF
+- [ ] Disable all edit capabilities:
+  - [ ] No form fields editable
+  - [ ] No comment/RFI creation
+  - [ ] No status changes
+  - [ ] Read-only indicators throughout
+- [ ] Make responsive
+
+### 4.4 Phase 4 Verification
+- [ ] Navigate to board review page
+- [ ] Verify PDF displays correctly
+- [ ] Verify SSN redacted (shows ••••)
+- [ ] Add private notes and verify saved
+- [ ] Reload page and verify notes persist
+- [ ] Mark as reviewed
+- [ ] Download compiled package
+- [ ] Verify no edit capabilities available
+- [ ] Test responsive layout
+
+---
+
+## Phase 5: Shared Components & Polish
+
+**Goal:** Integrate PDF.js, enhance file uploads, finalize form validation, responsive design, accessibility, and design system
+
+### 5.1 PDF.js Integration
+- [ ] Install PDF.js: `npm install pdfjs-dist`
+- [ ] Create `components/shared/pdf-viewer.tsx` component
+- [ ] Implement PDF rendering using PDF.js
+- [ ] Add thumbnail navigation sidebar:
+  - [ ] Display page thumbnails
+  - [ ] Click thumbnail to jump to page
+  - [ ] Highlight current page
+- [ ] Add zoom controls:
+  - [ ] Zoom in button (+)
+  - [ ] Zoom out button (-)
+  - [ ] Fit to width button
+  - [ ] Fit to page button
+  - [ ] Zoom percentage display
+- [ ] Add page navigation:
+  - [ ] Previous page button
+  - [ ] Next page button
+  - [ ] Page number input (go to page)
+  - [ ] Total pages display (e.g., "Page 1 of 10")
+- [ ] Add rotate button (90° clockwise)
+- [ ] Add "Open in new tab" button
+- [ ] Implement full-height responsive layout
+- [ ] Add loading state while PDF loads
+- [ ] Add error state for failed PDF loads
+- [ ] Test with sample PDFs in `public/samples/`
+
+### 5.2 Enhanced File Upload Component
+- [ ] Refactor `upload-dropzone.tsx` with advanced features
+- [ ] Implement drag-and-drop:
+  - [ ] Drop zone with border and highlight on drag-over
+  - [ ] Visual feedback on drop
+  - [ ] Support multiple files
+- [ ] Add file selection fallback:
+  - [ ] "Choose files" button
+  - [ ] Keyboard accessible
+  - [ ] Works without drag-and-drop
+- [ ] Implement upload progress:
+  - [ ] Per-file progress bar
+  - [ ] Percentage display
+  - [ ] Simulate chunked upload with delays
+- [ ] Add pause/resume simulation:
+  - [ ] Pause button during upload
+  - [ ] Resume button when paused
+  - [ ] Track pause/resume state
+- [ ] Implement file validation:
+  - [ ] Check file type against allowed types
+  - [ ] Check file size against 25MB limit
+  - [ ] Display validation errors
+  - [ ] Prevent upload of invalid files
+- [ ] Add preview thumbnails:
+  - [ ] Show image thumbnails for JPG/PNG
+  - [ ] Show PDF icon for PDFs
+  - [ ] Show document icon for DOC/DOCX
+- [ ] Add file actions:
+  - [ ] Preview button (open in modal or new tab)
+  - [ ] Delete button (remove from list)
+  - [ ] Replace button (upload new version)
+- [ ] Store files in localStorage or IndexedDB
+- [ ] Handle errors gracefully (show error state, allow retry)
+
+### 5.3 Form Validation System Enhancement
+- [ ] Create comprehensive Zod schemas in `lib/validators.ts`:
+  - [ ] Profile schema (name, email, phone, DOB, SSN, address history)
+  - [ ] Employment schema (employer, title, dates, income)
+  - [ ] Financial entry schema (type, category, amount)
+  - [ ] Document upload schema (type, size)
+  - [ ] Disclosure schema (acknowledged)
+  - [ ] Building code schema
+- [ ] Implement client-side validation hooks:
+  - [ ] `useFormValidation()` hook
+  - [ ] Validate on blur
+  - [ ] Validate on submit
+  - [ ] Return errors keyed by field name
+- [ ] Enhance error summary component:
+  - [ ] Display at top of page after validation fails
+  - [ ] Use `role="alert"` for screen reader announcement
+  - [ ] List all errors with anchor links to fields
+  - [ ] Style with error colors and icon
+- [ ] Implement focus management:
+  - [ ] On submit, if errors exist, focus error summary
+  - [ ] When clicking error summary link, focus corresponding field
+  - [ ] Ensure focused field not obscured by sticky headers
+- [ ] Create consistent error message patterns:
+  - [ ] Required: "Please enter {field}."
+  - [ ] Format: "{field} looks incorrect. Check the format."
+  - [ ] Upload: "This file type isn't allowed. Use PDF/JPG/PNG/DOCX."
+  - [ ] Disclosure: "You must acknowledge this notice before submitting."
+- [ ] Add validation to all forms across A0-A7, BK1-BK3, AD1-AD5, BR1
+
+### 5.4 Responsive Design Implementation
+- [ ] Define breakpoint constants:
+  - [ ] `sm`: 640px
+  - [ ] `md`: 768px
+  - [ ] `lg`: 1024px
+  - [ ] `xl`: 1280px
+  - [ ] `2xl`: 1536px
+- [ ] Implement mobile navigation:
+  - [ ] Create hamburger menu button
+  - [ ] Slide-out sidebar on mobile
+  - [ ] Close menu on route change
+  - [ ] Touch-friendly menu items
+- [ ] Make tables responsive:
+  - [ ] Use horizontal scroll on small screens
+  - [ ] Or transform to card view on mobile
+  - [ ] Ensure all data visible
+- [ ] Optimize forms for mobile:
+  - [ ] Stack form fields vertically
+  - [ ] Increase touch target size (≥24px)
+  - [ ] Use appropriate input types (email, tel, number, date)
+  - [ ] Ensure labels don't overlap inputs
+- [ ] Test layouts on all breakpoints:
+  - [ ] Mobile (320px - 639px)
+  - [ ] Tablet (640px - 1023px)
+  - [ ] Desktop (1024px+)
+- [ ] Ensure images scale appropriately
+- [ ] Test PDF viewer on mobile (consider simplified view)
+- [ ] Verify no horizontal scroll on mobile
+
+### 5.5 Accessibility Audit & Fixes
+- [ ] Keyboard navigation audit:
+  - [ ] Tab through all interactive elements
+  - [ ] Ensure logical tab order
+  - [ ] Verify Enter/Space activates buttons
+  - [ ] Test modal dialogs (trap focus, Escape to close)
+  - [ ] Ensure dropdowns keyboard navigable
+- [ ] Add visible focus indicators:
+  - [ ] Use Tailwind's `focus-visible:` classes
+  - [ ] Ensure contrast ratio ≥3:1 for focus indicators
+  - [ ] Test focus styles on all interactive elements
+- [ ] ARIA labels and roles:
+  - [ ] Add `aria-label` to icon-only buttons
+  - [ ] Add `aria-describedby` to form fields with help text
+  - [ ] Use `role="alert"` for error summaries
+  - [ ] Use `aria-live="polite"` for upload progress
+  - [ ] Add `aria-expanded` to collapsible sections
+- [ ] Form accessibility:
+  - [ ] Associate all labels with inputs (using `htmlFor`)
+  - [ ] Add required field indicators (visual + `aria-required`)
+  - [ ] Ensure error messages associated with fields (`aria-describedby`)
+- [ ] Color contrast audit:
+  - [ ] Check all text against backgrounds (≥4.5:1 for normal, ≥3:1 for large)
+  - [ ] Verify button text contrast
+  - [ ] Check placeholder text contrast
+  - [ ] Use contrast checker tool (e.g., WebAIM)
+- [ ] Focus not obscured:
+  - [ ] Ensure sticky headers don't cover focused elements
+  - [ ] Scroll to focused element if needed
+  - [ ] Test with WCAG 2.2 Focus Not Obscured criteria
+- [ ] Skip links:
+  - [ ] Add "Skip to main content" link at top
+  - [ ] Make visible on focus
+  - [ ] Jump to main content area
+- [ ] Heading structure:
+  - [ ] Ensure logical heading hierarchy (h1 → h2 → h3)
+  - [ ] One h1 per page
+  - [ ] No skipped heading levels
+- [ ] Alternative text:
+  - [ ] Add alt text to all images
+  - [ ] Use empty alt for decorative images
+  - [ ] Ensure informative alt text for meaningful images
+- [ ] Test with screen reader:
+  - [ ] Basic navigation test (Chrome + ChromeVox or Safari + VoiceOver)
+  - [ ] Verify forms are navigable
+  - [ ] Verify error announcements
+  - [ ] Verify dynamic content updates announced
+
+### 5.6 Design System Finalization
+- [ ] Define design tokens in Tailwind config or CSS variables:
+  - [ ] Border radius: `rounded-2xl` (16px cards), `rounded-xl` (12px buttons), `rounded-lg` (8px inputs)
+  - [ ] Spacing scale: 1 (4px), 2 (8px), 3 (12px), 4 (16px), 6 (24px), 8 (32px), 12 (48px), 16 (64px)
+  - [ ] Typography: Use Geist Sans for body, Geist Mono for code
+  - [ ] Font sizes: xs (12px), sm (14px), base (16px), lg (18px), xl (20px), 2xl (24px), 3xl (30px)
+- [ ] Define button variants:
+  - [ ] Primary: Filled with primary color (e.g., blue)
+  - [ ] Secondary: Outline or ghost style
+  - [ ] Destructive: Red for delete/deny actions
+  - [ ] Ghost: Text-only for tertiary actions
+- [ ] Create color palette:
+  - [ ] Primary: Blue shades (500 main, 600 hover, 700 active)
+  - [ ] Success: Green shades (for approvals, success messages)
+  - [ ] Warning: Yellow/orange shades (for RFIs, blockers)
+  - [ ] Error: Red shades (for validation errors, denials)
+  - [ ] Neutral: Gray scale (50-950 for backgrounds, borders, text)
+- [ ] Document design tokens:
+  - [ ] Create `docs/development/design-system.md`
+  - [ ] Document spacing scale
+  - [ ] Document color palette with hex codes
+  - [ ] Document typography scale
+  - [ ] Include examples of button variants
+- [ ] Apply design system consistently:
+  - [ ] Audit all components for consistency
+  - [ ] Replace hard-coded values with tokens
+  - [ ] Ensure consistent spacing throughout
+  - [ ] Verify consistent border radius
+- [ ] Create component showcase (optional):
+  - [ ] Create `app/(dashboard)/design-system/page.tsx`
+  - [ ] Display all button variants
+  - [ ] Display color palette
+  - [ ] Display typography scale
+  - [ ] Display form components
+  - [ ] Useful for developer reference
+
+### 5.7 Final Polish & Bug Fixes
+- [ ] Cross-browser testing:
+  - [ ] Test in Chrome (latest)
+  - [ ] Test in Firefox (latest)
+  - [ ] Test in Safari (latest)
+  - [ ] Test in Edge (latest)
+- [ ] Performance optimization:
+  - [ ] Optimize images (use Next.js Image component)
+  - [ ] Lazy load PDF.js and heavy components
+  - [ ] Check bundle size (npm run build)
+  - [ ] Verify no console errors or warnings
+- [ ] Fix any layout issues:
+  - [ ] Check alignment inconsistencies
+  - [ ] Verify spacing is consistent
+  - [ ] Fix any overflow issues
+- [ ] Verify data flow:
+  - [ ] Test all localStorage read/write operations
+  - [ ] Verify mock data updates correctly
+  - [ ] Test navigation preserves state
+- [ ] Error handling:
+  - [ ] Add try/catch blocks for localStorage operations
+  - [ ] Gracefully handle missing data
+  - [ ] Show user-friendly error messages
+- [ ] Loading states:
+  - [ ] Add loading spinners for async operations
+  - [ ] Add skeleton screens for data loading
+  - [ ] Ensure no flash of unstyled content
+- [ ] Final code cleanup:
+  - [ ] Remove console.logs
+  - [ ] Remove commented-out code
+  - [ ] Ensure consistent code formatting (run prettier if configured)
+  - [ ] Remove unused imports
+  - [ ] Fix ESLint warnings
+
+### 5.8 Documentation
+- [ ] Update `README.md` with:
+  - [ ] Project description
+  - [ ] Installation instructions
+  - [ ] Development instructions (npm run dev)
+  - [ ] Build instructions (npm run build)
+  - [ ] Project structure overview
+  - [ ] Technologies used
+- [ ] Create `docs/development/design-system.md` (if not done in 5.6)
+- [ ] Create `docs/development/component-guide.md`:
+  - [ ] Document major components and their usage
+  - [ ] Include prop interfaces
+  - [ ] Include usage examples
+- [ ] Document known limitations:
+  - [ ] No back-end integration
+  - [ ] Data stored in localStorage only
+  - [ ] Mock authentication
+  - [ ] Simulated file uploads
+- [ ] Create `docs/development/user-guide.md`:
+  - [ ] How to navigate the app
+  - [ ] Overview of each role
+  - [ ] Walkthrough of key workflows
+
+### 5.9 Phase 5 Final Verification
+- [ ] Complete end-to-end walkthrough as Applicant
+- [ ] Complete end-to-end walkthrough as Broker
+- [ ] Complete end-to-end walkthrough as Admin
+- [ ] Complete end-to-end walkthrough as Board member
+- [ ] Verify PDF viewer works in all contexts
+- [ ] Verify file uploads work throughout
+- [ ] Verify all form validations
+- [ ] Test responsive on mobile device (or DevTools mobile emulation)
+- [ ] Run accessibility checker (e.g., axe DevTools)
+- [ ] Check keyboard navigation throughout
+- [ ] Verify no console errors
+- [ ] Run production build and test
+
+---
+
+## Post-Implementation Checklist
+
+### Final Review
+- [ ] All phases (0-5) completed
+- [ ] All screens implemented (A0-A7, BK1-BK3, AD1-AD5, BR1)
+- [ ] All components functional
+- [ ] Mock data comprehensive and realistic
+- [ ] TypeScript types complete
+- [ ] No build errors or warnings
+- [ ] Responsive design verified
+- [ ] Accessibility audit passed
+- [ ] Design system consistent
+- [ ] Documentation complete
+
+### Handoff Preparation
+- [ ] Create demo video/walkthrough (optional)
+- [ ] Prepare presentation slides (optional)
+- [ ] List known limitations and future enhancements
+- [ ] Gather feedback from stakeholders
+- [ ] Plan for Phase 6 (back-end integration) if applicable
+
+---
+
+## Notes
+
+**Progress Tracking:**
+- Check off items as you complete them
+- Add notes or blockers inline if needed
+- Update dates for phase completions
+
+**Estimated Timeline:**
+- Phase 0: 1-2 days
+- Phase 1: 5-7 days
+- Phase 2: 3-4 days
+- Phase 3: 5-6 days
+- Phase 4: 1-2 days
+- Phase 5: 4-5 days
+- **Total: ~19-26 days**
+
+**Key Dependencies:**
+- Ensure shadcn/ui installed before Phase 1
+- Complete core layout components before individual screens
+- PDF.js integration can be done in parallel with other phases
+- Accessibility audit should be ongoing, not just Phase 5
+
+**Tips:**
+- Commit frequently to git
+- Test each screen before moving to next
+- Keep mock data realistic
+- Don't skip responsive testing
+- Document as you go
