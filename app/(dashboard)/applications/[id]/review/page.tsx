@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
@@ -21,27 +21,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   const [submittedAt, setSubmittedAt] = useState<Date | null>(null)
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
 
-  useEffect(() => {
-    // Load transaction type
-    const appData = localStorage.getItem(`application-${params.id}`)
-    if (appData) {
-      const data = JSON.parse(appData)
-      setTransactionType(data.transactionType)
-    }
-
-    // Check submission status
-    const submissionData = localStorage.getItem(`submission-${params.id}`)
-    if (submissionData) {
-      const data = JSON.parse(submissionData)
-      setIsSubmitted(data.submitted)
-      setSubmittedAt(data.submittedAt ? new Date(data.submittedAt) : null)
-    }
-
-    // Perform validation
-    validateApplication()
-  }, [params.id])
-
-  const validateApplication = () => {
+  const validateApplication = useCallback(() => {
     const items: ValidationItem[] = []
 
     // Check profile
@@ -125,7 +105,33 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
     }
 
     setValidationItems(items)
-  }
+  }, [params.id, transactionType])
+
+  useEffect(() => {
+    try {
+      // Load transaction type
+      const appData = localStorage.getItem(`application-${params.id}`)
+      if (appData) {
+        const data = JSON.parse(appData)
+        setTransactionType(data.transactionType)
+      }
+
+      // Check submission status
+      const submissionData = localStorage.getItem(`submission-${params.id}`)
+      if (submissionData) {
+        const data = JSON.parse(submissionData)
+        setIsSubmitted(data.submitted)
+        setSubmittedAt(data.submittedAt ? new Date(data.submittedAt) : null)
+      }
+    } catch (error) {
+      console.error("Error loading application data:", error)
+    }
+  }, [params.id])
+
+  // Perform validation when dependencies change
+  useEffect(() => {
+    validateApplication()
+  }, [validateApplication])
 
   const canSubmit = () => {
     return validationItems.every((item) => item.status === "complete" || item.status === "warning")

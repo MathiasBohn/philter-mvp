@@ -82,3 +82,165 @@ export const transactionTypeSchema = z.object({
     message: "Transaction type is required",
   }),
 });
+
+// Complete Profile Section Schema (A2)
+export const profileSectionSchema = z.object({
+  fullName: z.string().min(1, "Please enter your full name.").min(2, "Name must be at least 2 characters"),
+  email: z.string().min(1, "Please enter your email.").email("Email looks incorrect. Check the format."),
+  phone: z.string().min(1, "Please enter your phone number.").regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Phone number looks incorrect. Check the format."),
+  dob: z.instanceof(Date, { message: "Please enter your date of birth." }).refine(isAtLeast18, "You must be at least 18 years old to apply."),
+  ssn: z.string().min(1, "Please enter your SSN.").regex(/^\d{3}-\d{2}-\d{4}$/, "SSN must be in format XXX-XX-XXXX"),
+  addressHistory: z.array(addressHistorySchema).min(1, "Please add at least one address.").refine(
+    (addresses) => {
+      // Calculate total time at addresses (minimum 2 years required)
+      const now = new Date();
+      let totalMonths = 0;
+
+      addresses.forEach(addr => {
+        const from = addr.fromDate;
+        const to = addr.toDate || now;
+        const months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+        totalMonths += months;
+      });
+
+      return totalMonths >= 24; // 2 years = 24 months
+    },
+    "Address history must cover at least 2 years."
+  ),
+});
+
+// Employment & Income Section Schema (A3)
+export const employmentSectionSchema = z.object({
+  employmentRecords: z.array(employmentSchema).min(1, "Please add at least one employer or income source."),
+  documents: z.array(documentUploadSchema).optional(),
+});
+
+// Financial Summary Section Schema (A4)
+export const financialSectionSchema = z.object({
+  assets: z.array(financialEntrySchema).optional(),
+  liabilities: z.array(financialEntrySchema).optional(),
+  monthlyIncome: z.array(financialEntrySchema).optional(),
+  monthlyExpenses: z.array(financialEntrySchema).optional(),
+}).refine(
+  (data) => {
+    // At least one entry must exist
+    return (
+      (data.assets && data.assets.length > 0) ||
+      (data.liabilities && data.liabilities.length > 0) ||
+      (data.monthlyIncome && data.monthlyIncome.length > 0) ||
+      (data.monthlyExpenses && data.monthlyExpenses.length > 0)
+    );
+  },
+  "Please add at least one financial entry."
+);
+
+// Documents Section Schema (A5)
+export const documentsSectionSchema = z.object({
+  documents: z.array(documentUploadSchema).refine(
+    (docs) => {
+      // Must have at least one government ID
+      return docs.some(doc => doc.category === "GOVERNMENT_ID");
+    },
+    "Please upload at least one government-issued ID."
+  ),
+  notAvailableReasons: z.record(z.string(), z.string()).optional(),
+});
+
+// Disclosures Section Schema (A6) - conditional
+export const disclosuresSectionSchema = z.object({
+  disclosures: z.array(disclosureSchema).refine(
+    (disclosures) => disclosures.every(d => d.acknowledged === true),
+    "You must acknowledge all disclosures before submitting."
+  ),
+});
+
+// Template Wizard Schemas (AD1)
+export const templateBasicsSchema = z.object({
+  buildingId: z.string().min(1, "Please select a building."),
+  name: z.string().min(1, "Please enter a template name.").min(3, "Template name must be at least 3 characters"),
+  description: z.string().optional(),
+});
+
+export const templateSectionsSchema = z.object({
+  profile: z.object({
+    enabled: z.boolean(),
+    required: z.boolean(),
+  }),
+  income: z.object({
+    enabled: z.boolean(),
+    required: z.boolean(),
+  }),
+  financials: z.object({
+    enabled: z.boolean(),
+    required: z.boolean(),
+  }),
+  documents: z.object({
+    enabled: z.boolean(),
+    required: z.boolean(),
+  }),
+  disclosures: z.object({
+    enabled: z.boolean(),
+    required: z.boolean(),
+  }),
+});
+
+export const templateDocumentsSchema = z.object({
+  categories: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    required: z.boolean(),
+    enabled: z.boolean(),
+  })),
+});
+
+export const templateComplianceSchema = z.object({
+  localLaw55: z.boolean(),
+  windowGuard: z.boolean(),
+});
+
+// RFI Creation Schema (AD4)
+export const rfiCreationSchema = z.object({
+  sectionKey: z.string().min(1, "Please select a section."),
+  assigneeRole: z.enum(["APPLICANT", "BROKER"], { message: "Please select who should respond." }),
+  message: z.string().min(1, "Please enter a message.").min(10, "Message must be at least 10 characters."),
+  documentReferenceId: z.string().optional(),
+});
+
+// Decision Panel Schema (AD5)
+export const decisionSchema = z.object({
+  decision: z.enum(["APPROVED", "CONDITIONAL", "DENIED"], { message: "Please select a decision." }),
+  reasonCodes: z.array(z.string()).optional(),
+  notes: z.string().optional(),
+  usesConsumerReport: z.boolean(),
+  adverseActionNotice: z.string().optional(),
+}).refine(
+  (data) => {
+    // If uses consumer report AND (conditional or denied), require adverse action notice
+    if (data.usesConsumerReport && (data.decision === "CONDITIONAL" || data.decision === "DENIED")) {
+      return !!data.adverseActionNotice && data.adverseActionNotice.length > 0;
+    }
+    return true;
+  },
+  {
+    message: "Adverse action notice is required when using consumer reports for conditional approval or denial.",
+    path: ["adverseActionNotice"],
+  }
+);
+
+// Board Notes Schema (BR1)
+export const boardNotesSchema = z.object({
+  notes: z.string().max(10000, "Notes must be less than 10,000 characters."),
+});
+
+// Common field-level error messages
+export const errorMessages = {
+  required: (field: string) => `Please enter ${field}.`,
+  invalid: (field: string) => `${field} looks incorrect. Check the format.`,
+  minLength: (field: string, min: number) => `${field} must be at least ${min} characters.`,
+  maxLength: (field: string, max: number) => `${field} must be less than ${max} characters.`,
+  fileType: "This file type isn't allowed. Use PDF/JPG/PNG/DOCX.",
+  fileSize: (max: number) => `File size must be less than ${max}MB.`,
+  disclosure: "You must acknowledge this notice before submitting.",
+  minAge: "You must be at least 18 years old to apply.",
+  addressHistory: "Address history must cover at least 2 years.",
+};

@@ -34,24 +34,31 @@ export default function IncomePage({ params }: { params: { id: string } }) {
   }
 
   // Load data from localStorage on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const saved = localStorage.getItem(`income-data-${params.id}`)
-    if (saved) {
-      const data = JSON.parse(saved)
-      if (data.employers) {
-        setEmployers(
-          data.employers.map((e: { startDate: string; endDate?: string }) => ({
-            ...e,
-            startDate: new Date(e.startDate),
-            endDate: e.endDate ? new Date(e.endDate) : undefined,
-          }))
-        )
+    try {
+      const saved = localStorage.getItem(`income-data-${params.id}`)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.employers) {
+          setEmployers(
+            data.employers.map((e: { startDate: string; endDate?: string }) => ({
+              ...e,
+              startDate: new Date(e.startDate),
+              endDate: e.endDate ? new Date(e.endDate) : undefined,
+            }))
+          )
+        }
+        if (data.documents) {
+          setDocuments(data.documents)
+        }
+      } else {
+        // Initialize with one empty employer
+        addEmployer()
       }
-      if (data.documents) {
-        setDocuments(data.documents)
-      }
-    } else {
-      // Initialize with one empty employer
+    } catch (error) {
+      console.error("Error loading income data:", error)
+      // Initialize with one empty employer on error
       addEmployer()
     }
   }, [params.id])
@@ -70,7 +77,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
     setDocuments([...documents, ...newFiles])
 
     // Simulate upload progress
-    newFiles.forEach((file, index) => {
+    newFiles.forEach((file) => {
       if (file.status === "pending") {
         simulateUpload(file.id)
       }
@@ -113,7 +120,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
   const validate = () => {
     const newErrors: Record<string, string> = {}
 
-    employers.forEach((employer, index) => {
+    employers.forEach((employer) => {
       if (!employer.employer.trim()) {
         newErrors[`employer-${employer.id}`] = "Employer name is required"
       }

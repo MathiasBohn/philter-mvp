@@ -41,34 +41,38 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
 
   // Load transaction type and disclosures from localStorage
   useEffect(() => {
-    // Try to get transaction type from application data
-    const appData = localStorage.getItem(`application-${params.id}`)
-    let loadedTxType: TransactionType | null = null
+    try {
+      // Try to get transaction type from application data
+      const appData = localStorage.getItem(`application-${params.id}`)
+      let loadedTxType: TransactionType | null = null
 
-    if (appData) {
-      const data = JSON.parse(appData)
-      loadedTxType = data.transactionType
-      setTransactionType(loadedTxType)
-    }
+      if (appData) {
+        const data = JSON.parse(appData)
+        loadedTxType = data.transactionType
+        setTransactionType(loadedTxType)
+      }
 
-    // Load saved disclosures
-    const saved = localStorage.getItem(`disclosures-data-${params.id}`)
-    if (saved) {
-      const data = JSON.parse(saved)
-      if (data.disclosures) {
-        setDisclosures(data.disclosures)
+      // Load saved disclosures
+      const saved = localStorage.getItem(`disclosures-data-${params.id}`)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.disclosures) {
+          setDisclosures(data.disclosures)
+        }
+      } else if (loadedTxType) {
+        // Initialize disclosures for lease/sublet
+        if (
+          loadedTxType === TransactionType.CONDO_LEASE ||
+          loadedTxType === TransactionType.COOP_SUBLET
+        ) {
+          setDisclosures([
+            DISCLOSURE_TEMPLATES.LOCAL_LAW_55,
+            DISCLOSURE_TEMPLATES.WINDOW_GUARD,
+          ])
+        }
       }
-    } else if (loadedTxType) {
-      // Initialize disclosures for lease/sublet
-      if (
-        loadedTxType === TransactionType.CONDO_LEASE ||
-        loadedTxType === TransactionType.COOP_SUBLET
-      ) {
-        setDisclosures([
-          DISCLOSURE_TEMPLATES.LOCAL_LAW_55,
-          DISCLOSURE_TEMPLATES.WINDOW_GUARD,
-        ])
-      }
+    } catch (error) {
+      console.error("Error loading disclosures data:", error)
     }
   }, [params.id])
 

@@ -1,6 +1,18 @@
 "use client"
 
-import { X, Eye, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import {
+  X,
+  Eye,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Pause,
+  Play,
+  RefreshCw,
+  FileText,
+  Image as ImageIcon,
+  File as FileIcon,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
@@ -11,15 +23,33 @@ interface DocumentCardProps {
   document: UploadedFile
   onDelete: () => void
   onPreview?: () => void
+  onPause?: () => void
+  onResume?: () => void
+  onReplace?: () => void
 }
 
-export function DocumentCard({ document, onDelete, onPreview }: DocumentCardProps) {
+export function DocumentCard({
+  document,
+  onDelete,
+  onPreview,
+  onPause,
+  onResume,
+  onReplace,
+}: DocumentCardProps) {
   const getFileIcon = () => {
     const { file } = document
-    if (file.type.includes("pdf")) return "📄"
-    if (file.type.includes("image")) return "🖼️"
-    if (file.type.includes("word")) return "📝"
-    return "📎"
+    const type = file.type
+
+    if (type.includes("pdf")) {
+      return <FileText className="h-6 w-6 text-red-500" />
+    }
+    if (type.includes("image")) {
+      return <ImageIcon className="h-6 w-6 text-blue-500" />
+    }
+    if (type.includes("word") || type.includes("document")) {
+      return <FileText className="h-6 w-6 text-blue-600" />
+    }
+    return <FileIcon className="h-6 w-6 text-gray-500" />
   }
 
   const formatFileSize = (bytes: number) => {
@@ -32,6 +62,8 @@ export function DocumentCard({ document, onDelete, onPreview }: DocumentCardProp
     switch (document.status) {
       case "uploading":
         return <Loader2 className="h-4 w-4 animate-spin text-primary" />
+      case "paused":
+        return <Pause className="h-4 w-4 text-orange-500" />
       case "complete":
         return <CheckCircle2 className="h-4 w-4 text-green-600" />
       case "error":
@@ -41,48 +73,121 @@ export function DocumentCard({ document, onDelete, onPreview }: DocumentCardProp
     }
   }
 
+  const getStatusText = () => {
+    switch (document.status) {
+      case "uploading":
+        return `${document.progress}% uploaded`
+      case "paused":
+        return "Paused"
+      case "complete":
+        return "Complete"
+      case "error":
+        return document.error || "Upload failed"
+      case "pending":
+        return "Pending..."
+      default:
+        return ""
+    }
+  }
+
   return (
-    <Card className={cn("p-4", document.status === "error" && "border-destructive")}>
+    <Card
+      className={cn(
+        "p-4 transition-colors",
+        document.status === "error" && "border-destructive bg-destructive/5"
+      )}
+    >
       <div className="flex items-start gap-3">
         {document.preview ? (
-          <img
-            src={document.preview}
-            alt={document.file.name}
-            className="h-12 w-12 rounded object-cover"
-          />
+          <div className="relative h-14 w-14 flex-shrink-0">
+            <img
+              src={document.preview}
+              alt={document.file.name}
+              className="h-full w-full rounded object-cover"
+            />
+          </div>
         ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded bg-muted text-2xl">
+          <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded bg-muted">
             {getFileIcon()}
           </div>
         )}
 
-        <div className="flex-1 space-y-1">
+        <div className="flex-1 space-y-2 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium leading-none">{document.file.name}</p>
+            <div className="flex-1 space-y-1 min-w-0">
+              <p className="text-sm font-medium leading-none truncate" title={document.file.name}>
+                {document.file.name}
+              </p>
               <p className="text-xs text-muted-foreground">
                 {formatFileSize(document.file.size)}
               </p>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {getStatusIcon()}
+
+              {/* Pause/Resume buttons for uploading files */}
+              {document.status === "uploading" && onPause && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={onPause}
+                  title="Pause upload"
+                >
+                  <Pause className="h-4 w-4" />
+                  <span className="sr-only">Pause upload</span>
+                </Button>
+              )}
+
+              {document.status === "paused" && onResume && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={onResume}
+                  title="Resume upload"
+                >
+                  <Play className="h-4 w-4" />
+                  <span className="sr-only">Resume upload</span>
+                </Button>
+              )}
+
+              {/* Preview button for completed files */}
               {onPreview && document.status === "complete" && (
                 <Button
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8"
                   onClick={onPreview}
+                  title="Preview file"
                 >
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">Preview</span>
                 </Button>
               )}
+
+              {/* Replace button for completed files */}
+              {onReplace && document.status === "complete" && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8"
+                  onClick={onReplace}
+                  title="Replace file"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="sr-only">Replace</span>
+                </Button>
+              )}
+
+              {/* Delete button */}
               <Button
                 size="icon"
                 variant="ghost"
                 className="h-8 w-8"
                 onClick={onDelete}
+                title="Delete file"
               >
                 <X className="h-4 w-4" />
                 <span className="sr-only">Delete</span>
@@ -90,15 +195,38 @@ export function DocumentCard({ document, onDelete, onPreview }: DocumentCardProp
             </div>
           </div>
 
-          {document.status === "uploading" && (
+          {/* Progress bar for uploading/paused */}
+          {(document.status === "uploading" || document.status === "paused") && (
             <div className="space-y-1">
-              <Progress value={document.progress} className="h-1" />
-              <p className="text-xs text-muted-foreground">{document.progress}% uploaded</p>
+              <Progress
+                value={document.progress}
+                className={cn(
+                  "h-2",
+                  document.status === "paused" && "opacity-50"
+                )}
+              />
+              <div className="flex items-center justify-between">
+                <p
+                  className={cn(
+                    "text-xs",
+                    document.status === "paused"
+                      ? "text-orange-600 dark:text-orange-400"
+                      : "text-muted-foreground"
+                  )}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {getStatusText()}
+                </p>
+              </div>
             </div>
           )}
 
+          {/* Error message */}
           {document.status === "error" && document.error && (
-            <p className="text-xs text-destructive">{document.error}</p>
+            <p className="text-xs text-destructive" role="alert">
+              {document.error}
+            </p>
           )}
         </div>
       </div>
