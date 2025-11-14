@@ -57,20 +57,21 @@ const INITIAL_CATEGORIES: DocumentCategory[] = [
 
 export default function DocumentsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const [categories, setCategories] = useState<DocumentCategory[]>(INITIAL_CATEGORIES)
-  const [isSaving, setIsSaving] = useState(false)
-  const [errors, setErrors] = useState<string[]>([])
-
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(`documents-data-${params.id}`)
-    if (saved) {
-      const data = JSON.parse(saved)
-      if (data.categories) {
-        setCategories(data.categories)
+  const [categories, setCategories] = useState<DocumentCategory[]>(() => {
+    // Lazy initialization from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`documents-data-${params.id}`)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.categories) {
+          return data.categories
+        }
       }
     }
-  }, [params.id])
+    return INITIAL_CATEGORIES
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<string[]>([])
 
   const handleFilesAdded = (categoryId: string, newFiles: UploadedFile[]) => {
     setCategories((prev) =>

@@ -20,6 +20,19 @@ export default function IncomePage({ params }: { params: { id: string } }) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
 
+  const addEmployer = () => {
+    const newEmployer: EmploymentRecord = {
+      id: Math.random().toString(36).substring(7),
+      employer: "",
+      title: "",
+      startDate: new Date(),
+      payCadence: PayCadence.ANNUAL,
+      annualIncome: 0,
+      isCurrent: true,
+    }
+    setEmployers((prev) => [...prev, newEmployer])
+  }
+
   // Load data from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem(`income-data-${params.id}`)
@@ -42,19 +55,6 @@ export default function IncomePage({ params }: { params: { id: string } }) {
       addEmployer()
     }
   }, [params.id])
-
-  const addEmployer = () => {
-    const newEmployer: EmploymentRecord = {
-      id: Math.random().toString(36).substring(7),
-      employer: "",
-      title: "",
-      startDate: new Date(),
-      payCadence: PayCadence.ANNUAL,
-      annualIncome: 0,
-      isCurrent: true,
-    }
-    setEmployers([...employers, newEmployer])
-  }
 
   const updateEmployer = (id: string, updated: EmploymentRecord) => {
     setEmployers(employers.map((e) => (e.id === id ? updated : e)))

@@ -418,191 +418,194 @@ This implementation plan breaks down the philter MVP UI development into actiona
 **Goal:** Implement admin template wizard, inbox, review workspace, RFI management, and decision panel
 
 ### 3.1 Install Additional shadcn/ui Components
-- [ ] `npx shadcn@latest add stepper` (if available, or create custom)
-- [ ] `npx shadcn@latest add toggle`
-- [ ] `npx shadcn@latest add switch`
-- [ ] `npx shadcn@latest add radio-group`
-- [ ] `npx shadcn@latest add avatar`
+- [x] `npx shadcn@latest add stepper` (if available, or create custom)
+- [x] `npx shadcn@latest add toggle`
+- [x] `npx shadcn@latest add switch`
+- [x] `npx shadcn@latest add radio-group`
+- [x] `npx shadcn@latest add avatar`
+- [x] `npx shadcn@latest add scroll-area`
 
 ### 3.2 Admin Routes Setup
-- [ ] Create `app/(dashboard)/admin/templates/page.tsx` (AD1: Template wizard)
-- [ ] Create `app/(dashboard)/admin/templates/new/page.tsx` (AD1: New template wizard)
-- [ ] Create `app/(dashboard)/admin/inbox/page.tsx` (AD2: Intake inbox)
-- [ ] Create `app/(dashboard)/admin/review/[id]/page.tsx` (AD3: Review workspace)
+- [x] Create `app/(dashboard)/admin/templates/page.tsx` (AD1: Template wizard)
+- [x] Create `app/(dashboard)/admin/templates/new/page.tsx` (AD1: New template wizard)
+- [x] Create `app/(dashboard)/admin/inbox/page.tsx` (AD2: Intake inbox)
+- [x] Create `app/(dashboard)/admin/review/[id]/page.tsx` (AD3: Review workspace)
 
 ### 3.3 Create Admin-Specific Components
-- [ ] Create `components/features/admin/template-wizard.tsx`
-- [ ] Create `components/features/admin/stepper.tsx` (if not from shadcn)
-- [ ] Create `components/features/admin/section-toggle-list.tsx`
-- [ ] Create `components/features/admin/document-toggle-list.tsx`
-- [ ] Create `components/features/admin/compliance-toggles.tsx`
-- [ ] Create `components/features/admin/template-preview.tsx`
-- [ ] Create `components/features/admin/review-navigator.tsx`
-- [ ] Create `components/features/admin/data-panel.tsx`
-- [ ] Create `components/features/admin/rfi-thread.tsx`
-- [ ] Create `components/features/admin/rfi-composer.tsx`
-- [ ] Create `components/features/admin/activity-log.tsx`
-- [ ] Create `components/features/admin/decision-panel.tsx`
-- [ ] Create `components/features/admin/reason-tags.tsx`
+- [x] Create `components/features/admin/template-wizard.tsx`
+- [x] Create `components/features/admin/stepper.tsx` (if not from shadcn)
+- [x] Create `components/features/admin/section-toggle-list.tsx`
+- [x] Create `components/features/admin/document-toggle-list.tsx`
+- [x] Create `components/features/admin/compliance-toggles.tsx`
+- [x] Create `components/features/admin/template-preview.tsx`
+- [x] Create `components/features/admin/review-navigator.tsx`
+- [x] Create `components/features/admin/data-panel.tsx`
+- [x] Create `components/features/admin/rfi-thread.tsx`
+- [x] Create `components/features/admin/rfi-composer.tsx`
+- [x] Create `components/features/admin/activity-log.tsx`
+- [x] Create `components/features/admin/decision-panel.tsx`
+- [x] Create `components/features/admin/reason-tags.tsx`
+- [x] Create `components/features/admin/inbox-table.tsx`
+- [x] Create `components/features/admin/inbox-filter-bar.tsx`
 
 ### 3.4 Screen: AD1 - Template Wizard
-- [ ] Create stepper component showing 6 steps:
-  1. [ ] Basics
-  2. [ ] Sections
-  3. [ ] Documents
-  4. [ ] Compliance
-  5. [ ] Review
-  6. [ ] Publish
-- [ ] Implement Step 1 - Basics:
-  - [ ] Building selection (dropdown)
-  - [ ] Template name input
-  - [ ] Description textarea
-- [ ] Implement Step 2 - Sections:
-  - [ ] Toggle switches for each section (Profile, Income, Financials, Documents, Disclosures)
-  - [ ] Mark sections as required or optional
-- [ ] Implement Step 3 - Documents:
-  - [ ] Checklist of document categories
-  - [ ] Toggle required/optional per category
-  - [ ] Add custom categories option
-- [ ] Implement Step 4 - Compliance:
-  - [ ] Toggle Local Law 55 disclosure (lease/sublet only)
-  - [ ] Toggle Window Guard disclosure (lease/sublet only)
-- [ ] Implement Step 5 - Review:
-  - [ ] Display summary of all selections
-  - [ ] Show which sections are required
-  - [ ] Show which documents are required
-  - [ ] Show compliance settings
-- [ ] Implement Step 6 - Publish:
-  - [ ] Version number display
-  - [ ] Publish button
-  - [ ] Save template to mock data
-  - [ ] Show success confirmation
-- [ ] Add navigation between steps (Next/Previous buttons)
-- [ ] Add "Save Draft" functionality
-- [ ] Make responsive
+- [x] Create stepper component showing 6 steps:
+  1. [x] Basics
+  2. [x] Sections
+  3. [x] Documents
+  4. [x] Compliance
+  5. [x] Review
+  6. [x] Publish
+- [x] Implement Step 1 - Basics:
+  - [x] Building selection (dropdown)
+  - [x] Template name input
+  - [x] Description textarea
+- [x] Implement Step 2 - Sections:
+  - [x] Toggle switches for each section (Profile, Income, Financials, Documents, Disclosures)
+  - [x] Mark sections as required or optional
+- [x] Implement Step 3 - Documents:
+  - [x] Checklist of document categories
+  - [x] Toggle required/optional per category
+  - [x] Add custom categories option
+- [x] Implement Step 4 - Compliance:
+  - [x] Toggle Local Law 55 disclosure (lease/sublet only)
+  - [x] Toggle Window Guard disclosure (lease/sublet only)
+- [x] Implement Step 5 - Review:
+  - [x] Display summary of all selections
+  - [x] Show which sections are required
+  - [x] Show which documents are required
+  - [x] Show compliance settings
+- [x] Implement Step 6 - Publish:
+  - [x] Version number display
+  - [x] Publish button
+  - [x] Save template to mock data
+  - [x] Show success confirmation
+- [x] Add navigation between steps (Next/Previous buttons)
+- [x] Add "Save Draft" functionality
+- [x] Make responsive
 
 ### 3.5 Screen: AD2 - Intake Inbox
-- [ ] Implement data table with columns:
-  - [ ] Applicant(s) name
-  - [ ] Unit (if available)
-  - [ ] Transaction type
-  - [ ] Stage/Status
-  - [ ] Age (days since submission)
-  - [ ] Last activity (relative time)
-- [ ] Add filter bar:
-  - [ ] Status filter
-  - [ ] Date submitted filter
-  - [ ] Building filter
-- [ ] Add row actions:
-  - [ ] Open review workspace
-  - [ ] Assign to reviewer
-  - [ ] Set status
-- [ ] Add quick status update dropdown
-- [ ] Load applications from mock data (filter by status: SUBMITTED, IN_REVIEW, RFI)
-- [ ] Make table responsive
+- [x] Implement data table with columns:
+  - [x] Applicant(s) name
+  - [x] Unit (if available)
+  - [x] Transaction type
+  - [x] Stage/Status
+  - [x] Age (days since submission)
+  - [x] Last activity (relative time)
+- [x] Add filter bar:
+  - [x] Status filter
+  - [x] Date submitted filter
+  - [x] Building filter
+- [x] Add row actions:
+  - [x] Open review workspace
+  - [x] Assign to reviewer
+  - [x] Set status
+- [x] Add quick status update dropdown
+- [x] Load applications from mock data (filter by status: SUBMITTED, IN_REVIEW, RFI)
+- [x] Make table responsive
 
 ### 3.6 Screen: AD3 - Review Workspace
-- [ ] Implement 3-column layout:
-  - [ ] Left: Section navigator with flags (25% width)
-  - [ ] Center: PDF viewer + data panel toggle (50% width)
-  - [ ] Right: RFI thread + activity log (25% width)
-- [ ] Create section navigator:
-  - [ ] List all sections
-  - [ ] Show completion status per section
-  - [ ] Show flags (e.g., needs attention)
-  - [ ] Click to navigate to section
-- [ ] Implement center panel with toggle:
-  - [ ] PDF viewer mode: Display document previews
-  - [ ] Data panel mode: Display form data in read-only view
-  - [ ] Toggle button to switch between modes
-- [ ] Display full PII (no masking) for admin role
-- [ ] Create RFI thread in right panel:
-  - [ ] Display existing RFI messages
-  - [ ] Author avatar and name
-  - [ ] Role chip (e.g., "Admin", "Applicant")
-  - [ ] Timestamp
-  - [ ] Message content
-- [ ] Create activity log:
-  - [ ] Timeline of all actions
-  - [ ] Action type and description
-  - [ ] User who performed action
-  - [ ] Timestamp
-- [ ] Add "Mark Complete" / "Needs Info" buttons per section
-- [ ] Add "Create RFI" button that opens composer
-- [ ] Make responsive (stack columns on mobile)
+- [x] Implement 3-column layout:
+  - [x] Left: Section navigator with flags (25% width)
+  - [x] Center: PDF viewer + data panel toggle (50% width)
+  - [x] Right: RFI thread + activity log (25% width)
+- [x] Create section navigator:
+  - [x] List all sections
+  - [x] Show completion status per section
+  - [x] Show flags (e.g., needs attention)
+  - [x] Click to navigate to section
+- [x] Implement center panel with toggle:
+  - [x] PDF viewer mode: Display document previews (placeholder)
+  - [x] Data panel mode: Display form data in read-only view
+  - [x] Toggle button to switch between modes
+- [x] Display full PII (no masking) for admin role
+- [x] Create RFI thread in right panel:
+  - [x] Display existing RFI messages
+  - [x] Author avatar and name
+  - [x] Role chip (e.g., "Admin", "Applicant")
+  - [x] Timestamp
+  - [x] Message content
+- [x] Create activity log:
+  - [x] Timeline of all actions
+  - [x] Action type and description
+  - [x] User who performed action
+  - [x] Timestamp
+- [x] Add "Mark Complete" / "Needs Info" buttons per section
+- [x] Add "Create RFI" button that opens composer
+- [x] Make responsive (stack columns on mobile)
 
 ### 3.7 Screen: AD4 - RFI Management (within AD3)
-- [ ] Create RFI composer dialog:
-  - [ ] Section selection dropdown
-  - [ ] Assign to (Applicant or Broker) radio buttons
-  - [ ] Message textarea
-  - [ ] Attach document reference (optional)
-  - [ ] Send button
-- [ ] Implement RFI creation:
-  - [ ] Add RFI to mock data
-  - [ ] Update application status to RFI if needed
-  - [ ] Add first message to thread
-- [ ] Create RFI thread display:
-  - [ ] Message bubbles (different alignment for admin vs applicant/broker)
-  - [ ] Author information
-  - [ ] Timestamp
-  - [ ] Attached document references
-- [ ] Add reply functionality:
-  - [ ] Reply textarea
-  - [ ] Send reply button
-  - [ ] Add message to thread in mock data
-- [ ] Add "Resolve" button:
-  - [ ] Mark RFI as resolved
-  - [ ] Update status in mock data
-  - [ ] Visual indication (grayed out or moved to resolved section)
-- [ ] Make responsive
+- [x] Create RFI composer dialog:
+  - [x] Section selection dropdown
+  - [x] Assign to (Applicant or Broker) radio buttons
+  - [x] Message textarea
+  - [x] Attach document reference (optional - not implemented)
+  - [x] Send button
+- [x] Implement RFI creation:
+  - [x] Add RFI to mock data
+  - [x] Update application status to RFI if needed
+  - [x] Add first message to thread
+- [x] Create RFI thread display:
+  - [x] Message bubbles (different alignment for admin vs applicant/broker)
+  - [x] Author information
+  - [x] Timestamp
+  - [x] Attached document references (display capability)
+- [x] Add reply functionality:
+  - [x] Reply textarea
+  - [x] Send reply button
+  - [x] Add message to thread in mock data
+- [x] Add "Resolve" button:
+  - [x] Mark RFI as resolved
+  - [x] Update status in mock data
+  - [x] Visual indication (grayed out or moved to resolved section)
+- [x] Make responsive
 
 ### 3.8 Screen: AD5 - Decision Panel (within AD3 or separate)
-- [ ] Create decision panel with radio group:
-  - [ ] Approve
-  - [ ] Approve with Conditions
-  - [ ] Deny
-- [ ] Create reason tags component:
-  - [ ] Multi-select checkboxes for common reasons:
-    - [ ] Income insufficient
-    - [ ] DTI too high
-    - [ ] Incomplete documentation
-    - [ ] Unsatisfactory references
-    - [ ] Board policy criteria not met
-    - [ ] Other
-  - [ ] Free-text notes textarea
-- [ ] Add "Uses consumer report" checkbox
-- [ ] Implement conditional logic:
-  - [ ] If "Uses consumer report" checked AND (Deny or Conditional selected)
-  - [ ] Show required field: "Adverse action notice required"
-  - [ ] Require adverse action payload before enabling submit
-- [ ] Create decision email preview:
-  - [ ] Show to: applicant email
-  - [ ] Show subject based on decision
-  - [ ] Show email body with decision details
-  - [ ] Include reason codes if applicable
-  - [ ] Include adverse action notice if applicable
-- [ ] Add confirmation modal before submitting decision
-- [ ] Implement submit decision:
-  - [ ] Save decision to mock data
-  - [ ] Update application status (APPROVED, CONDITIONAL, or DENIED)
-  - [ ] Add decided timestamp
-  - [ ] Show success confirmation
-- [ ] Make responsive
+- [x] Create decision panel with radio group:
+  - [x] Approve
+  - [x] Approve with Conditions
+  - [x] Deny
+- [x] Create reason tags component:
+  - [x] Multi-select checkboxes for common reasons:
+    - [x] Income insufficient
+    - [x] DTI too high
+    - [x] Incomplete documentation
+    - [x] Unsatisfactory references
+    - [x] Board policy criteria not met
+    - [x] Other
+  - [x] Free-text notes textarea
+- [x] Add "Uses consumer report" checkbox
+- [x] Implement conditional logic:
+  - [x] If "Uses consumer report" checked AND (Deny or Conditional selected)
+  - [x] Show required field: "Adverse action notice required"
+  - [x] Require adverse action payload before enabling submit
+- [x] Create decision email preview:
+  - [x] Show to: applicant email
+  - [x] Show subject based on decision
+  - [x] Show email body with decision details
+  - [x] Include reason codes if applicable
+  - [x] Include adverse action notice if applicable
+- [x] Add confirmation modal before submitting decision
+- [x] Implement submit decision:
+  - [x] Save decision to mock data
+  - [x] Update application status (APPROVED, CONDITIONAL, or DENIED)
+  - [x] Add decided timestamp
+  - [x] Show success confirmation
+- [x] Make responsive
 
 ### 3.9 Phase 3 Verification
-- [ ] Complete template wizard flow
-- [ ] Navigate intake inbox
-- [ ] Open review workspace
-- [ ] Navigate between sections
-- [ ] Verify full SSN visibility (no masking)
-- [ ] Create test RFI
-- [ ] Reply to RFI
-- [ ] Resolve RFI
-- [ ] Mark sections as complete/needs info
-- [ ] Record decision (all 3 types)
-- [ ] Test conditional logic (consumer report + deny/conditional)
-- [ ] Verify responsive layouts
+- [x] Complete template wizard flow
+- [x] Navigate intake inbox
+- [x] Open review workspace
+- [x] Navigate between sections
+- [x] Verify full SSN visibility (no masking)
+- [x] Create test RFI
+- [x] Reply to RFI
+- [x] Resolve RFI
+- [x] Mark sections as complete/needs info
+- [x] Record decision (all 3 types)
+- [x] Test conditional logic (consumer report + deny/conditional)
+- [x] Verify responsive layouts
 
 ---
 
@@ -611,52 +614,52 @@ This implementation plan breaks down the philter MVP UI development into actiona
 **Goal:** Implement read-only review workspace for board members
 
 ### 4.1 Board Routes Setup
-- [ ] Create `app/(dashboard)/board/review/[id]/page.tsx` (BR1: Read-only review)
+- [x] Create `app/(dashboard)/board/review/[id]/page.tsx` (BR1: Read-only review)
 
 ### 4.2 Create Board-Specific Components
-- [ ] Create `components/features/board/read-only-viewer.tsx`
-- [ ] Create `components/features/board/private-notes.tsx`
-- [ ] Create `components/features/board/download-notice.tsx`
+- [x] Create `components/features/board/read-only-viewer.tsx`
+- [x] Create `components/features/board/private-notes.tsx`
+- [x] Create `components/features/board/download-notice.tsx`
 
 ### 4.3 Screen: BR1 - Read-only Review
-- [ ] Implement read-only layout:
-  - [ ] PDF viewer (main area)
-  - [ ] Private notes panel (sidebar or below)
-- [ ] Display compiled package PDF preview
-- [ ] Add watermark to PDF viewer (optional, "Board Review Copy")
-- [ ] Create private notes component:
-  - [ ] Textarea for notes
-  - [ ] Save to localStorage (keyed by board member user ID)
-  - [ ] Explicitly label as "Private - Not shared with applicant or admin"
-  - [ ] Load notes on page load
-- [ ] Implement SSN redaction:
-  - [ ] Replace SSN fields with "••••" or "—"
-  - [ ] Verify no full SSN visible anywhere
-- [ ] Add "Mark as Reviewed" button:
-  - [ ] Save reviewed status to localStorage
-  - [ ] Show timestamp of review
-  - [ ] Disable button after marked
-- [ ] Create download button:
-  - [ ] Add "Download Compiled Package" button
-  - [ ] Show expiry notice: "Link expires soon to protect your privacy"
-  - [ ] Trigger download of mock PDF
-- [ ] Disable all edit capabilities:
-  - [ ] No form fields editable
-  - [ ] No comment/RFI creation
-  - [ ] No status changes
-  - [ ] Read-only indicators throughout
-- [ ] Make responsive
+- [x] Implement read-only layout:
+  - [x] PDF viewer (main area)
+  - [x] Private notes panel (sidebar or below)
+- [x] Display compiled package PDF preview
+- [x] Add watermark to PDF viewer (optional, "Board Review Copy")
+- [x] Create private notes component:
+  - [x] Textarea for notes
+  - [x] Save to localStorage (keyed by board member user ID)
+  - [x] Explicitly label as "Private - Not shared with applicant or admin"
+  - [x] Load notes on page load
+- [x] Implement SSN redaction:
+  - [x] Replace SSN fields with "••••" or "—"
+  - [x] Verify no full SSN visible anywhere
+- [x] Add "Mark as Reviewed" button:
+  - [x] Save reviewed status to localStorage
+  - [x] Show timestamp of review
+  - [x] Disable button after marked
+- [x] Create download button:
+  - [x] Add "Download Compiled Package" button
+  - [x] Show expiry notice: "Link expires soon to protect your privacy"
+  - [x] Trigger download of mock PDF
+- [x] Disable all edit capabilities:
+  - [x] No form fields editable
+  - [x] No comment/RFI creation
+  - [x] No status changes
+  - [x] Read-only indicators throughout
+- [x] Make responsive
 
 ### 4.4 Phase 4 Verification
-- [ ] Navigate to board review page
-- [ ] Verify PDF displays correctly
-- [ ] Verify SSN redacted (shows ••••)
-- [ ] Add private notes and verify saved
-- [ ] Reload page and verify notes persist
-- [ ] Mark as reviewed
-- [ ] Download compiled package
-- [ ] Verify no edit capabilities available
-- [ ] Test responsive layout
+- [x] Navigate to board review page
+- [x] Verify PDF displays correctly
+- [x] Verify SSN redacted (shows ••••)
+- [x] Add private notes and verify saved
+- [x] Reload page and verify notes persist
+- [x] Mark as reviewed
+- [x] Download compiled package
+- [x] Verify no edit capabilities available
+- [x] Test responsive layout
 
 ---
 

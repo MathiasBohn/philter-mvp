@@ -48,22 +48,23 @@ const EXPENSE_CATEGORIES = [
 
 export default function FinancialsPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const [entries, setEntries] = useState<FinancialEntry[]>([])
+  const [entries, setEntries] = useState<FinancialEntry[]>(() => {
+    // Lazy initialization from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(`financials-data-${params.id}`)
+      if (saved) {
+        const data = JSON.parse(saved)
+        if (data.entries) {
+          return data.entries
+        }
+      }
+    }
+    return []
+  })
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<FinancialEntryType>(
     FinancialEntryType.ASSET
   )
-
-  // Load data from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem(`financials-data-${params.id}`)
-    if (saved) {
-      const data = JSON.parse(saved)
-      if (data.entries) {
-        setEntries(data.entries)
-      }
-    }
-  }, [params.id])
 
   const addEntry = (entryType: FinancialEntryType) => {
     // Get default category for the entry type

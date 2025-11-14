@@ -230,6 +230,7 @@ export type Application = {
   id: string;
   buildingId: string;
   building?: Building;
+  unit?: string;
   transactionType: TransactionType;
   status: ApplicationStatus;
   createdBy: string;

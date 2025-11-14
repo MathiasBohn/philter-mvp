@@ -43,9 +43,12 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     // Try to get transaction type from application data
     const appData = localStorage.getItem(`application-${params.id}`)
+    let loadedTxType: TransactionType | null = null
+
     if (appData) {
       const data = JSON.parse(appData)
-      setTransactionType(data.transactionType)
+      loadedTxType = data.transactionType
+      setTransactionType(loadedTxType)
     }
 
     // Load saved disclosures
@@ -55,12 +58,11 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
       if (data.disclosures) {
         setDisclosures(data.disclosures)
       }
-    } else {
+    } else if (loadedTxType) {
       // Initialize disclosures for lease/sublet
-      const txType = transactionType || TransactionType.CONDO_LEASE
       if (
-        txType === TransactionType.CONDO_LEASE ||
-        txType === TransactionType.COOP_SUBLET
+        loadedTxType === TransactionType.CONDO_LEASE ||
+        loadedTxType === TransactionType.COOP_SUBLET
       ) {
         setDisclosures([
           DISCLOSURE_TEMPLATES.LOCAL_LAW_55,
@@ -68,7 +70,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
         ])
       }
     }
-  }, [params.id, transactionType])
+  }, [params.id])
 
   const handleAcknowledge = (disclosureId: string, acknowledged: boolean) => {
     setDisclosures((prev) =>
