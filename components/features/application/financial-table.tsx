@@ -1,0 +1,75 @@
+"use client"
+
+import { Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { FinancialEntryRow } from "./financial-entry-row"
+import { FinancialEntryType, type FinancialEntry } from "@/lib/types"
+
+interface FinancialTableProps {
+  entries: FinancialEntry[]
+  onAdd: () => void
+  onUpdate: (id: string, entry: FinancialEntry) => void
+  onDelete: (id: string) => void
+  entryType: FinancialEntryType
+  categories: Array<{ value: string; label: string }>
+}
+
+export function FinancialTable({
+  entries,
+  onAdd,
+  onUpdate,
+  onDelete,
+  entryType,
+  categories,
+}: FinancialTableProps) {
+  const filteredEntries = entries.filter((e) => e.entryType === entryType)
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="p-3 text-left text-sm font-medium">
+                Category <span className="text-destructive">*</span>
+              </th>
+              <th className="p-3 text-left text-sm font-medium">Institution</th>
+              <th className="p-3 text-left text-sm font-medium">Description</th>
+              <th className="p-3 text-left text-sm font-medium">
+                Amount <span className="text-destructive">*</span>
+              </th>
+              <th className="w-16 p-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEntries.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                  No entries yet. Click &quot;Add Entry&quot; to get started.
+                </td>
+              </tr>
+            ) : (
+              filteredEntries.map((entry) => (
+                <FinancialEntryRow
+                  key={entry.id}
+                  entry={entry}
+                  onUpdate={(updated) => onUpdate(entry.id, updated)}
+                  onDelete={() => onDelete(entry.id)}
+                  categories={categories}
+                />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="border-t p-4">
+        <Button type="button" onClick={onAdd} variant="outline" size="sm">
+          <Plus className="mr-2 h-4 w-4" />
+          Add Entry
+        </Button>
+      </div>
+    </Card>
+  )
+}

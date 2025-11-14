@@ -1,0 +1,240 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertCircle, Info } from "lucide-react"
+import { DisclosureCard, type Disclosure } from "@/components/features/application/disclosure-card"
+import { FormActions } from "@/components/forms/form-actions"
+import { TransactionType } from "@/lib/types"
+
+const DISCLOSURE_TEMPLATES = {
+  LOCAL_LAW_55: {
+    id: "local-law-55",
+    type: "LOCAL_LAW_55" as const,
+    title: "Local Law 55: Indoor Allergen Hazards",
+    description:
+      "New York City Local Law 55 requires landlords to provide tenants with information about indoor allergen hazards, including mold, mice, rats, and cockroaches. This disclosure informs you of your rights and the landlord's responsibilities regarding these allergens.",
+    pdfUrl: "/samples/local-law-55-disclosure.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
+  WINDOW_GUARD: {
+    id: "window-guard",
+    type: "WINDOW_GUARD" as const,
+    title: "Window Guard Lease Notice",
+    description:
+      "New York City law requires landlords to install window guards in apartments where children 10 years old or younger reside. This notice informs you of your right to request window guard installation and your responsibility to notify the landlord if a child under 11 resides or will reside in the apartment.",
+    pdfUrl: "/samples/window-guard-notice.pdf",
+    acknowledged: false,
+    requiresUpload: true,
+  },
+}
+
+export default function DisclosuresPage({ params }: { params: { id: string } }) {
+  const router = useRouter()
+  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+  const [disclosures, setDisclosures] = useState<Disclosure[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+  const [errors, setErrors] = useState<string[]>([])
+
+  // Load transaction type and disclosures from localStorage
+  useEffect(() => {
+    // Try to get transaction type from application data
+    const appData = localStorage.getItem(`application-${params.id}`)
+    if (appData) {
+      const data = JSON.parse(appData)
+      setTransactionType(data.transactionType)
+    }
+
+    // Load saved disclosures
+    const saved = localStorage.getItem(`disclosures-data-${params.id}`)
+    if (saved) {
+      const data = JSON.parse(saved)
+      if (data.disclosures) {
+        setDisclosures(data.disclosures)
+      }
+    } else {
+      // Initialize disclosures for lease/sublet
+      const txType = transactionType || TransactionType.CONDO_LEASE
+      if (
+        txType === TransactionType.CONDO_LEASE ||
+        txType === TransactionType.COOP_SUBLET
+      ) {
+        setDisclosures([
+          DISCLOSURE_TEMPLATES.LOCAL_LAW_55,
+          DISCLOSURE_TEMPLATES.WINDOW_GUARD,
+        ])
+      }
+    }
+  }, [params.id, transactionType])
+
+  const handleAcknowledge = (disclosureId: string, acknowledged: boolean) => {
+    setDisclosures((prev) =>
+      prev.map((d) => (d.id === disclosureId ? { ...d, acknowledged } : d))
+    )
+  }
+
+  const handleDocumentUpload = (disclosureId: string, file: File) => {
+    setDisclosures((prev) =>
+      prev.map((d) =>
+        d.id === disclosureId
+          ? {
+              ...d,
+              signedDocument: {
+                id: Math.random().toString(36).substring(7),
+                file,
+                progress: 100,
+                status: "complete" as const,
+              },
+            }
+          : d
+      )
+    )
+  }
+
+  const handleDocumentRemove = (disclosureId: string) => {
+    setDisclosures((prev) =>
+      prev.map((d) =>
+        d.id === disclosureId ? { ...d, signedDocument: undefined } : d
+      )
+    )
+  }
+
+  const validate = () => {
+    const newErrors: string[] = []
+
+    // Check if all disclosures are acknowledged
+    const unacknowledged = disclosures.filter((d) => !d.acknowledged)
+    if (unacknowledged.length > 0) {
+      newErrors.push(
+        "You must acknowledge all disclosures before continuing"
+      )
+    }
+
+    // Check if required uploads are provided
+    const missingUploads = disclosures.filter(
+      (d) => d.requiresUpload && !d.signedDocument
+    )
+    if (missingUploads.length > 0) {
+      newErrors.push(
+        "You must upload all required signed disclosure forms"
+      )
+    }
+
+    setErrors(newErrors)
+    return newErrors.length === 0
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true)
+
+    // Save to localStorage
+    const data = {
+      disclosures,
+      updatedAt: new Date().toISOString(),
+    }
+    localStorage.setItem(`disclosures-data-${params.id}`, JSON.stringify(data))
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
+    setIsSaving(false)
+  }
+
+  const handleContinue = async () => {
+    if (!validate()) {
+      return
+    }
+
+    await handleSave()
+    router.push(`/applications/${params.id}/review`)
+  }
+
+  // Skip this screen if not a lease/sublet transaction
+  const isLeaseOrSublet =
+    transactionType === TransactionType.CONDO_LEASE ||
+    transactionType === TransactionType.COOP_SUBLET
+
+  // Redirect effect for non-lease/sublet transactions
+  useEffect(() => {
+    if (!isLeaseOrSublet && transactionType) {
+      router.push(`/applications/${params.id}/review`)
+    }
+  }, [isLeaseOrSublet, transactionType, params.id, router])
+
+  if (!isLeaseOrSublet && transactionType) {
+    return (
+      <div className="mx-auto max-w-4xl space-y-6 py-6">
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Disclosures are not required for purchase transactions. Redirecting to
+            review page...
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6 py-6">
+      <div>
+        <h1 className="text-3xl font-bold">Disclosures</h1>
+        <p className="mt-2 text-muted-foreground">
+          Please review and acknowledge the following legally required disclosures for
+          lease and sublet transactions in New York City.
+        </p>
+      </div>
+
+      {errors.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <ul className="list-disc pl-4">
+              {errors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Separator />
+
+      <div className="space-y-6">
+        {disclosures.map((disclosure) => (
+          <DisclosureCard
+            key={disclosure.id}
+            disclosure={disclosure}
+            onAcknowledge={(acknowledged) =>
+              handleAcknowledge(disclosure.id, acknowledged)
+            }
+            onDocumentUpload={(file) => handleDocumentUpload(disclosure.id, file)}
+            onDocumentRemove={() => handleDocumentRemove(disclosure.id)}
+          />
+        ))}
+      </div>
+
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          These disclosures are required by New York City law for all residential lease
+          and sublet transactions. You must acknowledge and, where required, sign and
+          upload the disclosure forms before submitting your application.
+        </AlertDescription>
+      </Alert>
+
+      <Separator />
+
+      <FormActions
+        onSave={handleSave}
+        onCancel={() => router.push(`/applications/${params.id}`)}
+        onContinue={handleContinue}
+        isSaving={isSaving}
+        continueText="Save & Continue"
+      />
+    </div>
+  )
+}

@@ -420,92 +420,92 @@ The platform supports five distinct roles with different capabilities:
 
 ### 5.1 Phase 0: Setup & Cleanup
 
-- [ ] Boilerplate content removed from `app/page.tsx`
-- [ ] Unused Next.js assets deleted (next.svg, vercel.svg)
-- [ ] shadcn/ui successfully initialized with proper configuration
-- [ ] Project folder structure created as specified
-- [ ] TypeScript types defined for all entities
-- [ ] Mock data fixtures created with realistic content
-- [ ] Project builds without errors
+- [x] Boilerplate content removed from `app/page.tsx`
+- [x] Unused Next.js assets deleted (next.svg, vercel.svg)
+- [x] shadcn/ui successfully initialized with proper configuration
+- [x] Project folder structure created as specified
+- [x] TypeScript types defined for all entities
+- [x] Mock data fixtures created with realistic content
+- [x] Project builds without errors
 
 ### 5.2 Phase 1: Applicant Flow (A0-A7)
 
 **A0 - Welcome & Building Code Entry**
-- [ ] Building code input field validates format
-- [ ] All 4 transaction type tiles displayed correctly
-- [ ] Invalid code shows appropriate error message
-- [ ] Error summary appears at page top
-- [ ] Help text visible and actionable
-- [ ] Start button creates new application (mock)
+- [x] Building code input field validates format
+- [x] All 4 transaction type tiles displayed correctly
+- [x] Invalid code shows appropriate error message
+- [x] Error summary appears at page top
+- [x] Help text visible and actionable
+- [x] Start button creates new application (mock)
 
 **A1 - Application Overview Hub**
-- [ ] All sections displayed with correct status pills
-- [ ] Progress bar calculates completion accurately
-- [ ] Invite widget functional (adds to mock data)
-- [ ] RFI banner appears when RFIs present
-- [ ] Continue button navigates to next incomplete section
-- [ ] Responsive on mobile, tablet, desktop
+- [x] All sections displayed with correct status pills
+- [x] Progress bar calculates completion accurately
+- [x] Invite widget functional (adds to mock data)
+- [x] RFI banner appears when RFIs present
+- [x] Continue button navigates to next incomplete section
+- [x] Responsive on mobile, tablet, desktop
 
 **A2 - Profile Section**
-- [ ] All required fields present and labeled
-- [ ] SSN input masked correctly
-- [ ] DOB picker functional with age validation (≥18)
-- [ ] Address history requires minimum 2 years
-- [ ] Add person button adds new co-applicant/guarantor
-- [ ] Inline validation errors display
-- [ ] Error summary appears with anchor links
-- [ ] Save updates mock data
-- [ ] Autosave indicator visible
+- [x] All required fields present and labeled
+- [x] SSN input masked correctly
+- [x] DOB picker functional with age validation (≥18)
+- [x] Address history requires minimum 2 years
+- [x] Add person button adds new co-applicant/guarantor
+- [x] Inline validation errors display
+- [x] Error summary appears with anchor links
+- [x] Save updates mock data
+- [x] Autosave indicator visible
 
 **A3 - Employment & Income**
-- [ ] Add employer button creates new employer entry
-- [ ] Remove employer works correctly
-- [ ] All employer fields present
-- [ ] Money input formats currency correctly
-- [ ] Upload dropzone accepts files
-- [ ] Upload progress indicator animates
-- [ ] Document cards show file info
-- [ ] Preview/delete actions work
-- [ ] File type/size validation enforced
+- [x] Add employer button creates new employer entry
+- [x] Remove employer works correctly
+- [x] All employer fields present
+- [x] Money input formats currency correctly
+- [x] Upload dropzone accepts files
+- [x] Upload progress indicator animates
+- [x] Document cards show file info
+- [x] Preview/delete actions work
+- [x] File type/size validation enforced
 
 **A4 - Financial Summary**
-- [ ] 4 tabs displayed (Assets, Liabilities, Monthly Income, Monthly Expenses)
-- [ ] Add row creates new entry
-- [ ] Delete row removes entry
-- [ ] Category dropdowns populated correctly per type
-- [ ] Totals (Net Worth, DTI) calculate correctly
-- [ ] Amount fields validate numeric input
-- [ ] Responsive table layout on mobile
+- [x] 4 tabs displayed (Assets, Liabilities, Monthly Income, Monthly Expenses)
+- [x] Add row creates new entry
+- [x] Delete row removes entry
+- [x] Category dropdowns populated correctly per type
+- [x] Totals (Net Worth, DTI) calculate correctly
+- [x] Amount fields validate numeric input
+- [x] Responsive table layout on mobile
 
 **A5 - Documents Upload & Preview**
-- [ ] All document categories displayed
-- [ ] Required/optional indicators shown
-- [ ] Drag-and-drop upload works
-- [ ] File selection fallback works (keyboard accessible)
-- [ ] PDF preview opens in viewer
-- [ ] Replace/delete file actions work
-- [ ] "I don't have this" option functional
-- [ ] Validation: At least 1 govt ID required
+- [x] All document categories displayed
+- [x] Required/optional indicators shown
+- [x] Drag-and-drop upload works
+- [x] File selection fallback works (keyboard accessible)
+- [x] PDF preview opens in viewer
+- [x] Replace/delete file actions work
+- [x] "I don't have this" option functional
+- [x] Validation: At least 1 govt ID required
 
 **A6 - Disclosures**
-- [ ] Only shown for CONDO_LEASE and COOP_SUBLET
-- [ ] Not shown for COOP_PURCHASE and CONDO_PURCHASE
-- [ ] Local Law 55 disclosure displayed
-- [ ] Window Guard disclosure displayed
-- [ ] Download links functional (mock PDFs)
-- [ ] Acknowledgment checkboxes required
-- [ ] Upload signed form works if required
-- [ ] Validation prevents proceeding without acknowledgment
+- [x] Only shown for CONDO_LEASE and COOP_SUBLET
+- [x] Not shown for COOP_PURCHASE and CONDO_PURCHASE
+- [x] Local Law 55 disclosure displayed
+- [x] Window Guard disclosure displayed
+- [x] Download links functional (mock PDFs)
+- [x] Acknowledgment checkboxes required
+- [x] Upload signed form works if required
+- [x] Validation prevents proceeding without acknowledgment
 
 **A7 - Review & Submit**
-- [ ] Validation summary displays all requirements
-- [ ] Incomplete items link to respective sections
-- [ ] PDF preview displays compiled package (mock)
-- [ ] Submit button disabled until all requirements met
-- [ ] Submit action shows loading state
-- [ ] Post-submit: Editing locked
-- [ ] Post-submit: Timestamp displayed
-- [ ] Post-submit: "What's next" message shown
+- [x] Validation summary displays all requirements
+- [x] Incomplete items link to respective sections
+- [x] PDF preview displays compiled package (mock)
+- [x] Submit button disabled until all requirements met
+- [x] Submit action shows loading state
+- [x] Post-submit: Editing locked
+- [x] Post-submit: Timestamp displayed
+- [x] Post-submit: "What's next" message shown
 
 ### 5.3 Phase 2: Broker Flow (BK1-BK3)
 

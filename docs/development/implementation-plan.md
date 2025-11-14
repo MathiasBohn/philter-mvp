@@ -107,206 +107,206 @@ This implementation plan breaks down the philter MVP UI development into actiona
 **Goal:** Implement complete applicant workflow with all screens
 
 ### 1.1 Install Core shadcn/ui Components
-- [ ] `npx shadcn@latest add button`
-- [ ] `npx shadcn@latest add input`
-- [ ] `npx shadcn@latest add label`
-- [ ] `npx shadcn@latest add card`
-- [ ] `npx shadcn@latest add form`
-- [ ] `npx shadcn@latest add select`
-- [ ] `npx shadcn@latest add textarea`
-- [ ] `npx shadcn@latest add dropdown-menu`
-- [ ] `npx shadcn@latest add dialog`
-- [ ] `npx shadcn@latest add alert`
-- [ ] `npx shadcn@latest add badge`
-- [ ] `npx shadcn@latest add progress`
-- [ ] `npx shadcn@latest add tabs`
-- [ ] `npx shadcn@latest add breadcrumb`
-- [ ] `npx shadcn@latest add separator`
+- [x] `npx shadcn@latest add button`
+- [x] `npx shadcn@latest add input`
+- [x] `npx shadcn@latest add label`
+- [x] `npx shadcn@latest add card`
+- [x] `npx shadcn@latest add form`
+- [x] `npx shadcn@latest add select`
+- [x] `npx shadcn@latest add textarea`
+- [x] `npx shadcn@latest add dropdown-menu`
+- [x] `npx shadcn@latest add dialog`
+- [x] `npx shadcn@latest add alert`
+- [x] `npx shadcn@latest add badge`
+- [x] `npx shadcn@latest add progress`
+- [x] `npx shadcn@latest add tabs`
+- [x] `npx shadcn@latest add breadcrumb`
+- [x] `npx shadcn@latest add separator`
 
 ### 1.2 Create Core Layout Components
-- [ ] Create `components/layout/app-shell.tsx` (main application shell)
-- [ ] Create `components/layout/top-bar.tsx` (header with logo, role pill, user menu)
-- [ ] Create `components/layout/sidebar.tsx` (contextual navigation)
-- [ ] Create `components/layout/mobile-nav.tsx` (hamburger menu for mobile)
-- [ ] Create `components/layout/breadcrumbs.tsx` (breadcrumb navigation)
-- [ ] Create `components/layout/progress-indicator.tsx` (overall progress bar)
-- [ ] Update `app/(dashboard)/layout.tsx` to use AppShell
+- [x] Create `components/layout/app-shell.tsx` (main application shell)
+- [x] Create `components/layout/top-bar.tsx` (header with logo, role pill, user menu)
+- [x] Create `components/layout/sidebar.tsx` (contextual navigation)
+- [x] Create `components/layout/mobile-nav.tsx` (hamburger menu for mobile)
+- [x] Create `components/layout/breadcrumbs.tsx` (breadcrumb navigation)
+- [x] Create `components/layout/progress-indicator.tsx` (overall progress bar)
+- [x] Update `app/(dashboard)/layout.tsx` to use AppShell
 
 ### 1.3 Create Reusable Form Components
-- [ ] Create `components/forms/field-row.tsx` (label + input + error wrapper)
-- [ ] Create `components/forms/error-summary.tsx` (page-top error list with anchor links)
-- [ ] Create `components/forms/form-actions.tsx` (save/cancel button group)
-- [ ] Create `components/forms/masked-ssn-input.tsx` (SSN input with masking)
-- [ ] Create `components/forms/date-input.tsx` (date picker)
-- [ ] Create `components/forms/money-input.tsx` (currency formatted input)
-- [ ] Create `components/forms/repeatable-group.tsx` (add/remove items)
+- [x] Create `components/forms/field-row.tsx` (label + input + error wrapper)
+- [x] Create `components/forms/error-summary.tsx` (page-top error list with anchor links)
+- [x] Create `components/forms/form-actions.tsx` (save/cancel button group)
+- [x] Create `components/forms/masked-ssn-input.tsx` (SSN input with masking)
+- [x] Create `components/forms/date-input.tsx` (date picker)
+- [x] Create `components/forms/money-input.tsx` (currency formatted input)
+- [x] Create `components/forms/repeatable-group.tsx` (add/remove items)
 
 ### 1.4 Application Routes Setup
-- [ ] Create `app/(dashboard)/applications/[id]/page.tsx` (A1: Overview)
-- [ ] Create `app/(dashboard)/applications/[id]/profile/page.tsx` (A2)
-- [ ] Create `app/(dashboard)/applications/[id]/income/page.tsx` (A3)
-- [ ] Create `app/(dashboard)/applications/[id]/financials/page.tsx` (A4)
-- [ ] Create `app/(dashboard)/applications/[id]/documents/page.tsx` (A5)
-- [ ] Create `app/(dashboard)/applications/[id]/disclosures/page.tsx` (A6)
-- [ ] Create `app/(dashboard)/applications/[id]/review/page.tsx` (A7)
-- [ ] Create `app/(dashboard)/applications/new/page.tsx` (A0: Building code entry)
+- [x] Create `app/(dashboard)/applications/[id]/page.tsx` (A1: Overview)
+- [x] Create `app/(dashboard)/applications/[id]/profile/page.tsx` (A2)
+- [x] Create `app/(dashboard)/applications/[id]/income/page.tsx` (A3)
+- [x] Create `app/(dashboard)/applications/[id]/financials/page.tsx` (A4)
+- [x] Create `app/(dashboard)/applications/[id]/documents/page.tsx` (A5)
+- [x] Create `app/(dashboard)/applications/[id]/disclosures/page.tsx` (A6)
+- [x] Create `app/(dashboard)/applications/[id]/review/page.tsx` (A7)
+- [x] Create `app/(dashboard)/applications/new/page.tsx` (A0: Building code entry)
 
 ### 1.5 Screen: A0 - Welcome & Building Code Entry
-- [ ] Create `components/features/application/building-code-input.tsx`
-- [ ] Create `components/features/application/transaction-type-tiles.tsx`
-- [ ] Implement form validation (non-empty, format check)
-- [ ] Add error handling UI (inline + page-top summary)
-- [ ] Add "Don't have a code?" help text
-- [ ] Add loading state
-- [ ] Implement mock building code validation (accept any 6-character code)
-- [ ] On success, navigate to A1 with new application ID
-- [ ] Make responsive for mobile/tablet/desktop
+- [x] Create `components/features/application/building-code-input.tsx`
+- [x] Create `components/features/application/transaction-type-tiles.tsx`
+- [x] Implement form validation (non-empty, format check)
+- [x] Add error handling UI (inline + page-top summary)
+- [x] Add "Don't have a code?" help text
+- [x] Add loading state
+- [x] Implement mock building code validation (accept any 6-character code)
+- [x] On success, navigate to A1 with new application ID
+- [x] Make responsive for mobile/tablet/desktop
 
 ### 1.6 Screen: A1 - Application Overview Hub
-- [ ] Create `components/features/application/section-list.tsx`
-- [ ] Create `components/features/application/section-card.tsx` with status pill
-- [ ] Create `components/features/application/invite-widget.tsx`
-- [ ] Create `components/features/application/rfi-banner.tsx`
-- [ ] Implement progress calculation from mock data
-- [ ] Add navigation to incomplete sections
-- [ ] Add "Invite Co-applicant/Guarantor" functionality (adds to mock data)
-- [ ] Display RFI banner if RFIs present
-- [ ] Make responsive
+- [x] Create `components/features/application/section-list.tsx`
+- [x] Create `components/features/application/section-card.tsx` with status pill
+- [x] Create `components/features/application/invite-widget.tsx`
+- [x] Create `components/features/application/rfi-banner.tsx`
+- [x] Implement progress calculation from mock data
+- [x] Add navigation to incomplete sections
+- [x] Add "Invite Co-applicant/Guarantor" functionality (adds to mock data)
+- [x] Display RFI banner if RFIs present
+- [x] Make responsive
 
 ### 1.7 Screen: A2 - Profile Section
-- [ ] Create Zod validation schema for profile in `lib/validators.ts`
-- [ ] Implement profile form with all fields:
-  - [ ] Full name (required)
-  - [ ] Email (required, email format)
-  - [ ] Phone (required)
-  - [ ] Date of birth (required, ≥18 years)
-  - [ ] SSN (masked input, format validation)
-  - [ ] Address history section
-- [ ] Create `components/features/application/address-history-list.tsx`
-- [ ] Add address history entry (address, from date, to date)
-- [ ] Validate minimum 2 years address history
-- [ ] Create `components/features/application/add-person-button.tsx`
-- [ ] Implement "Add Co-applicant/Guarantor" functionality
-- [ ] Implement inline validation errors
-- [ ] Implement error summary at page top with anchor links
-- [ ] Add autosave indicator (simulated)
-- [ ] Save data to localStorage
-- [ ] Add "Save & Continue" button to navigate to A3
-- [ ] Make responsive
+- [x] Create Zod validation schema for profile in `lib/validators.ts`
+- [x] Implement profile form with all fields:
+  - [x] Full name (required)
+  - [x] Email (required, email format)
+  - [x] Phone (required)
+  - [x] Date of birth (required, ≥18 years)
+  - [x] SSN (masked input, format validation)
+  - [x] Address history section
+- [x] Create `components/features/application/address-history-list.tsx`
+- [x] Add address history entry (address, from date, to date)
+- [x] Validate minimum 2 years address history
+- [x] Create `components/features/application/add-person-button.tsx`
+- [x] Implement "Add Co-applicant/Guarantor" functionality
+- [x] Implement inline validation errors
+- [x] Implement error summary at page top with anchor links
+- [x] Add autosave indicator (simulated)
+- [x] Save data to localStorage
+- [x] Add "Save & Continue" button to navigate to A3
+- [x] Make responsive
 
 ### 1.8 Screen: A3 - Employment & Income
-- [ ] Create Zod validation schema for employment
-- [ ] Create `components/features/application/employer-entry.tsx`
-- [ ] Implement repeatable employer group (add/remove)
-- [ ] Add employer fields:
-  - [ ] Employer name (required if employed)
-  - [ ] Title (required if employed)
-  - [ ] Start date (required if employed)
-  - [ ] Pay cadence (dropdown: Annual, Monthly, Bi-weekly, Weekly)
-  - [ ] Annual income (required, numeric, ≥0)
-- [ ] Create `components/features/application/upload-dropzone.tsx`
-- [ ] Create `components/features/application/document-card.tsx`
-- [ ] Implement file upload UI (drag-and-drop + file picker)
-- [ ] Add upload progress indicator (simulated)
-- [ ] Implement file validation (type: PDF/JPG/PNG/DOC/DOCX, size ≤25MB)
-- [ ] Store uploaded files in localStorage (base64 or File API)
-- [ ] Add preview/delete actions for documents
-- [ ] Save data to localStorage
-- [ ] Add "Save & Continue" button
-- [ ] Make responsive
+- [x] Create Zod validation schema for employment
+- [x] Create `components/features/application/employer-entry.tsx`
+- [x] Implement repeatable employer group (add/remove)
+- [x] Add employer fields:
+  - [x] Employer name (required if employed)
+  - [x] Title (required if employed)
+  - [x] Start date (required if employed)
+  - [x] Pay cadence (dropdown: Annual, Monthly, Bi-weekly, Weekly)
+  - [x] Annual income (required, numeric, ≥0)
+- [x] Create `components/features/application/upload-dropzone.tsx`
+- [x] Create `components/features/application/document-card.tsx`
+- [x] Implement file upload UI (drag-and-drop + file picker)
+- [x] Add upload progress indicator (simulated)
+- [x] Implement file validation (type: PDF/JPG/PNG/DOC/DOCX, size ≤25MB)
+- [x] Store uploaded files in localStorage (base64 or File API)
+- [x] Add preview/delete actions for documents
+- [x] Save data to localStorage
+- [x] Add "Save & Continue" button
+- [x] Make responsive
 
 ### 1.9 Screen: A4 - Financial Summary (REBNY-aligned)
-- [ ] Create Zod validation schema for financial entries
-- [ ] Create `components/features/application/financial-table.tsx`
-- [ ] Implement tabs for 4 categories:
-  - [ ] Assets
-  - [ ] Liabilities
-  - [ ] Monthly Income
-  - [ ] Monthly Expenses
-- [ ] Create `components/features/application/financial-entry-row.tsx`
-- [ ] Implement add/edit/delete entry functionality
-- [ ] Add category dropdowns per entry type:
-  - [ ] Assets: Checking, Savings, Investment, Real Estate, Other
-  - [ ] Liabilities: Mortgage, Auto Loan, Credit Card, Student Loan, Other
-  - [ ] Monthly Income: Employment, Rental, Investment, Other
-  - [ ] Monthly Expenses: Rent/Mortgage, Utilities, Insurance, Other
-- [ ] Implement amount validation (required, numeric)
-- [ ] Create `components/features/application/totals-bar.tsx`
-- [ ] Calculate and display Net Worth (Assets - Liabilities)
-- [ ] Calculate and display DTI (Monthly Expenses / Monthly Income)
-- [ ] Save data to localStorage
-- [ ] Add "Save & Continue" button
-- [ ] Make responsive (card view on mobile)
+- [x] Create Zod validation schema for financial entries
+- [x] Create `components/features/application/financial-table.tsx`
+- [x] Implement tabs for 4 categories:
+  - [x] Assets
+  - [x] Liabilities
+  - [x] Monthly Income
+  - [x] Monthly Expenses
+- [x] Create `components/features/application/financial-entry-row.tsx`
+- [x] Implement add/edit/delete entry functionality
+- [x] Add category dropdowns per entry type:
+  - [x] Assets: Checking, Savings, Investment, Real Estate, Other
+  - [x] Liabilities: Mortgage, Auto Loan, Credit Card, Student Loan, Other
+  - [x] Monthly Income: Employment, Rental, Investment, Other
+  - [x] Monthly Expenses: Rent/Mortgage, Utilities, Insurance, Other
+- [x] Implement amount validation (required, numeric)
+- [x] Create `components/features/application/totals-bar.tsx`
+- [x] Calculate and display Net Worth (Assets - Liabilities)
+- [x] Calculate and display DTI (Monthly Expenses / Monthly Income)
+- [x] Save data to localStorage
+- [x] Add "Save & Continue" button
+- [x] Make responsive (card view on mobile)
 
 ### 1.10 Screen: A5 - Documents Upload & Preview
-- [ ] Create `components/features/application/document-checklist.tsx`
-- [ ] Define document categories:
-  - [ ] Government-issued ID (required)
-  - [ ] Bank letters/statements
-  - [ ] Tax returns
-  - [ ] Reference letters
-  - [ ] Building-specific forms
-- [ ] Implement upload dropzone per category
-- [ ] Create `components/features/application/document-preview.tsx`
-- [ ] Integrate PDF preview (using basic `<iframe>` or prepare for PDF.js later)
-- [ ] Add file replace/delete functionality
-- [ ] Create "I don't have this" option with reason textarea
-- [ ] Implement validation: At least 1 govt ID required
-- [ ] Store documents in localStorage
-- [ ] Save metadata to mock data
-- [ ] Add "Save & Continue" button
-- [ ] Make responsive
+- [x] Create `components/features/application/document-checklist.tsx`
+- [x] Define document categories:
+  - [x] Government-issued ID (required)
+  - [x] Bank letters/statements
+  - [x] Tax returns
+  - [x] Reference letters
+  - [x] Building-specific forms
+- [x] Implement upload dropzone per category
+- [x] Create `components/features/application/document-preview.tsx`
+- [x] Integrate PDF preview (using basic `<iframe>` or prepare for PDF.js later)
+- [x] Add file replace/delete functionality
+- [x] Create "I don't have this" option with reason textarea
+- [x] Implement validation: At least 1 govt ID required
+- [x] Store documents in localStorage
+- [x] Save metadata to mock data
+- [x] Add "Save & Continue" button
+- [x] Make responsive
 
 ### 1.11 Screen: A6 - Disclosures (Lease/Sublet Only)
-- [ ] Create `components/features/application/disclosure-card.tsx`
-- [ ] Implement conditional rendering (only for CONDO_LEASE and COOP_SUBLET)
-- [ ] Add Local Law 55 Indoor Allergen disclosure:
-  - [ ] Display title and description
-  - [ ] Add download link for disclosure PDF (mock)
-  - [ ] Add acknowledgment checkbox
-- [ ] Add Window Guard lease notice disclosure:
-  - [ ] Display title and description
-  - [ ] Add download link for disclosure PDF (mock)
-  - [ ] Add acknowledgment checkbox
-  - [ ] Add upload field for signed form (optional)
-- [ ] Implement validation: All enabled disclosures must be acknowledged
-- [ ] Save acknowledgments to localStorage
-- [ ] Add "Save & Continue" button
-- [ ] Make responsive
+- [x] Create `components/features/application/disclosure-card.tsx`
+- [x] Implement conditional rendering (only for CONDO_LEASE and COOP_SUBLET)
+- [x] Add Local Law 55 Indoor Allergen disclosure:
+  - [x] Display title and description
+  - [x] Add download link for disclosure PDF (mock)
+  - [x] Add acknowledgment checkbox
+- [x] Add Window Guard lease notice disclosure:
+  - [x] Display title and description
+  - [x] Add download link for disclosure PDF (mock)
+  - [x] Add acknowledgment checkbox
+  - [x] Add upload field for signed form (optional)
+- [x] Implement validation: All enabled disclosures must be acknowledged
+- [x] Save acknowledgments to localStorage
+- [x] Add "Save & Continue" button
+- [x] Make responsive
 
 ### 1.12 Screen: A7 - Review & Submit
-- [ ] Create `components/features/application/validation-summary.tsx`
-- [ ] Implement comprehensive validation check across all sections
-- [ ] Display checklist of requirements with status:
-  - [ ] Profile complete
-  - [ ] At least 1 employer or income source
-  - [ ] Financial summary complete
-  - [ ] At least 1 govt ID uploaded
-  - [ ] All disclosures acknowledged (if applicable)
-- [ ] Add anchor links to incomplete sections (using hash navigation)
-- [ ] Create mock compiled PDF preview
-- [ ] Display PDF preview using `<iframe>` or PDF viewer component
-- [ ] Disable submit button until all requirements met
-- [ ] Implement submit action:
-  - [ ] Show loading state
-  - [ ] Update application status to SUBMITTED in localStorage
-  - [ ] Lock editing (set readonly flag)
-  - [ ] Display timestamp
-- [ ] Create post-submit success state:
-  - [ ] Show confirmation message
-  - [ ] Display "What's next" information
-  - [ ] Prevent further editing
-- [ ] Make responsive
+- [x] Create `components/features/application/validation-summary.tsx`
+- [x] Implement comprehensive validation check across all sections
+- [x] Display checklist of requirements with status:
+  - [x] Profile complete
+  - [x] At least 1 employer or income source
+  - [x] Financial summary complete
+  - [x] At least 1 govt ID uploaded
+  - [x] All disclosures acknowledged (if applicable)
+- [x] Add anchor links to incomplete sections (using hash navigation)
+- [x] Create mock compiled PDF preview
+- [x] Display PDF preview using `<iframe>` or PDF viewer component
+- [x] Disable submit button until all requirements met
+- [x] Implement submit action:
+  - [x] Show loading state
+  - [x] Update application status to SUBMITTED in localStorage
+  - [x] Lock editing (set readonly flag)
+  - [x] Display timestamp
+- [x] Create post-submit success state:
+  - [x] Show confirmation message
+  - [x] Display "What's next" information
+  - [x] Prevent further editing
+- [x] Make responsive
 
 ### 1.13 Phase 1 Verification
-- [ ] Navigate through complete A0-A7 flow
-- [ ] Verify all form validations work
-- [ ] Test responsive layouts on mobile, tablet, desktop
-- [ ] Check localStorage persistence
-- [ ] Verify error summaries with anchor links
-- [ ] Test keyboard navigation
-- [ ] Verify all "Save & Continue" buttons work
-- [ ] Test submit flow from start to finish
+- [x] Navigate through complete A0-A7 flow
+- [x] Verify all form validations work
+- [x] Test responsive layouts on mobile, tablet, desktop
+- [x] Check localStorage persistence
+- [x] Verify error summaries with anchor links
+- [x] Test keyboard navigation
+- [x] Verify all "Save & Continue" buttons work
+- [x] Test submit flow from start to finish
 
 ---
 
