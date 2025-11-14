@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { use, useState, useMemo } from "react";
 import { notFound } from "next/navigation";
 import { ReviewNavigator } from "@/components/features/admin/review-navigator";
 import { DataPanel } from "@/components/features/admin/data-panel";
@@ -20,12 +20,13 @@ import {
   DecisionRecord,
 } from "@/lib/types";
 
-export default function AdminReviewPage({ params }: { params: { id: string } }) {
+export default function AdminReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [currentSection, setCurrentSection] = useState("profile");
   const [rfis, setRfis] = useState(mockRFIs);
 
   // Find the application
-  const application = mockApplications.find((app) => app.id === params.id);
+  const application = mockApplications.find((app) => app.id === id);
 
   if (!application) {
     notFound();
@@ -39,7 +40,7 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
     return [
       {
         id: "act-1",
-        applicationId: params.id,
+        applicationId: id,
         userId: "user-1",
         userName: application.people[0]?.fullName || "Applicant",
         userRole: Role.APPLICANT,
@@ -49,7 +50,7 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
       },
       {
         id: "act-2",
-        applicationId: params.id,
+        applicationId: id,
         userId: "user-4",
         userName: "David Martinez",
         userRole: Role.ADMIN,
@@ -58,10 +59,10 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
         timestamp: twoDaysAgo,
       },
       ...(rfis
-        .filter((rfi) => rfi.applicationId === params.id)
+        .filter((rfi) => rfi.applicationId === id)
         .map((rfi, index) => ({
           id: `act-rfi-${index}`,
-          applicationId: params.id,
+          applicationId: id,
           userId: rfi.createdBy,
           userName: "David Martinez",
           userRole: Role.ADMIN as Role,
@@ -70,7 +71,7 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
           timestamp: rfi.createdAt,
         }))),
     ];
-  }, [params.id, application, rfis]);
+  }, [id, application, rfis]);
 
   const handleCreateRFI = (data: {
     sectionKey: string;
@@ -79,7 +80,7 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
   }) => {
     const newRFI = {
       id: `rfi-${Date.now()}`,
-      applicationId: params.id,
+      applicationId: id,
       sectionKey: data.sectionKey,
       status: RFIStatus.OPEN,
       assigneeRole: data.assigneeRole,
@@ -141,9 +142,7 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
 
   const handleDecisionSubmit = (decisionRecord: DecisionRecord) => {
     // In a real app, this would update the application status in the backend
-    console.log("Decision submitted:", decisionRecord);
     // Could also update local state to show the decision was recorded
-    // For now, just log it to demonstrate the flow
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -219,7 +218,7 @@ export default function AdminReviewPage({ params }: { params: { id: string } }) 
             <TabsContent value="rfis" className="flex-1 mt-0 overflow-hidden">
               <RFIThread
                 rfis={rfis}
-                applicationId={params.id}
+                applicationId={id}
                 onReply={handleReplyRFI}
                 onResolve={handleResolveRFI}
               />

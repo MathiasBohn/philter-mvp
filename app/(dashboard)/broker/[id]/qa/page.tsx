@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { mockApplications } from "@/lib/mock-data";
 import { notFound } from "next/navigation";
 import { useState } from "react";
@@ -11,8 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 import { ArrowRight, Eye } from "lucide-react";
 
-export default function BrokerQAPage({ params }: { params: { id: string } }) {
-  const application = mockApplications.find((app) => app.id === params.id);
+export default function BrokerQAPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const application = mockApplications.find((app) => app.id === id);
   const [selectedSection, setSelectedSection] = useState("profile");
 
   if (!application) {
@@ -33,7 +35,7 @@ export default function BrokerQAPage({ params }: { params: { id: string } }) {
             </p>
           </div>
           <div className="flex gap-2">
-            <Link href={`/broker/${params.id}/submit`}>
+            <Link href={`/broker/${id}/submit`}>
               <Button disabled={!isReadyForSubmit} className="w-full sm:w-auto">
                 {isReadyForSubmit ? (
                   <>
@@ -237,7 +239,7 @@ export default function BrokerQAPage({ params }: { params: { id: string } }) {
 
         {/* Right: QA Panel - Full width on mobile, stacks below on tablet */}
         <div className="md:col-span-4 lg:col-span-3">
-          <QAPanel application={application} applicationId={params.id} />
+          <QAPanel application={application} applicationId={id} />
         </div>
       </div>
     </div>

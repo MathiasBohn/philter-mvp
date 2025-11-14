@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { use, useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,8 @@ import {
 } from "@/components/features/application/validation-summary"
 import { TransactionType } from "@/lib/types"
 
-export default function ReviewPage({ params }: { params: { id: string } }) {
+export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter()
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -25,19 +26,19 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
     const items: ValidationItem[] = []
 
     // Check profile
-    const profileData = localStorage.getItem(`profile-data-${params.id}`)
+    const profileData = localStorage.getItem(`profile-data-${id}`)
     items.push({
       section: "Profile",
       requirement: "Complete personal information",
       status: profileData ? "complete" : "incomplete",
-      link: `/applications/${params.id}/profile`,
+      link: `/applications/${id}/profile`,
       message: profileData
         ? "Name, email, phone, DOB, SSN, and 2-year address history"
         : "Please complete your profile",
     })
 
     // Check employment
-    const incomeData = localStorage.getItem(`income-data-${params.id}`)
+    const incomeData = localStorage.getItem(`income-data-${id}`)
     const hasIncome = incomeData
       ? JSON.parse(incomeData).employers?.length > 0
       : false
@@ -45,14 +46,14 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       section: "Employment & Income",
       requirement: "At least one employer or income source",
       status: hasIncome ? "complete" : "incomplete",
-      link: `/applications/${params.id}/income`,
+      link: `/applications/${id}/income`,
       message: hasIncome
         ? "Employment history and income verification documents"
         : "Please add at least one employer",
     })
 
     // Check financials
-    const financialsData = localStorage.getItem(`financials-data-${params.id}`)
+    const financialsData = localStorage.getItem(`financials-data-${id}`)
     const hasFinancials = financialsData
       ? JSON.parse(financialsData).entries?.length > 0
       : false
@@ -60,14 +61,14 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       section: "Financial Summary",
       requirement: "Financial information complete",
       status: hasFinancials ? "complete" : "warning",
-      link: `/applications/${params.id}/financials`,
+      link: `/applications/${id}/financials`,
       message: hasFinancials
         ? "Assets, liabilities, and income/expense breakdown"
         : "Financial entries help strengthen your application",
     })
 
     // Check documents
-    const documentsData = localStorage.getItem(`documents-data-${params.id}`)
+    const documentsData = localStorage.getItem(`documents-data-${id}`)
     const hasGovtId = documentsData
       ? JSON.parse(documentsData).categories?.find(
           (c: { id: string; documents?: unknown[] }) => c.id === "govt-id" && c.documents?.length && c.documents.length > 0
@@ -77,7 +78,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       section: "Documents",
       requirement: "At least one government-issued ID",
       status: hasGovtId ? "complete" : "incomplete",
-      link: `/applications/${params.id}/documents`,
+      link: `/applications/${id}/documents`,
       message: hasGovtId
         ? "Required documents uploaded"
         : "Government ID is required",
@@ -89,7 +90,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       transactionType === TransactionType.COOP_SUBLET
 
     if (isLeaseOrSublet) {
-      const disclosuresData = localStorage.getItem(`disclosures-data-${params.id}`)
+      const disclosuresData = localStorage.getItem(`disclosures-data-${id}`)
       const allAcknowledged = disclosuresData
         ? JSON.parse(disclosuresData).disclosures?.every((d: { acknowledged: boolean }) => d.acknowledged)
         : false
@@ -97,7 +98,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         section: "Disclosures",
         requirement: "All disclosures acknowledged",
         status: allAcknowledged ? "complete" : "incomplete",
-        link: `/applications/${params.id}/disclosures`,
+        link: `/applications/${id}/disclosures`,
         message: allAcknowledged
           ? "Legal disclosures acknowledged"
           : "Please acknowledge all required disclosures",
@@ -105,7 +106,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
     }
 
     setValidationItems(items)
-  }, [params.id, transactionType])
+  }, [id, transactionType])
 
   useEffect(() => {
     const loadData = () => {
@@ -115,14 +116,14 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         let loadedSubmittedAt: Date | null = null
 
         // Load transaction type
-        const appData = localStorage.getItem(`application-${params.id}`)
+        const appData = localStorage.getItem(`application-${id}`)
         if (appData) {
           const data = JSON.parse(appData)
           loadedTxType = data.transactionType
         }
 
         // Check submission status
-        const submissionData = localStorage.getItem(`submission-${params.id}`)
+        const submissionData = localStorage.getItem(`submission-${id}`)
         if (submissionData) {
           const data = JSON.parse(submissionData)
           loadedSubmitted = data.submitted
@@ -143,7 +144,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
     }
 
     loadData()
-  }, [params.id])
+  }, [id])
 
   // Perform validation when dependencies change
   useEffect(() => {
@@ -170,9 +171,9 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
     const submissionData = {
       submitted: true,
       submittedAt: new Date().toISOString(),
-      applicationId: params.id,
+      applicationId: id,
     }
-    localStorage.setItem(`submission-${params.id}`, JSON.stringify(submissionData))
+    localStorage.setItem(`submission-${id}`, JSON.stringify(submissionData))
 
     setIsSubmitted(true)
     setSubmittedAt(new Date())
@@ -199,7 +200,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
             <div>
               <h3 className="font-semibold">Submission Details</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Application ID: {params.id}
+                Application ID: {id}
               </p>
               <p className="text-sm text-muted-foreground">
                 Submitted:{" "}
@@ -249,7 +250,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
         </Card>
 
         <div className="flex justify-center gap-3">
-          <Button onClick={() => router.push(`/applications/${params.id}`)}>
+          <Button onClick={() => router.push(`/applications/${id}`)}>
             View Application
           </Button>
           <Button variant="outline" onClick={() => router.push("/")}>
@@ -334,7 +335,7 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
       <div className="flex justify-center">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/applications/${params.id}`)}
+          onClick={() => router.push(`/applications/${id}`)}
         >
           Back to Overview
         </Button>

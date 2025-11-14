@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -32,7 +32,8 @@ const DISCLOSURE_TEMPLATES = {
   },
 }
 
-export default function DisclosuresPage({ params }: { params: { id: string } }) {
+export default function DisclosuresPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter()
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
   const [disclosures, setDisclosures] = useState<Disclosure[]>([])
@@ -44,7 +45,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
     const loadData = () => {
       try {
         // Try to get transaction type from application data
-        const appData = localStorage.getItem(`application-${params.id}`)
+        const appData = localStorage.getItem(`application-${id}`)
         let loadedTxType: TransactionType | null = null
 
         if (appData) {
@@ -53,7 +54,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
         }
 
         // Load saved disclosures
-        const saved = localStorage.getItem(`disclosures-data-${params.id}`)
+        const saved = localStorage.getItem(`disclosures-data-${id}`)
         let loadedDisclosures: typeof disclosures | null = null
 
         if (saved) {
@@ -87,7 +88,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
     }
 
     loadData()
-  }, [params.id])
+  }, [id])
 
   const handleAcknowledge = (disclosureId: string, acknowledged: boolean) => {
     setDisclosures((prev) =>
@@ -154,7 +155,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
       disclosures,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`disclosures-data-${params.id}`, JSON.stringify(data))
+    localStorage.setItem(`disclosures-data-${id}`, JSON.stringify(data))
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -168,7 +169,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
     }
 
     await handleSave()
-    router.push(`/applications/${params.id}/review`)
+    router.push(`/applications/${id}/review`)
   }
 
   // Skip this screen if not a lease/sublet transaction
@@ -179,9 +180,9 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
   // Redirect effect for non-lease/sublet transactions
   useEffect(() => {
     if (!isLeaseOrSublet && transactionType) {
-      router.push(`/applications/${params.id}/review`)
+      router.push(`/applications/${id}/review`)
     }
-  }, [isLeaseOrSublet, transactionType, params.id, router])
+  }, [isLeaseOrSublet, transactionType, id, router])
 
   if (!isLeaseOrSublet && transactionType) {
     return (
@@ -249,7 +250,7 @@ export default function DisclosuresPage({ params }: { params: { id: string } }) 
 
       <FormActions
         onSave={handleSave}
-        onCancel={() => router.push(`/applications/${params.id}`)}
+        onCancel={() => router.push(`/applications/${id}`)}
         onContinue={handleContinue}
         isSaving={isSaving}
         continueText="Save & Continue"

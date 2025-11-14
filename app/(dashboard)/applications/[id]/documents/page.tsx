@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -55,12 +55,13 @@ const INITIAL_CATEGORIES: DocumentCategory[] = [
   },
 ]
 
-export default function DocumentsPage({ params }: { params: { id: string } }) {
+export default function DocumentsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter()
   const [categories, setCategories] = useState<DocumentCategory[]>(() => {
     // Lazy initialization from localStorage
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`documents-data-${params.id}`)
+      const saved = localStorage.getItem(`documents-data-${id}`)
       if (saved) {
         const data = JSON.parse(saved)
         if (data.categories) {
@@ -194,7 +195,7 @@ export default function DocumentsPage({ params }: { params: { id: string } }) {
       categories,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`documents-data-${params.id}`, JSON.stringify(data))
+    localStorage.setItem(`documents-data-${id}`, JSON.stringify(data))
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -208,7 +209,7 @@ export default function DocumentsPage({ params }: { params: { id: string } }) {
     }
 
     await handleSave()
-    router.push(`/applications/${params.id}/disclosures`)
+    router.push(`/applications/${id}/disclosures`)
   }
 
   // Count total documents
@@ -270,7 +271,7 @@ export default function DocumentsPage({ params }: { params: { id: string } }) {
 
       <FormActions
         onSave={handleSave}
-        onCancel={() => router.push(`/applications/${params.id}`)}
+        onCancel={() => router.push(`/applications/${id}`)}
         onContinue={handleContinue}
         isSaving={isSaving}
         continueText="Save & Continue"

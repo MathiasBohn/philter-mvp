@@ -40,12 +40,7 @@ export function RequestInfoDialog({
 
   const handleSubmit = () => {
     // In a real app, this would create an RFI in the database
-    console.log("Creating RFI:", {
-      applicationId,
-      section: selectedSection,
-      message,
-      assignTo,
-    });
+    // RFI created for applicationId, section, with message assigned to role
 
     // Reset form
     setSelectedSection("");

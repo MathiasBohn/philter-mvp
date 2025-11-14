@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,7 +13,8 @@ import { FormActions } from "@/components/forms/form-actions"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { PayCadence, type EmploymentRecord } from "@/lib/types"
 
-export default function IncomePage({ params }: { params: { id: string } }) {
+export default function IncomePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter()
   const [employers, setEmployers] = useState<EmploymentRecord[]>([])
   const [documents, setDocuments] = useState<UploadedFile[]>([])
@@ -37,7 +38,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const loadData = () => {
       try {
-        const saved = localStorage.getItem(`income-data-${params.id}`)
+        const saved = localStorage.getItem(`income-data-${id}`)
         if (saved) {
           const data = JSON.parse(saved)
           if (data.employers) {
@@ -66,7 +67,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
 
     loadData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.id])
+  }, [id])
 
   const updateEmployer = (id: string, updated: EmploymentRecord) => {
     setEmployers(employers.map((e) => (e.id === id ? updated : e)))
@@ -154,7 +155,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
       documents,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`income-data-${params.id}`, JSON.stringify(data))
+    localStorage.setItem(`income-data-${id}`, JSON.stringify(data))
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -168,7 +169,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
     }
 
     await handleSave()
-    router.push(`/applications/${params.id}/financials`)
+    router.push(`/applications/${id}/financials`)
   }
 
   const getEmployerErrors = (employerId: string) => {
@@ -263,7 +264,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
 
       <FormActions
         onSave={handleSave}
-        onCancel={() => router.push(`/applications/${params.id}`)}
+        onCancel={() => router.push(`/applications/${id}`)}
         onContinue={handleContinue}
         isSaving={isSaving}
         continueText="Save & Continue"

@@ -100,15 +100,7 @@ export function UploadBehalfDialog({
     setUploadComplete(true);
 
     // In a real app, this would save documents to the database
-    console.log("Uploading on behalf:", {
-      applicationId,
-      category,
-      files: files.map((f) => ({
-        name: f.file.name,
-        size: f.file.size,
-        type: f.file.type,
-      })),
-    });
+    // Upload completed for applicationId with category and files
 
     // Auto-close after a brief delay
     setTimeout(() => {

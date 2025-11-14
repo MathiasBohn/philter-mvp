@@ -1,14 +1,15 @@
 "use client";
 
+import { use, useState } from "react";
 import { mockApplications } from "@/lib/mock-data";
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, AlertCircle, FileText, Clock } from "lucide-react";
-import { useState } from "react";
 
-export default function BrokerSubmitPage({ params }: { params: { id: string } }) {
-  const application = mockApplications.find((app) => app.id === params.id);
+export default function BrokerSubmitPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const application = mockApplications.find((app) => app.id === id);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(application?.status === "SUBMITTED");

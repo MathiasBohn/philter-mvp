@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { mockApplications } from "@/lib/mock-data";
 import { SectionList } from "@/components/features/application/section-list";
 import { InviteWidget } from "@/components/features/application/invite-widget";
@@ -9,8 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Role } from "@/lib/types";
 import { notFound } from "next/navigation";
 
-export default function ApplicationOverviewPage({ params }: { params: { id: string } }) {
-  const application = mockApplications.find((app) => app.id === params.id);
+export default function ApplicationOverviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const application = mockApplications.find((app) => app.id === id);
 
   if (!application) {
     notFound();
@@ -18,8 +20,6 @@ export default function ApplicationOverviewPage({ params }: { params: { id: stri
 
   const handleInvite = (email: string, role: Role.CO_APPLICANT | Role.GUARANTOR) => {
     // In a real app, this would make an API call
-    // For now, just log to console
-    console.log(`Invited ${email} as ${role} to application ${params.id}`);
     // Could also update localStorage or mock data here
   };
 
@@ -67,7 +67,7 @@ export default function ApplicationOverviewPage({ params }: { params: { id: stri
       </div>
 
       {/* RFI Banner */}
-      <RFIBanner rfis={application.rfis} applicationId={params.id} />
+      <RFIBanner rfis={application.rfis} applicationId={id} />
 
       {/* Section List */}
       <div>
@@ -77,7 +77,7 @@ export default function ApplicationOverviewPage({ params }: { params: { id: stri
 
       {/* Invite Widget */}
       {!application.isLocked && (
-        <InviteWidget applicationId={params.id} onInvite={handleInvite} />
+        <InviteWidget applicationId={id} onInvite={handleInvite} />
       )}
     </div>
   );

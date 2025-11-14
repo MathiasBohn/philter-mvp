@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
@@ -46,12 +46,13 @@ const EXPENSE_CATEGORIES = [
   { value: ExpenseCategory.OTHER, label: "Other Expense" },
 ]
 
-export default function FinancialsPage({ params }: { params: { id: string } }) {
+export default function FinancialsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter()
   const [entries, setEntries] = useState<FinancialEntry[]>(() => {
     // Lazy initialization from localStorage
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`financials-data-${params.id}`)
+      const saved = localStorage.getItem(`financials-data-${id}`)
       if (saved) {
         const data = JSON.parse(saved)
         if (data.entries) {
@@ -111,7 +112,7 @@ export default function FinancialsPage({ params }: { params: { id: string } }) {
       entries,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`financials-data-${params.id}`, JSON.stringify(data))
+    localStorage.setItem(`financials-data-${id}`, JSON.stringify(data))
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
@@ -121,7 +122,7 @@ export default function FinancialsPage({ params }: { params: { id: string } }) {
 
   const handleContinue = async () => {
     await handleSave()
-    router.push(`/applications/${params.id}/documents`)
+    router.push(`/applications/${id}/documents`)
   }
 
   // Calculate totals
@@ -223,7 +224,7 @@ export default function FinancialsPage({ params }: { params: { id: string } }) {
 
       <FormActions
         onSave={handleSave}
-        onCancel={() => router.push(`/applications/${params.id}`)}
+        onCancel={() => router.push(`/applications/${id}`)}
         onContinue={handleContinue}
         isSaving={isSaving}
         continueText="Save & Continue"

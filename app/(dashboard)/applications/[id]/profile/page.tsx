@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { use, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,7 +23,8 @@ import { useRouter } from "next/navigation";
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
-export default function ProfilePage({ params }: { params: { id: string } }) {
+export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -58,7 +59,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
 
   // Load saved data from localStorage on mount
   useEffect(() => {
-    const savedData = localStorage.getItem(`profile_${params.id}`);
+    const savedData = localStorage.getItem(`profile_${id}`);
     if (savedData) {
       const parsed = JSON.parse(savedData);
       if (parsed.fullName) setValue("fullName", parsed.fullName);
@@ -76,7 +77,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         setValue("addressHistory", loadedAddresses);
       }
     }
-  }, [params.id, setValue]);
+  }, [id, setValue]);
 
   // Update form value when addresses change
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Save to localStorage
-    localStorage.setItem(`profile_${params.id}`, JSON.stringify({
+    localStorage.setItem(`profile_${id}`, JSON.stringify({
       ...data,
       dob: data.dob.toISOString(),
       addressHistory: data.addressHistory.map(addr => ({
@@ -141,12 +142,11 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
   };
 
   const handleAddPerson = (name: string, email: string, role: Role.CO_APPLICANT | Role.GUARANTOR) => {
-    console.log(`Added ${name} (${email}) as ${role}`);
     // In a real app, this would make an API call to invite the person
   };
 
   const handleContinue = () => {
-    router.push(`/applications/${params.id}/income`);
+    router.push(`/applications/${id}/income`);
   };
 
   return (
@@ -320,7 +320,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
         {/* Form Actions */}
         <div className="flex items-center justify-between">
           <Button type="button" variant="outline" asChild>
-            <Link href={`/applications/${params.id}`}>Back to Overview</Link>
+            <Link href={`/applications/${id}`}>Back to Overview</Link>
           </Button>
           <div className="flex gap-2">
             <Button type="submit" variant="outline" disabled={isSaving}>
