@@ -1,7 +1,7 @@
-export default function Home() {
+export default function SignInPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <h1 className="text-3xl font-semibold">philter</h1>
+      <h1 className="text-2xl font-semibold">Sign In</h1>
     </div>
   );
 }

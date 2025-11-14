@@ -20,85 +20,85 @@ This implementation plan breaks down the philter MVP UI development into actiona
 **Goal:** Clean up boilerplate and establish project foundation
 
 ### 0.1 Remove Boilerplate Content
-- [ ] Delete boilerplate content from `app/page.tsx`
-- [ ] Remove `public/next.svg`
-- [ ] Remove `public/vercel.svg`
-- [ ] Clean up boilerplate styles in `app/globals.css` (keep Tailwind imports)
-- [ ] Update `app/layout.tsx` metadata to reflect philter branding
+- [x] Delete boilerplate content from `app/page.tsx`
+- [x] Remove `public/next.svg`
+- [x] Remove `public/vercel.svg`
+- [x] Clean up boilerplate styles in `app/globals.css` (keep Tailwind imports)
+- [x] Update `app/layout.tsx` metadata to reflect philter branding
 
 ### 0.2 Install shadcn/ui
-- [ ] Run `npx shadcn@latest init`
+- [x] Run `npx shadcn@latest init`
   - Choose New York style
   - Use CSS variables for theming
   - Configure path aliases (@/components, @/lib, etc.)
-- [ ] Verify `components.json` created with correct configuration
-- [ ] Install additional dependencies: `npm install class-variance-authority clsx tailwind-merge`
-- [ ] Install Zod: `npm install zod`
-- [ ] Verify all dependencies installed successfully
+- [x] Verify `components.json` created with correct configuration
+- [x] Install additional dependencies: `npm install class-variance-authority clsx tailwind-merge`
+- [x] Install Zod: `npm install zod`
+- [x] Verify all dependencies installed successfully
 
 ### 0.3 Create Project Folder Structure
-- [ ] Create `app/(marketing)/` directory (route group for public pages)
-- [ ] Create `app/(marketing)/page.tsx` (landing page)
-- [ ] Create `app/(auth)/` directory (route group for auth flows)
-- [ ] Create `app/(auth)/sign-in/page.tsx`
-- [ ] Create `app/(dashboard)/` directory (route group for protected routes)
-- [ ] Create `app/(dashboard)/layout.tsx` (dashboard shell)
-- [ ] Create `components/ui/` directory (shadcn/ui components)
-- [ ] Create `components/forms/` directory (custom form components)
-- [ ] Create `components/layout/` directory (layout components)
-- [ ] Create `components/features/` directory (feature-specific components)
-- [ ] Create `components/features/application/` directory
-- [ ] Create `components/features/broker/` directory
-- [ ] Create `components/features/admin/` directory
-- [ ] Create `components/features/board/` directory
-- [ ] Create `lib/` directory (utilities and helpers)
-- [ ] Create `lib/mock-data/` directory (fixtures)
-- [ ] Create `lib/types.ts` file
-- [ ] Create `lib/utils.ts` file (if not created by shadcn)
-- [ ] Create `lib/validators.ts` file
+- [x] Create `app/(marketing)/` directory (route group for public pages)
+- [x] Create `app/(marketing)/page.tsx` (landing page)
+- [x] Create `app/(auth)/` directory (route group for auth flows)
+- [x] Create `app/(auth)/sign-in/page.tsx`
+- [x] Create `app/(dashboard)/` directory (route group for protected routes)
+- [x] Create `app/(dashboard)/layout.tsx` (dashboard shell)
+- [x] Create `components/ui/` directory (shadcn/ui components)
+- [x] Create `components/forms/` directory (custom form components)
+- [x] Create `components/layout/` directory (layout components)
+- [x] Create `components/features/` directory (feature-specific components)
+- [x] Create `components/features/application/` directory
+- [x] Create `components/features/broker/` directory
+- [x] Create `components/features/admin/` directory
+- [x] Create `components/features/board/` directory
+- [x] Create `lib/` directory (utilities and helpers)
+- [x] Create `lib/mock-data/` directory (fixtures)
+- [x] Create `lib/types.ts` file
+- [x] Create `lib/utils.ts` file (if not created by shadcn)
+- [x] Create `lib/validators.ts` file
 
 ### 0.4 Define TypeScript Types
-- [ ] Create `lib/types.ts` with core entity types:
-  - [ ] `User` type (id, name, email, role)
-  - [ ] `Role` enum (APPLICANT, CO_APPLICANT, GUARANTOR, BROKER, ADMIN, BOARD)
-  - [ ] `TransactionType` enum (COOP_PURCHASE, CONDO_PURCHASE, COOP_SUBLET, CONDO_LEASE)
-  - [ ] `ApplicationStatus` enum (IN_PROGRESS, SUBMITTED, IN_REVIEW, RFI, APPROVED, CONDITIONAL, DENIED)
-  - [ ] `Building` type (id, name, code, type, address)
-  - [ ] `Application` type (id, buildingId, type, status, createdBy, submittedAt)
-  - [ ] `ApplicationSection` type (key, data, isComplete)
-  - [ ] `Person` type (id, fullName, email, phone, dob, ssnLast4, addressHistory)
-  - [ ] `EmploymentRecord` type (id, employer, title, startDate, income)
-  - [ ] `FinancialEntry` type (id, entryType, category, institution, amount)
-  - [ ] `Document` type (id, category, filename, size, uploadedAt, status)
-  - [ ] `RFI` type (id, sectionKey, status, assigneeRole, createdBy, messages)
-  - [ ] `Decision` type (id, decision, reasonCodes, notes, decidedAt)
-  - [ ] `Disclosure` type (id, type, acknowledged, documentUploadId)
+- [x] Create `lib/types.ts` with core entity types:
+  - [x] `User` type (id, name, email, role)
+  - [x] `Role` enum (APPLICANT, CO_APPLICANT, GUARANTOR, BROKER, ADMIN, BOARD)
+  - [x] `TransactionType` enum (COOP_PURCHASE, CONDO_PURCHASE, COOP_SUBLET, CONDO_LEASE)
+  - [x] `ApplicationStatus` enum (IN_PROGRESS, SUBMITTED, IN_REVIEW, RFI, APPROVED, CONDITIONAL, DENIED)
+  - [x] `Building` type (id, name, code, type, address)
+  - [x] `Application` type (id, buildingId, type, status, createdBy, submittedAt)
+  - [x] `ApplicationSection` type (key, data, isComplete)
+  - [x] `Person` type (id, fullName, email, phone, dob, ssnLast4, addressHistory)
+  - [x] `EmploymentRecord` type (id, employer, title, startDate, income)
+  - [x] `FinancialEntry` type (id, entryType, category, institution, amount)
+  - [x] `Document` type (id, category, filename, size, uploadedAt, status)
+  - [x] `RFI` type (id, sectionKey, status, assigneeRole, createdBy, messages)
+  - [x] `Decision` type (id, decision, reasonCodes, notes, decidedAt)
+  - [x] `Disclosure` type (id, type, acknowledged, documentUploadId)
 
 ### 0.5 Create Mock Data Fixtures
-- [ ] Create `lib/mock-data/users.ts` with sample users (1 applicant, 1 broker, 1 admin, 1 board member)
-- [ ] Create `lib/mock-data/buildings.ts` with 3 sample buildings (1 rental, 1 co-op, 1 condo)
-- [ ] Create `lib/mock-data/applications.ts` with 5-10 sample applications in various states
-- [ ] Create `lib/mock-data/documents.ts` with sample document metadata
-- [ ] Create `lib/mock-data/rfis.ts` with sample RFI threads
-- [ ] Create `lib/mock-data/index.ts` to export all fixtures
+- [x] Create `lib/mock-data/users.ts` with sample users (1 applicant, 1 broker, 1 admin, 1 board member)
+- [x] Create `lib/mock-data/buildings.ts` with 3 sample buildings (1 rental, 1 co-op, 1 condo)
+- [x] Create `lib/mock-data/applications.ts` with 5-10 sample applications in various states
+- [x] Create `lib/mock-data/documents.ts` with sample document metadata
+- [x] Create `lib/mock-data/rfis.ts` with sample RFI threads
+- [x] Create `lib/mock-data/index.ts` to export all fixtures
 - [ ] Add sample PDF files to `public/samples/` directory
 
 ### 0.6 Create Utility Functions
-- [ ] Create `lib/utils.ts` with helper functions:
-  - [ ] `cn()` function for classname merging (if not from shadcn)
-  - [ ] `formatCurrency()` function
-  - [ ] `formatDate()` function
-  - [ ] `formatSSN()` function (full, last4, redacted)
-  - [ ] `calculateDTI()` function
-  - [ ] `calculateNetWorth()` function
-  - [ ] `calculateCompletionPercentage()` function
-- [ ] Create `lib/validators.ts` with Zod schemas for forms
+- [x] Create `lib/utils.ts` with helper functions:
+  - [x] `cn()` function for classname merging (if not from shadcn)
+  - [x] `formatCurrency()` function
+  - [x] `formatDate()` function
+  - [x] `formatSSN()` function (full, last4, redacted)
+  - [x] `calculateDTI()` function
+  - [x] `calculateNetWorth()` function
+  - [x] `calculateCompletionPercentage()` function
+- [x] Create `lib/validators.ts` with Zod schemas for forms
 
 ### 0.7 Verification
-- [ ] Run `npm run dev` and verify app starts without errors
-- [ ] Run `npm run build` and verify successful build
-- [ ] Run `npm run lint` and fix any linting issues
-- [ ] Verify TypeScript compilation succeeds
+- [x] Run `npm run dev` and verify app starts without errors
+- [x] Run `npm run build` and verify successful build
+- [x] Run `npm run lint` and fix any linting issues
+- [x] Verify TypeScript compilation succeeds
 
 ---
 
