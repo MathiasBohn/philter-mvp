@@ -4,7 +4,6 @@ import { mockApplications } from "@/lib/mock-data";
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Check, AlertCircle, FileText, Clock } from "lucide-react";
 import { useState } from "react";
 
@@ -80,14 +79,14 @@ export default function BrokerSubmitPage({ params }: { params: { id: string } })
 
   if (submitted) {
     return (
-      <div className="max-w-2xl mx-auto space-y-6 py-12">
+      <div className="max-w-2xl mx-auto space-y-6 py-6 sm:py-12 px-4 sm:px-0">
         <Card className="border-green-600">
           <CardHeader className="text-center">
             <div className="mx-auto w-12 h-12 bg-green-600 rounded-full flex items-center justify-center mb-4">
               <Check className="h-6 w-6 text-white" />
             </div>
-            <CardTitle className="text-2xl">Application Submitted Successfully</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl sm:text-2xl">Application Submitted Successfully</CardTitle>
+            <CardDescription className="text-sm">
               Submitted on {new Date().toLocaleDateString()} at {new Date().toLocaleTimeString()}
             </CardDescription>
           </CardHeader>
@@ -96,7 +95,7 @@ export default function BrokerSubmitPage({ params }: { params: { id: string } })
               <h3 className="font-semibold mb-2">What happens next?</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Building management will review the application</li>
-                <li>• You'll be notified if any additional information is needed</li>
+                <li>• You&apos;ll be notified if any additional information is needed</li>
                 <li>• Typical review time is 5-10 business days</li>
                 <li>• You can track the status in your pipeline</li>
               </ul>
@@ -111,15 +110,16 @@ export default function BrokerSubmitPage({ params }: { params: { id: string } })
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 px-4 sm:px-0">
+      {/* Header - Responsive */}
       <div>
-        <h1 className="text-3xl font-bold">Submit to Building</h1>
-        <p className="mt-2 text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold">Submit to Building</h1>
+        <p className="mt-2 text-sm sm:text-base text-muted-foreground">
           Review deliverables and submit completed application
         </p>
       </div>
 
+      {/* Responsive Grid: stacks on mobile, 2-col on desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Deliverables Checklist */}
         <div className="space-y-6">
@@ -151,15 +151,15 @@ export default function BrokerSubmitPage({ params }: { params: { id: string } })
           {/* Board Package Preview */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <FileText className="h-5 w-5" />
                 Board Package Preview
               </CardTitle>
-              <CardDescription>Compiled application for building submission</CardDescription>
+              <CardDescription className="text-sm">Compiled application for building submission</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg aspect-[8.5/11] bg-muted flex items-center justify-center">
-                <p className="text-muted-foreground">PDF Preview</p>
+              <div className="border rounded-lg aspect-[8.5/11] bg-muted flex items-center justify-center min-h-[300px]">
+                <p className="text-sm text-muted-foreground">PDF Preview</p>
               </div>
             </CardContent>
           </Card>
@@ -169,20 +169,20 @@ export default function BrokerSubmitPage({ params }: { params: { id: string } })
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                 <Clock className="h-5 w-5" />
                 Activity Timeline
               </CardTitle>
-              <CardDescription>Recent application activity</CardDescription>
+              <CardDescription className="text-sm">Recent application activity</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {activityLog.map((activity) => (
                   <div key={activity.id} className="flex gap-3">
                     <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-sm">{activity.action}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground truncate">
                         {activity.user} • {activity.timestamp.toLocaleDateString()}
                       </p>
                     </div>

@@ -23,25 +23,29 @@ export default function BrokerQAPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header - Responsive */}
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">QA Workspace</h1>
-            <p className="mt-2 text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold">QA Workspace</h1>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
               {application.building?.name} - {application.people[0]?.fullName || "New Application"}
             </p>
           </div>
           <div className="flex gap-2">
             <Link href={`/broker/${params.id}/submit`}>
-              <Button disabled={!isReadyForSubmit}>
+              <Button disabled={!isReadyForSubmit} className="w-full sm:w-auto">
                 {isReadyForSubmit ? (
                   <>
-                    Ready to Submit
+                    <span className="hidden sm:inline">Ready to Submit</span>
+                    <span className="sm:hidden">Submit</span>
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 ) : (
-                  "Complete All Sections First"
+                  <>
+                    <span className="hidden sm:inline">Complete All Sections First</span>
+                    <span className="sm:hidden">Incomplete</span>
+                  </>
                 )}
               </Button>
             </Link>
@@ -49,33 +53,35 @@ export default function BrokerQAPage({ params }: { params: { id: string } }) {
         </div>
       </div>
 
-      {/* 3-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* 3-Column Layout - Responsive: stacks on mobile, 2-col on tablet, 3-col on desktop */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
         {/* Left: Section Navigator */}
-        <div className="lg:col-span-3 space-y-2">
+        <div className="md:col-span-2 lg:col-span-3 space-y-2">
           <h2 className="font-semibold mb-3">Sections</h2>
-          {application.sections.map((section) => (
-            <button
-              key={section.key}
-              onClick={() => setSelectedSection(section.key)}
-              className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
-                selectedSection === section.key
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card hover:bg-accent"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{section.label}</span>
-                <Badge variant={section.isComplete ? "default" : "secondary"}>
-                  {section.isComplete ? "Complete" : "Incomplete"}
-                </Badge>
-              </div>
-            </button>
-          ))}
+          <div className="space-y-2">
+            {application.sections.map((section) => (
+              <button
+                key={section.key}
+                onClick={() => setSelectedSection(section.key)}
+                className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
+                  selectedSection === section.key
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card hover:bg-accent"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-medium text-sm sm:text-base">{section.label}</span>
+                  <Badge variant={section.isComplete ? "default" : "secondary"} className="shrink-0">
+                    {section.isComplete ? "Complete" : "Incomplete"}
+                  </Badge>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Center: Form/Document View */}
-        <div className="lg:col-span-6">
+        <div className="md:col-span-2 lg:col-span-6">
           <Card>
             <CardHeader>
               <CardTitle>
@@ -229,8 +235,8 @@ export default function BrokerQAPage({ params }: { params: { id: string } }) {
           </Card>
         </div>
 
-        {/* Right: QA Panel */}
-        <div className="lg:col-span-3">
+        {/* Right: QA Panel - Full width on mobile, stacks below on tablet */}
+        <div className="md:col-span-4 lg:col-span-3">
           <QAPanel application={application} applicationId={params.id} />
         </div>
       </div>

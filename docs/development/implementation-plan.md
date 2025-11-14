@@ -359,57 +359,57 @@ This implementation plan breaks down the philter MVP UI development into actiona
 - [x] Make table responsive (card view on mobile)
 
 ### 2.5 Screen: BK2 - Pre-fill & QA Workspace
-- [ ] Implement 3-column layout:
-  - [ ] Left: Section navigator (30% width)
-  - [ ] Center: Form/document view (45% width)
-  - [ ] Right: QA panel (25% width)
-- [ ] Create section navigator showing all application sections
-- [ ] Implement center panel to display:
-  - [ ] Form data from selected section (read-only with masked PII)
-  - [ ] Document previews
-- [ ] Implement SSN masking (show last-4 only) in center panel
-- [ ] Create QA panel with:
-  - [ ] Completeness checklist
-  - [ ] Blocker alerts (missing required items)
-  - [ ] "Request Info" button
-- [ ] Implement "Request Info" functionality:
-  - [ ] Open dialog
-  - [ ] Select section
-  - [ ] Add message
-  - [ ] Create RFI in mock data
-- [ ] Add "Upload on behalf" functionality (same as applicant upload)
-- [ ] Add "Mark Ready for Submit" button (enables when all complete)
-- [ ] Make responsive (stack columns on mobile)
+- [x] Implement 3-column layout:
+  - [x] Left: Section navigator (30% width)
+  - [x] Center: Form/document view (45% width)
+  - [x] Right: QA panel (25% width)
+- [x] Create section navigator showing all application sections
+- [x] Implement center panel to display:
+  - [x] Form data from selected section (read-only with masked PII)
+  - [x] Document previews
+- [x] Implement SSN masking (show last-4 only) in center panel
+- [x] Create QA panel with:
+  - [x] Completeness checklist
+  - [x] Blocker alerts (missing required items)
+  - [x] "Request Info" button
+- [x] Implement "Request Info" functionality:
+  - [x] Open dialog
+  - [x] Select section
+  - [x] Add message
+  - [x] Create RFI in mock data
+- [x] Add "Upload on behalf" functionality (same as applicant upload)
+- [x] Add "Mark Ready for Submit" button (enables when all complete)
+- [x] Make responsive (stack columns on mobile)
 
 ### 2.6 Screen: BK3 - Submission Confirm
-- [ ] Create deliverables checklist:
-  - [ ] Profile complete
-  - [ ] Employment/income documented
-  - [ ] Financials complete
-  - [ ] All required documents uploaded
-  - [ ] Disclosures acknowledged (if applicable)
-- [ ] Display compiled board package preview (mock PDF)
-- [ ] Create audit trail component:
-  - [ ] List of key actions with timestamps
-  - [ ] User who performed action
-  - [ ] Action type (e.g., "Profile updated", "Document uploaded")
-- [ ] Add "Submit to Building" button
-- [ ] Implement submit action:
-  - [ ] Update status to SUBMITTED
-  - [ ] Add submitted timestamp
-  - [ ] Show confirmation message
-- [ ] Make responsive
+- [x] Create deliverables checklist:
+  - [x] Profile complete
+  - [x] Employment/income documented
+  - [x] Financials complete
+  - [x] All required documents uploaded
+  - [x] Disclosures acknowledged (if applicable)
+- [x] Display compiled board package preview (mock PDF)
+- [x] Create audit trail component:
+  - [x] List of key actions with timestamps
+  - [x] User who performed action
+  - [x] Action type (e.g., "Profile updated", "Document uploaded")
+- [x] Add "Submit to Building" button
+- [x] Implement submit action:
+  - [x] Update status to SUBMITTED
+  - [x] Add submitted timestamp
+  - [x] Show confirmation message
+- [x] Make responsive
 
 ### 2.7 Phase 2 Verification
-- [ ] Navigate BK1 pipeline view
-- [ ] Test table sorting and filtering
-- [ ] Open QA workspace from pipeline
-- [ ] Navigate between sections in QA workspace
-- [ ] Verify SSN masking (last-4 only)
-- [ ] Create test RFI using "Request Info"
-- [ ] Upload document on behalf
-- [ ] Mark application ready and submit
-- [ ] Verify responsive layouts
+- [x] Navigate BK1 pipeline view
+- [x] Test table sorting and filtering
+- [x] Open QA workspace from pipeline
+- [x] Navigate between sections in QA workspace
+- [x] Verify SSN masking (last-4 only)
+- [x] Create test RFI using "Request Info"
+- [x] Upload document on behalf
+- [x] Mark application ready and submit
+- [x] Verify responsive layouts
 
 ---
 

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { CompletenessChecklist } from "./completeness-checklist";
 import { RequestInfoDialog } from "./request-info-dialog";
+import { UploadBehalfDialog } from "./upload-behalf-dialog";
 import { Application } from "@/lib/types";
 import { AlertCircle, MessageSquare, Upload } from "lucide-react";
 import { useState } from "react";
@@ -15,6 +16,7 @@ interface QAPanelProps {
 
 export function QAPanel({ application, applicationId }: QAPanelProps) {
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   const incompleteSections = application.sections.filter((s) => !s.isComplete);
 
@@ -67,7 +69,11 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
             <MessageSquare className="mr-2 h-4 w-4" />
             Request Info
           </Button>
-          <Button variant="outline" className="w-full justify-start">
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => setIsUploadDialogOpen(true)}
+          >
             <Upload className="mr-2 h-4 w-4" />
             Upload on Behalf
           </Button>
@@ -80,6 +86,13 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
         onOpenChange={setIsRequestDialogOpen}
         applicationId={applicationId}
         sections={application.sections}
+      />
+
+      {/* Upload on Behalf Dialog */}
+      <UploadBehalfDialog
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+        applicationId={applicationId}
       />
     </div>
   );
