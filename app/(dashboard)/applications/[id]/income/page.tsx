@@ -34,33 +34,38 @@ export default function IncomePage({ params }: { params: { id: string } }) {
   }
 
   // Load data from localStorage on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`income-data-${params.id}`)
-      if (saved) {
-        const data = JSON.parse(saved)
-        if (data.employers) {
-          setEmployers(
-            data.employers.map((e: { startDate: string; endDate?: string }) => ({
-              ...e,
-              startDate: new Date(e.startDate),
-              endDate: e.endDate ? new Date(e.endDate) : undefined,
-            }))
-          )
+    const loadData = () => {
+      try {
+        const saved = localStorage.getItem(`income-data-${params.id}`)
+        if (saved) {
+          const data = JSON.parse(saved)
+          if (data.employers) {
+            const loadedEmployers = data.employers.map(
+              (e: { startDate: string; endDate?: string }) => ({
+                ...e,
+                startDate: new Date(e.startDate),
+                endDate: e.endDate ? new Date(e.endDate) : undefined,
+              })
+            )
+            setEmployers(loadedEmployers)
+          }
+          if (data.documents) {
+            setDocuments(data.documents)
+          }
+        } else {
+          // Initialize with one empty employer
+          addEmployer()
         }
-        if (data.documents) {
-          setDocuments(data.documents)
-        }
-      } else {
-        // Initialize with one empty employer
+      } catch (error) {
+        console.error("Error loading income data:", error)
+        // Initialize with one empty employer on error
         addEmployer()
       }
-    } catch (error) {
-      console.error("Error loading income data:", error)
-      // Initialize with one empty employer on error
-      addEmployer()
     }
+
+    loadData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
   const updateEmployer = (id: string, updated: EmploymentRecord) => {
@@ -207,7 +212,7 @@ export default function IncomePage({ params }: { params: { id: string } }) {
         </div>
 
         <div className="space-y-4">
-          {employers.map((employer, index) => (
+          {employers.map((employer) => (
             <EmployerEntry
               key={employer.id}
               employer={employer}

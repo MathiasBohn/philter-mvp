@@ -108,28 +108,47 @@ export default function ReviewPage({ params }: { params: { id: string } }) {
   }, [params.id, transactionType])
 
   useEffect(() => {
-    try {
-      // Load transaction type
-      const appData = localStorage.getItem(`application-${params.id}`)
-      if (appData) {
-        const data = JSON.parse(appData)
-        setTransactionType(data.transactionType)
-      }
+    const loadData = () => {
+      try {
+        let loadedTxType: TransactionType | null = null
+        let loadedSubmitted = false
+        let loadedSubmittedAt: Date | null = null
 
-      // Check submission status
-      const submissionData = localStorage.getItem(`submission-${params.id}`)
-      if (submissionData) {
-        const data = JSON.parse(submissionData)
-        setIsSubmitted(data.submitted)
-        setSubmittedAt(data.submittedAt ? new Date(data.submittedAt) : null)
+        // Load transaction type
+        const appData = localStorage.getItem(`application-${params.id}`)
+        if (appData) {
+          const data = JSON.parse(appData)
+          loadedTxType = data.transactionType
+        }
+
+        // Check submission status
+        const submissionData = localStorage.getItem(`submission-${params.id}`)
+        if (submissionData) {
+          const data = JSON.parse(submissionData)
+          loadedSubmitted = data.submitted
+          loadedSubmittedAt = data.submittedAt ? new Date(data.submittedAt) : null
+        }
+
+        // Batch state updates
+        if (loadedTxType) {
+          setTransactionType(loadedTxType)
+        }
+        setIsSubmitted(loadedSubmitted)
+        if (loadedSubmittedAt) {
+          setSubmittedAt(loadedSubmittedAt)
+        }
+      } catch (error) {
+        console.error("Error loading application data:", error)
       }
-    } catch (error) {
-      console.error("Error loading application data:", error)
     }
+
+    loadData()
   }, [params.id])
 
   // Perform validation when dependencies change
   useEffect(() => {
+    // validateApplication is a memoized callback that updates validation state
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     validateApplication()
   }, [validateApplication])
 

@@ -255,6 +255,7 @@ export default function ProfilePage({ params }: { params: { id: string } }) {
                 <Label htmlFor="dob">
                   Date of Birth <span className="text-red-500">*</span>
                 </Label>
+                {/* eslint-disable-next-line react-hooks/incompatible-library */}
                 <DateInput
                   id="dob"
                   value={watch("dob")}
