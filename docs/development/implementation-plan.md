@@ -668,30 +668,30 @@ This implementation plan breaks down the philter MVP UI development into actiona
 **Goal:** Integrate PDF.js, enhance file uploads, finalize form validation, responsive design, accessibility, and design system
 
 ### 5.1 PDF.js Integration
-- [ ] Install PDF.js: `npm install pdfjs-dist`
-- [ ] Create `components/shared/pdf-viewer.tsx` component
-- [ ] Implement PDF rendering using PDF.js
-- [ ] Add thumbnail navigation sidebar:
-  - [ ] Display page thumbnails
-  - [ ] Click thumbnail to jump to page
-  - [ ] Highlight current page
-- [ ] Add zoom controls:
-  - [ ] Zoom in button (+)
-  - [ ] Zoom out button (-)
-  - [ ] Fit to width button
-  - [ ] Fit to page button
-  - [ ] Zoom percentage display
-- [ ] Add page navigation:
-  - [ ] Previous page button
-  - [ ] Next page button
-  - [ ] Page number input (go to page)
-  - [ ] Total pages display (e.g., "Page 1 of 10")
-- [ ] Add rotate button (90° clockwise)
-- [ ] Add "Open in new tab" button
-- [ ] Implement full-height responsive layout
-- [ ] Add loading state while PDF loads
-- [ ] Add error state for failed PDF loads
-- [ ] Test with sample PDFs in `public/samples/`
+- [x] Install PDF.js: `npm install pdfjs-dist`
+- [x] Create `components/shared/pdf-viewer.tsx` component
+- [x] Implement PDF rendering using PDF.js
+- [x] Add thumbnail navigation sidebar:
+  - [x] Display page thumbnails
+  - [x] Click thumbnail to jump to page
+  - [x] Highlight current page
+- [x] Add zoom controls:
+  - [x] Zoom in button (+)
+  - [x] Zoom out button (-)
+  - [x] Fit to width button
+  - [x] Fit to page button
+  - [x] Zoom percentage display
+- [x] Add page navigation:
+  - [x] Previous page button
+  - [x] Next page button
+  - [x] Page number input (go to page)
+  - [x] Total pages display (e.g., "Page 1 of 10")
+- [x] Add rotate button (90° clockwise)
+- [x] Add "Open in new tab" button
+- [x] Implement full-height responsive layout
+- [x] Add loading state while PDF loads
+- [x] Add error state for failed PDF loads
+- [x] Test with sample PDFs in `public/samples/`
 
 ### 5.2 Enhanced File Upload Component
 - [ ] Refactor `upload-dropzone.tsx` with advanced features

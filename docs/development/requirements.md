@@ -510,106 +510,106 @@ The platform supports five distinct roles with different capabilities:
 ### 5.3 Phase 2: Broker Flow (BK1-BK3)
 
 **BK1 - Broker Pipeline**
-- [ ] Data table displays all applications
-- [ ] Columns sortable
-- [ ] Filters work (status, date, building)
-- [ ] Empty state displays with CTA
-- [ ] Start new application button works
-- [ ] Open QA action navigates to BK2
-- [ ] Responsive on mobile (card view)
+- [x] Data table displays all applications
+- [x] Columns sortable
+- [x] Filters work (status, date, building)
+- [x] Empty state displays with CTA
+- [x] Start new application button works
+- [x] Open QA action navigates to BK2
+- [x] Responsive on mobile (card view)
 
 **BK2 - Pre-fill & QA Workspace**
-- [ ] Three-column layout displays correctly
-- [ ] Section navigator shows all sections
-- [ ] Center panel shows form/document view
-- [ ] QA panel shows completeness checklist
-- [ ] SSN masked to last-4 only
-- [ ] Upload on behalf works
-- [ ] Request info creates mock RFI
-- [ ] Mark ready enables submit
+- [x] Three-column layout displays correctly
+- [x] Section navigator shows all sections
+- [x] Center panel shows form/document view
+- [x] QA panel shows completeness checklist
+- [x] SSN masked to last-4 only
+- [x] Upload on behalf works
+- [x] Request info creates mock RFI
+- [x] Mark ready enables submit
 
 **BK3 - Submission Confirm**
-- [ ] Checklist of deliverables displayed
-- [ ] PDF preview works
-- [ ] Audit trail shows activity
-- [ ] Submit button functional
-- [ ] Confirmation message appears
+- [x] Checklist of deliverables displayed
+- [x] PDF preview works
+- [x] Audit trail shows activity
+- [x] Submit button functional
+- [x] Confirmation message appears
 
 ### 5.4 Phase 3: Admin Flow (AD1-AD5)
 
 **AD1 - Template Wizard**
-- [ ] Stepper shows 6 steps
-- [ ] Navigate forward/backward between steps
-- [ ] Toggle switches for sections work
-- [ ] Toggle switches for documents work
-- [ ] Compliance toggles (LL55, Window Guard) work
-- [ ] Review step shows summary
-- [ ] Publish button saves template (mock)
-- [ ] Version number displayed
+- [x] Stepper shows 6 steps
+- [x] Navigate forward/backward between steps
+- [x] Toggle switches for sections work
+- [x] Toggle switches for documents work
+- [x] Compliance toggles (LL55, Window Guard) work
+- [x] Review step shows summary
+- [x] Publish button saves template (mock)
+- [x] Version number displayed
 
 **AD2 - Intake Inbox**
-- [ ] Data table displays all submitted applications
-- [ ] All columns populated correctly
-- [ ] Filters functional
-- [ ] Open review action navigates to AD3
-- [ ] Assign action updates mock data
-- [ ] Set status action updates status
+- [x] Data table displays all submitted applications
+- [x] All columns populated correctly
+- [x] Filters functional
+- [x] Open review action navigates to AD3
+- [x] Assign action updates mock data
+- [x] Set status action updates status
 
 **AD3 - Review Workspace**
-- [ ] Three-column layout correct
-- [ ] Section navigator shows flags/status
-- [ ] PDF viewer displays documents
-- [ ] Data panel shows form data
-- [ ] RFI thread displays messages
-- [ ] Activity log shows timeline
-- [ ] Mark complete/needs info works
-- [ ] Create RFI functional
-- [ ] Full SSN visible (no masking)
+- [x] Three-column layout correct
+- [x] Section navigator shows flags/status
+- [x] PDF viewer displays documents
+- [x] Data panel shows form data
+- [x] RFI thread displays messages
+- [x] Activity log shows timeline
+- [x] Mark complete/needs info works
+- [x] Create RFI functional
+- [x] Full SSN visible (no masking)
 
 **AD4 - RFIs**
-- [ ] RFI composer form works
-- [ ] Threaded messages display correctly
-- [ ] Author/role chips visible
-- [ ] Assign to Applicant/Broker works
-- [ ] Attach document references works
-- [ ] Status toggle (Open/Resolved) works
-- [ ] Timestamps displayed
+- [x] RFI composer form works
+- [x] Threaded messages display correctly
+- [x] Author/role chips visible
+- [x] Assign to Applicant/Broker works
+- [x] Attach document references works
+- [x] Status toggle (Open/Resolved) works
+- [x] Timestamps displayed
 
 **AD5 - Decision Panel**
-- [ ] Three decision options (Approve, Conditional, Deny)
-- [ ] Reason tags multi-select works
-- [ ] Free-text notes field functional
-- [ ] "Uses consumer report" checkbox works
-- [ ] Conditional logic: If consumer report + Deny/Conditional, requires adverse action
-- [ ] Email preview displays
-- [ ] Submit decision works
-- [ ] Confirmation message appears
+- [x] Three decision options (Approve, Conditional, Deny)
+- [x] Reason tags multi-select works
+- [x] Free-text notes field functional
+- [x] "Uses consumer report" checkbox works
+- [x] Conditional logic: If consumer report + Deny/Conditional, requires adverse action
+- [x] Email preview displays
+- [x] Submit decision works
+- [x] Confirmation message appears
 
 ### 5.5 Phase 4: Board Reviewer Flow (BR1)
 
 **BR1 - Read-only Review**
-- [ ] PDF viewer displays compiled package
-- [ ] Watermark visible (if applicable)
-- [ ] Private notes field functional
-- [ ] Notes saved to localStorage
-- [ ] Mark reviewed button works
-- [ ] Download button shows expiry notice
-- [ ] Download action works (mock)
-- [ ] SSN redacted (displayed as ••••)
-- [ ] No edit capabilities available
-- [ ] No comment/RFI capabilities available
+- [x] PDF viewer displays compiled package
+- [x] Watermark visible (if applicable)
+- [x] Private notes field functional
+- [x] Notes saved to localStorage
+- [x] Mark reviewed button works
+- [x] Download button shows expiry notice
+- [x] Download action works (mock)
+- [x] SSN redacted (displayed as ••••)
+- [x] No edit capabilities available
+- [x] No comment/RFI capabilities available
 
 ### 5.6 Phase 5: Shared Components & Polish
 
 **PDF.js Integration**
-- [ ] PdfViewer component created
-- [ ] Thumbnail navigation works
-- [ ] Zoom controls functional (+/-)
-- [ ] Page navigation works
-- [ ] Rotate button works
-- [ ] Open in new tab works
-- [ ] Full-height responsive layout
-- [ ] Works with sample PDFs
+- [x] PdfViewer component created
+- [x] Thumbnail navigation works
+- [x] Zoom controls functional (+/-)
+- [x] Page navigation works
+- [x] Rotate button works
+- [x] Open in new tab works
+- [x] Full-height responsive layout
+- [x] Works with sample PDFs
 
 **File Upload Component**
 - [ ] Drag-and-drop functional
