@@ -1,0 +1,206 @@
+"use client";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { StatusTag } from "./status-tag";
+import { Application } from "@/lib/types";
+import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface ApplicationTableProps {
+  applications: Application[];
+}
+
+export function ApplicationTable({ applications }: ApplicationTableProps) {
+  const [sortColumn, setSortColumn] = useState<keyof Application | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  const handleSort = (column: keyof Application) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const sortedApplications = [...applications].sort((a, b) => {
+    if (!sortColumn) return 0;
+
+    const aValue = a[sortColumn];
+    const bValue = b[sortColumn];
+
+    if (aValue === undefined || bValue === undefined) return 0;
+
+    if (sortDirection === "asc") {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+
+  const getRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInDays === 0) return "Today";
+    if (diffInDays === 1) return "Yesterday";
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+    return `${Math.floor(diffInDays / 30)} months ago`;
+  };
+
+  if (applications.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="text-center">
+          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
+            <FileText className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <CardTitle>No Applications Yet</CardTitle>
+          <CardDescription>
+            Get started by creating your first application
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center">
+          <Link href="/applications/new">
+            <Button>Start New Application</Button>
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort("createdAt")}
+            >
+              Applicant(s)
+            </TableHead>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort("buildingId")}
+            >
+              Building
+            </TableHead>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort("transactionType")}
+            >
+              Transaction Type
+            </TableHead>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort("completionPercentage")}
+            >
+              Completion
+            </TableHead>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort("lastActivityAt")}
+            >
+              Last Activity
+            </TableHead>
+            <TableHead
+              className="cursor-pointer hover:bg-muted/50"
+              onClick={() => handleSort("status")}
+            >
+              Status
+            </TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedApplications.map((application) => (
+            <TableRow key={application.id}>
+              <TableCell className="font-medium">
+                {application.people.length > 0
+                  ? application.people.map((p) => p.fullName).join(", ")
+                  : "New Application"}
+              </TableCell>
+              <TableCell>
+                <div>
+                  <p className="font-medium">{application.building?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {application.building?.address.street}
+                  </p>
+                </div>
+              </TableCell>
+              <TableCell>
+                {application.transactionType.replace(/_/g, " ")}
+              </TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  <Progress value={application.completionPercentage} className="h-2" />
+                  <p className="text-xs text-muted-foreground">
+                    {application.completionPercentage}%
+                  </p>
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {getRelativeTime(application.lastActivityAt)}
+              </TableCell>
+              <TableCell>
+                <StatusTag status={application.status} />
+              </TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="sr-only">Open menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href={`/broker/${application.id}/qa`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Open QA Workspace
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      Invite Applicant
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/applications/${application.id}`}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        View Details
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

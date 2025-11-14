@@ -315,48 +315,48 @@ This implementation plan breaks down the philter MVP UI development into actiona
 **Goal:** Implement broker pipeline and QA workspace
 
 ### 2.1 Install Additional shadcn/ui Components
-- [ ] `npx shadcn@latest add table`
-- [ ] `npx shadcn@latest add checkbox`
-- [ ] `npx shadcn@latest add sheet`
-- [ ] `npx shadcn@latest add tooltip`
-- [ ] `npx shadcn@latest add command`
-- [ ] `npx shadcn@latest add popover`
-- [ ] `npx shadcn@latest add calendar`
+- [x] `npx shadcn@latest add table`
+- [x] `npx shadcn@latest add checkbox`
+- [x] `npx shadcn@latest add sheet`
+- [x] `npx shadcn@latest add tooltip`
+- [x] `npx shadcn@latest add command`
+- [x] `npx shadcn@latest add popover`
+- [x] `npx shadcn@latest add calendar`
 
 ### 2.2 Broker Routes Setup
-- [ ] Create `app/(dashboard)/broker/page.tsx` (BK1: Pipeline)
-- [ ] Create `app/(dashboard)/broker/[id]/qa/page.tsx` (BK2: QA workspace)
-- [ ] Create `app/(dashboard)/broker/[id]/submit/page.tsx` (BK3: Submission confirm)
+- [x] Create `app/(dashboard)/broker/page.tsx` (BK1: Pipeline)
+- [x] Create `app/(dashboard)/broker/[id]/qa/page.tsx` (BK2: QA workspace)
+- [x] Create `app/(dashboard)/broker/[id]/submit/page.tsx` (BK3: Submission confirm)
 
 ### 2.3 Create Broker-Specific Components
-- [ ] Create `components/features/broker/application-table.tsx`
-- [ ] Create `components/features/broker/filter-bar.tsx`
-- [ ] Create `components/features/broker/status-tag.tsx`
-- [ ] Create `components/features/broker/qa-panel.tsx`
-- [ ] Create `components/features/broker/completeness-checklist.tsx`
-- [ ] Create `components/features/broker/request-info-dialog.tsx`
+- [x] Create `components/features/broker/application-table.tsx`
+- [x] Create `components/features/broker/filter-bar.tsx`
+- [x] Create `components/features/broker/status-tag.tsx`
+- [x] Create `components/features/broker/qa-panel.tsx`
+- [x] Create `components/features/broker/completeness-checklist.tsx`
+- [x] Create `components/features/broker/request-info-dialog.tsx`
 
 ### 2.4 Screen: BK1 - Broker Pipeline
-- [ ] Implement data table with columns:
-  - [ ] Applicant name(s)
-  - [ ] Building
-  - [ ] Transaction type
-  - [ ] Completion % (with progress bar)
-  - [ ] Last activity (relative time)
-  - [ ] Status (with colored badge)
-- [ ] Add column sorting functionality
-- [ ] Implement filter bar:
-  - [ ] Status filter (dropdown)
-  - [ ] Date range filter (calendar)
-  - [ ] Building filter (dropdown)
-- [ ] Add row actions dropdown:
-  - [ ] Open QA workspace
-  - [ ] Invite applicant
-  - [ ] View details
-- [ ] Create empty state with "Start New Application" CTA
-- [ ] Add "Start New Application" button in header
-- [ ] Link to A0 for new application
-- [ ] Make table responsive (card view on mobile)
+- [x] Implement data table with columns:
+  - [x] Applicant name(s)
+  - [x] Building
+  - [x] Transaction type
+  - [x] Completion % (with progress bar)
+  - [x] Last activity (relative time)
+  - [x] Status (with colored badge)
+- [x] Add column sorting functionality
+- [x] Implement filter bar:
+  - [x] Status filter (dropdown)
+  - [x] Date range filter (calendar)
+  - [x] Building filter (dropdown)
+- [x] Add row actions dropdown:
+  - [x] Open QA workspace
+  - [x] Invite applicant
+  - [x] View details
+- [x] Create empty state with "Start New Application" CTA
+- [x] Add "Start New Application" button in header
+- [x] Link to A0 for new application
+- [x] Make table responsive (card view on mobile)
 
 ### 2.5 Screen: BK2 - Pre-fill & QA Workspace
 - [ ] Implement 3-column layout:
