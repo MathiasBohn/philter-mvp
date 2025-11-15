@@ -1,52 +1,34 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState } from "react";
 import { InboxFilterBar } from "@/components/features/agent/inbox-filter-bar";
 import { InboxTable } from "@/components/features/agent/inbox-table";
 import { mockApplications } from "@/lib/mock-data/applications";
 import { ApplicationStatus } from "@/lib/types";
 import { storage } from "@/lib/persistence";
+import { useApplicationFilters } from "@/lib/hooks/use-application-filters";
 
 export default function AgentInboxPage() {
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [buildingFilter, setBuildingFilter] = useState("all");
   const [applications, setApplications] = useState(() => storage.getApplications(mockApplications));
 
-  // Reload applications from storage when component mounts or updates
-  useEffect(() => {
-    setApplications(storage.getApplications(mockApplications));
-  }, []);
-
-  // Filter applications based on selected filters
-  const filteredApplications = useMemo(() => {
-    return applications.filter((app) => {
-      // Only show submitted or later status applications
-      const submittedStatuses = [
-        ApplicationStatus.SUBMITTED,
-        ApplicationStatus.IN_REVIEW,
-        ApplicationStatus.RFI,
-        ApplicationStatus.APPROVED,
-        ApplicationStatus.CONDITIONAL,
-        ApplicationStatus.DENIED,
-      ];
-
-      if (!submittedStatuses.includes(app.status)) {
-        return false;
-      }
-
-      // Filter by status
-      if (statusFilter !== "all" && app.status !== statusFilter) {
-        return false;
-      }
-
-      // Filter by building
-      if (buildingFilter !== "all" && app.buildingId !== buildingFilter) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [applications, statusFilter, buildingFilter]);
+  // Filter applications with custom hook
+  const {
+    filteredApplications,
+    filters,
+    setStatusFilter,
+    setBuildingFilter,
+  } = useApplicationFilters(applications, {
+    initialStatusFilter: "all",
+    initialBuildingFilter: "all",
+    allowedStatuses: [
+      ApplicationStatus.SUBMITTED,
+      ApplicationStatus.IN_REVIEW,
+      ApplicationStatus.RFI,
+      ApplicationStatus.APPROVED,
+      ApplicationStatus.CONDITIONAL,
+      ApplicationStatus.DENIED,
+    ],
+  });
 
   const handleStatusChange = (appId: string, newStatus: ApplicationStatus) => {
     // Update localStorage
@@ -65,9 +47,9 @@ export default function AgentInboxPage() {
       </div>
 
       <InboxFilterBar
-        statusFilter={statusFilter}
-        buildingFilter={buildingFilter}
-        onStatusChange={setStatusFilter}
+        statusFilter={filters.statusFilter as string}
+        buildingFilter={filters.buildingFilter}
+        onStatusChange={(value) => setStatusFilter(value as ApplicationStatus | "all")}
         onBuildingChange={setBuildingFilter}
       />
 

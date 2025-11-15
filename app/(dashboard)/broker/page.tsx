@@ -6,24 +6,18 @@ import { FilterBar } from "@/components/features/broker/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useApplicationFilters } from "@/lib/hooks/use-application-filters";
 import { ApplicationStatus } from "@/lib/types";
 
 export default function BrokerPipelinePage() {
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | "ALL">("ALL");
-  const [buildingFilter, setBuildingFilter] = useState<string>("ALL");
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: undefined,
-    to: undefined,
-  });
-
-  // Filter applications based on selected filters
-  const filteredApplications = mockApplications.filter((app) => {
-    if (statusFilter !== "ALL" && app.status !== statusFilter) return false;
-    if (buildingFilter !== "ALL" && app.buildingId !== buildingFilter) return false;
-    if (dateRange.from && app.createdAt < dateRange.from) return false;
-    if (dateRange.to && app.createdAt > dateRange.to) return false;
-    return true;
+  const {
+    filteredApplications,
+    filters,
+    setStatusFilter,
+    setBuildingFilter,
+    setDateRange,
+  } = useApplicationFilters(mockApplications, {
+    enableDateRange: true,
   });
 
   return (
@@ -46,11 +40,11 @@ export default function BrokerPipelinePage() {
 
       {/* Filter Bar */}
       <FilterBar
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        buildingFilter={buildingFilter}
+        statusFilter={filters.statusFilter as ApplicationStatus | "ALL"}
+        onStatusFilterChange={(status) => setStatusFilter(status)}
+        buildingFilter={filters.buildingFilter}
         onBuildingFilterChange={setBuildingFilter}
-        dateRange={dateRange}
+        dateRange={filters.dateRange}
         onDateRangeChange={setDateRange}
       />
 
