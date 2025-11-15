@@ -36,7 +36,7 @@ export default function BrokerPipelinePage() {
             Manage and track all client applications
           </p>
         </div>
-        <Link href="/applications/new">
+        <Link href="/broker/new">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Start New Application

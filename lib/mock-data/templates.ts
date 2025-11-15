@@ -1,0 +1,103 @@
+import { Template, DocumentCategory, DisclosureType } from "@/lib/types";
+
+export const mockTemplates: Template[] = [
+  {
+    id: "tmpl-1",
+    buildingId: "bldg-1",
+    name: "The Manhattan - Condo Purchase",
+    description: "Standard condo purchase application template for The Manhattan",
+    version: 2,
+    requiredSections: ["profile", "income", "financials", "documents", "disclosures"],
+    optionalSections: ["review"],
+    requiredDocuments: [
+      DocumentCategory.GOVERNMENT_ID,
+      DocumentCategory.BANK_STATEMENT,
+      DocumentCategory.TAX_RETURN,
+      DocumentCategory.PAYSTUB,
+      DocumentCategory.REFERENCE_LETTER,
+    ],
+    optionalDocuments: [
+      DocumentCategory.W2,
+    ],
+    enabledDisclosures: [
+      DisclosureType.LOCAL_LAW_55,
+      DisclosureType.WINDOW_GUARD,
+    ],
+    createdAt: new Date("2024-01-15"),
+    publishedAt: new Date("2024-01-20"),
+    isPublished: true,
+  },
+  {
+    id: "tmpl-2",
+    buildingId: "bldg-2",
+    name: "Brooklyn Heights Co-op - Purchase",
+    description: "Co-op purchase application template with board review requirements",
+    version: 3,
+    requiredSections: ["profile", "income", "financials", "documents", "disclosures"],
+    optionalSections: ["review"],
+    requiredDocuments: [
+      DocumentCategory.GOVERNMENT_ID,
+      DocumentCategory.BANK_STATEMENT,
+      DocumentCategory.TAX_RETURN,
+      DocumentCategory.PAYSTUB,
+      DocumentCategory.W2,
+      DocumentCategory.REFERENCE_LETTER,
+      DocumentCategory.BUILDING_FORM,
+    ],
+    optionalDocuments: [
+      DocumentCategory.OTHER,
+    ],
+    enabledDisclosures: [
+      DisclosureType.LOCAL_LAW_55,
+      DisclosureType.WINDOW_GUARD,
+    ],
+    createdAt: new Date("2024-02-01"),
+    publishedAt: new Date("2024-02-10"),
+    isPublished: true,
+  },
+  {
+    id: "tmpl-3",
+    buildingId: "bldg-3",
+    name: "Chelsea Tower - Rental Application",
+    description: "Standard rental application template for Chelsea Tower",
+    version: 1,
+    requiredSections: ["profile", "income", "documents"],
+    optionalSections: ["financials", "disclosures", "review"],
+    requiredDocuments: [
+      DocumentCategory.GOVERNMENT_ID,
+      DocumentCategory.PAYSTUB,
+      DocumentCategory.REFERENCE_LETTER,
+    ],
+    optionalDocuments: [
+      DocumentCategory.BANK_STATEMENT,
+      DocumentCategory.OTHER,
+    ],
+    enabledDisclosures: [
+      DisclosureType.LOCAL_LAW_55,
+    ],
+    createdAt: new Date("2024-03-05"),
+    publishedAt: new Date("2024-03-10"),
+    isPublished: true,
+  },
+  {
+    id: "tmpl-4",
+    buildingId: "bldg-1",
+    name: "The Manhattan - Sublet Application",
+    description: "Sublet application template (draft)",
+    version: 1,
+    requiredSections: ["profile", "documents"],
+    optionalSections: ["income", "financials", "disclosures", "review"],
+    requiredDocuments: [
+      DocumentCategory.GOVERNMENT_ID,
+      DocumentCategory.REFERENCE_LETTER,
+    ],
+    optionalDocuments: [
+      DocumentCategory.BANK_STATEMENT,
+      DocumentCategory.OTHER,
+    ],
+    enabledDisclosures: [],
+    createdAt: new Date("2024-11-01"),
+    publishedAt: undefined,
+    isPublished: false,
+  },
+];

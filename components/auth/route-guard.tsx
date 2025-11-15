@@ -31,7 +31,7 @@ export function RouteGuard({ children, allowedRoles, redirectTo = "/" }: RouteGu
     }
   }, [user, isLoading, allowedRoles, router, redirectTo])
 
-  // Show loading state while checking authentication
+  // Show loading state ONLY while checking authentication on initial load
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -43,7 +43,7 @@ export function RouteGuard({ children, allowedRoles, redirectTo = "/" }: RouteGu
     )
   }
 
-  // Don't render children if user is not authenticated or doesn't have permission
+  // If user is not authenticated or doesn't have permission, show nothing (redirect will happen via useEffect)
   if (!user || !allowedRoles.includes(user.role)) {
     return null
   }

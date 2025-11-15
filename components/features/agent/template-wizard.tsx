@@ -371,7 +371,7 @@ export function TemplateWizard() {
           </Button>
         ) : (
           isPublished && (
-            <Button onClick={() => (window.location.href = "/admin/templates")}>
+            <Button onClick={() => (window.location.href = "/agent/templates")}>
               Back to Templates
             </Button>
           )

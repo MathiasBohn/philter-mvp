@@ -4,3 +4,4 @@ export { mockBuildings } from "./buildings";
 export { mockApplications } from "./applications";
 export { mockDocuments } from "./documents";
 export { mockRFIs } from "./rfis";
+export { mockTemplates } from "./templates";

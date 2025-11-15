@@ -137,7 +137,7 @@ export function DecisionPanel({
         notes: notes || undefined,
         usesConsumerReport,
         adverseActionRequired,
-        decidedBy: "user-4", // Property Manager user ID
+        decidedBy: "user-4", // Transaction Agent user ID
         decidedAt: new Date(),
       };
 

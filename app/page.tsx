@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +32,10 @@ export default function Home() {
       role: Role.BROKER,
     },
     {
-      title: "Property Manager",
+      title: "Transaction Agent",
       description: "Review submitted applications and manage templates",
       icon: Shield,
-      href: "/admin/inbox",
+      href: "/agent/inbox",
       color: "text-green-600 dark:text-green-400",
       role: Role.ADMIN,
     },

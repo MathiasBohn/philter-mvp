@@ -2,16 +2,17 @@
 
 import { use, useState, useMemo } from "react";
 import { notFound } from "next/navigation";
-import { ReviewNavigator } from "@/components/features/admin/review-navigator";
-import { DataPanel } from "@/components/features/admin/data-panel";
-import { RFIThread } from "@/components/features/admin/rfi-thread";
-import { RFIComposer } from "@/components/features/admin/rfi-composer";
-import { ActivityLog } from "@/components/features/admin/activity-log";
-import { DecisionPanel } from "@/components/features/admin/decision-panel";
+import { ReviewNavigator } from "@/components/features/agent/review-navigator";
+import { DataPanel } from "@/components/features/agent/data-panel";
+import { RFIThread } from "@/components/features/agent/rfi-thread";
+import { RFIComposer } from "@/components/features/agent/rfi-composer";
+import { ActivityLog } from "@/components/features/agent/activity-log";
+import { DecisionPanel } from "@/components/features/agent/decision-panel";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockApplications } from "@/lib/mock-data/applications";
 import { mockRFIs } from "@/lib/mock-data/rfis";
+import { storage } from "@/lib/persistence";
 import {
   Role,
   RFIStatus,
@@ -20,10 +21,10 @@ import {
   DecisionRecord,
 } from "@/lib/types";
 
-export default function AdminReviewPage({ params }: { params: Promise<{ id: string }> }) {
+export default function AgentReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [currentSection, setCurrentSection] = useState("profile");
-  const [rfis, setRfis] = useState(mockRFIs);
+  const [rfis, setRfis] = useState(() => storage.getRFIsForApplication(id, mockRFIs));
 
   // Find the application
   const application = mockApplications.find((app) => app.id === id);
@@ -84,7 +85,7 @@ export default function AdminReviewPage({ params }: { params: Promise<{ id: stri
       sectionKey: data.sectionKey,
       status: RFIStatus.OPEN,
       assigneeRole: data.assigneeRole,
-      createdBy: "user-4", // Property Manager user
+      createdBy: "user-4", // Transaction Agent user
       createdAt: new Date(),
       messages: [
         {
@@ -98,51 +99,52 @@ export default function AdminReviewPage({ params }: { params: Promise<{ id: stri
       ],
     };
 
-    setRfis([...rfis, newRFI]);
+    // Save to storage
+    storage.addRFI(newRFI, mockRFIs);
+    // Update local state
+    setRfis(storage.getRFIsForApplication(id, mockRFIs));
   };
 
   const handleReplyRFI = (rfiId: string, message: string) => {
-    setRfis(
-      rfis.map((rfi) => {
-        if (rfi.id === rfiId) {
-          return {
-            ...rfi,
-            messages: [
-              ...rfi.messages,
-              {
-                id: `msg-${Date.now()}`,
-                authorId: "user-4",
-                authorName: "David Martinez",
-                authorRole: Role.ADMIN,
-                message,
-                createdAt: new Date(),
-              } as RFIMessage,
-            ],
-          };
-        }
-        return rfi;
-      })
-    );
+    const targetRFI = rfis.find(rfi => rfi.id === rfiId);
+    if (!targetRFI) return;
+
+    const updatedRFI = {
+      ...targetRFI,
+      messages: [
+        ...targetRFI.messages,
+        {
+          id: `msg-${Date.now()}`,
+          authorId: "user-4",
+          authorName: "David Martinez",
+          authorRole: Role.ADMIN,
+          message,
+          createdAt: new Date(),
+        } as RFIMessage,
+      ],
+    };
+
+    // Save to storage
+    storage.updateRFI(rfiId, updatedRFI, mockRFIs);
+    // Update local state
+    setRfis(storage.getRFIsForApplication(id, mockRFIs));
   };
 
   const handleResolveRFI = (rfiId: string) => {
-    setRfis(
-      rfis.map((rfi) => {
-        if (rfi.id === rfiId) {
-          return {
-            ...rfi,
-            status: RFIStatus.RESOLVED,
-            resolvedAt: new Date(),
-          };
-        }
-        return rfi;
-      })
-    );
+    // Save to storage
+    storage.updateRFI(rfiId, {
+      status: RFIStatus.RESOLVED,
+      resolvedAt: new Date(),
+    }, mockRFIs);
+    // Update local state
+    setRfis(storage.getRFIsForApplication(id, mockRFIs));
   };
 
   const handleDecisionSubmit = (decisionRecord: DecisionRecord) => {
-    // In a real app, this would update the application status in the backend
-    // Could also update local state to show the decision was recorded
+    // Save decision to storage
+    storage.saveDecision(decisionRecord);
+    // Update application status based on decision
+    storage.updateApplicationStatus(id, decisionRecord.decision);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -164,7 +166,7 @@ export default function AdminReviewPage({ params }: { params: Promise<{ id: stri
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 -my-8 sm:-mx-6 lg:-mx-8">
       {/* Header */}
       <div className="border-b p-6">
         <div className="flex items-center justify-between">

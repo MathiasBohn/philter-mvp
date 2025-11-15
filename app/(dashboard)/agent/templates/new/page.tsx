@@ -1,4 +1,4 @@
-import { TemplateWizard } from "@/components/features/admin/template-wizard";
+import { TemplateWizard } from "@/components/features/agent/template-wizard";
 
 export default function NewTemplatePage() {
   return (

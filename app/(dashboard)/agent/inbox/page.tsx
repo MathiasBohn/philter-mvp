@@ -1,18 +1,25 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { InboxFilterBar } from "@/components/features/admin/inbox-filter-bar";
-import { InboxTable } from "@/components/features/admin/inbox-table";
+import { useState, useMemo, useEffect } from "react";
+import { InboxFilterBar } from "@/components/features/agent/inbox-filter-bar";
+import { InboxTable } from "@/components/features/agent/inbox-table";
 import { mockApplications } from "@/lib/mock-data/applications";
 import { ApplicationStatus } from "@/lib/types";
+import { storage } from "@/lib/persistence";
 
-export default function AdminInboxPage() {
+export default function AgentInboxPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [buildingFilter, setBuildingFilter] = useState("all");
+  const [applications, setApplications] = useState(() => storage.getApplications(mockApplications));
+
+  // Reload applications from storage when component mounts or updates
+  useEffect(() => {
+    setApplications(storage.getApplications(mockApplications));
+  }, []);
 
   // Filter applications based on selected filters
   const filteredApplications = useMemo(() => {
-    return mockApplications.filter((app) => {
+    return applications.filter((app) => {
       // Only show submitted or later status applications
       const submittedStatuses = [
         ApplicationStatus.SUBMITTED,
@@ -39,7 +46,14 @@ export default function AdminInboxPage() {
 
       return true;
     });
-  }, [statusFilter, buildingFilter]);
+  }, [applications, statusFilter, buildingFilter]);
+
+  const handleStatusChange = (appId: string, newStatus: ApplicationStatus) => {
+    // Update localStorage
+    storage.updateApplicationStatus(appId, newStatus);
+    // Reload applications from storage
+    setApplications(storage.getApplications(mockApplications));
+  };
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -57,7 +71,10 @@ export default function AdminInboxPage() {
         onBuildingChange={setBuildingFilter}
       />
 
-      <InboxTable applications={filteredApplications} />
+      <InboxTable
+        applications={filteredApplications}
+        onStatusChange={handleStatusChange}
+      />
     </div>
   );
 }

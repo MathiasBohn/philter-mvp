@@ -1,18 +1,107 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { mockApplications } from "@/lib/mock-data";
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, AlertCircle, FileText, Clock } from "lucide-react";
+import { Check, AlertCircle, FileText, Clock, Loader2 } from "lucide-react";
+import { Application } from "@/lib/types";
 
 export default function BrokerSubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const application = mockApplications.find((app) => app.id === id);
   const router = useRouter();
+  const [application, setApplication] = useState<Application | undefined>(() =>
+    mockApplications.find((app) => app.id === id)
+  );
+  const [isLoading, setIsLoading] = useState(!mockApplications.find((app) => app.id === id));
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(application?.status === "SUBMITTED");
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    // If not found in mock data, try localStorage
+    if (!application && isLoading) {
+      try {
+        const storedApp = localStorage.getItem(`application_${id}`);
+        if (storedApp) {
+          const parsedApp = JSON.parse(storedApp);
+          // Transform localStorage format to match Application type
+          const transformedApp: Application = {
+            id: parsedApp.id,
+            buildingId: parsedApp.buildingId || parsedApp.buildingCode,
+            building: {
+              id: parsedApp.buildingId || parsedApp.buildingCode,
+              code: parsedApp.buildingCode || parsedApp.buildingId,
+              name: parsedApp.buildingName || "Demo Building",
+              type: parsedApp.buildingType || "CONDO",
+              address: {
+                street: "123 Main St",
+                city: "New York",
+                state: "NY",
+                zip: "10001"
+              }
+            },
+            unit: parsedApp.unit,
+            transactionType: parsedApp.transactionType,
+            status: parsedApp.status,
+            createdBy: parsedApp.createdBy || "broker-user",
+            createdAt: new Date(parsedApp.createdAt),
+            submittedAt: parsedApp.submittedAt ? new Date(parsedApp.submittedAt) : undefined,
+            lastActivityAt: new Date(parsedApp.createdAt),
+            people: parsedApp.applicantName ? [{
+              id: "person-1",
+              fullName: parsedApp.applicantName,
+              email: parsedApp.applicantEmail || "",
+              phone: "",
+              dob: new Date(),
+              ssnLast4: "",
+              addressHistory: [],
+              role: "APPLICANT" as const
+            }] : [],
+            employmentRecords: [],
+            financialEntries: [],
+            documents: [],
+            disclosures: [],
+            sections: Object.entries(parsedApp.sections || {}).map(([key, value]: [string, any]) => ({
+              key: key,
+              label: key.charAt(0).toUpperCase() + key.slice(1),
+              isComplete: value.complete || false,
+              data: undefined
+            })),
+            completionPercentage: 0,
+            rfis: [],
+            isLocked: false
+          };
+
+          // Calculate completion percentage
+          const completedSections = transformedApp.sections.filter(s => s.isComplete).length;
+          transformedApp.completionPercentage = transformedApp.sections.length > 0
+            ? Math.round((completedSections / transformedApp.sections.length) * 100)
+            : 0;
+
+          setApplication(transformedApp);
+          setSubmitted(transformedApp.status === "SUBMITTED");
+        }
+      } catch (error) {
+        console.error("Error loading application from localStorage:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (application) {
+      setSubmitted(application.status === "SUBMITTED");
+    }
+  }, [id, application, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading application...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!application) {
     notFound();

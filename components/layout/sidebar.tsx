@@ -11,9 +11,15 @@ import {
   FileCheck,
   CheckCircle,
   Home,
+  Inbox,
+  Settings,
+  ClipboardList,
+  Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
+import { useUser } from "@/lib/user-context"
+import { Role } from "@/lib/types"
 
 interface SidebarProps {
   onNavigate?: () => void
@@ -21,63 +27,161 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname()
+  const { user } = useUser()
 
   // Extract application ID from URL or use default
-  // URL pattern: /applications/[id]/...
   const pathParts = pathname.split('/')
-  const applicationIdFromUrl = pathParts[2] // gets the [id] part
-  const applicationId = applicationIdFromUrl || "app-1" // default to first mock application
 
-  const sections = [
-    {
-      label: "Overview",
-      href: `/applications/${applicationId}`,
-      icon: Home,
-      complete: false,
-    },
-    {
-      label: "Profile",
-      href: `/applications/${applicationId}/profile`,
-      icon: User,
-      complete: false,
-    },
-    {
-      label: "Employment & Income",
-      href: `/applications/${applicationId}/income`,
-      icon: Briefcase,
-      complete: false,
-    },
-    {
-      label: "Financial Summary",
-      href: `/applications/${applicationId}/financials`,
-      icon: DollarSign,
-      complete: false,
-    },
-    {
-      label: "Documents",
-      href: `/applications/${applicationId}/documents`,
-      icon: Upload,
-      complete: false,
-    },
-    {
-      label: "Disclosures",
-      href: `/applications/${applicationId}/disclosures`,
-      icon: FileCheck,
-      complete: false,
-    },
-    {
-      label: "Review & Submit",
-      href: `/applications/${applicationId}/review`,
-      icon: CheckCircle,
-      complete: false,
-    },
-  ]
+  // Determine application ID based on the current route structure
+  let applicationId = "app-1" // default
+
+  if (pathname.startsWith('/applications/') && pathParts[2]) {
+    // Pattern: /applications/[id]/...
+    applicationId = pathParts[2]
+  } else if (pathname.startsWith('/broker/') && pathParts[2]) {
+    // Pattern: /broker/[id]/...
+    applicationId = pathParts[2]
+  } else if (pathname.startsWith('/agent/review/') && pathParts[3]) {
+    // Pattern: /agent/review/[id]
+    applicationId = pathParts[3]
+  } else if (pathname.startsWith('/board/review/') && pathParts[3]) {
+    // Pattern: /board/review/[id]
+    applicationId = pathParts[3]
+  }
+
+  // Define navigation sections based on user role
+  const getNavigationForRole = () => {
+    if (!user) return []
+
+    switch (user.role) {
+      case Role.APPLICANT:
+      case Role.CO_APPLICANT:
+      case Role.GUARANTOR:
+        return [
+          {
+            label: "Overview",
+            href: `/applications/${applicationId}`,
+            icon: Home,
+            complete: false,
+          },
+          {
+            label: "Profile",
+            href: `/applications/${applicationId}/profile`,
+            icon: User,
+            complete: false,
+          },
+          {
+            label: "Employment & Income",
+            href: `/applications/${applicationId}/income`,
+            icon: Briefcase,
+            complete: false,
+          },
+          {
+            label: "Financial Summary",
+            href: `/applications/${applicationId}/financials`,
+            icon: DollarSign,
+            complete: false,
+          },
+          {
+            label: "Documents",
+            href: `/applications/${applicationId}/documents`,
+            icon: Upload,
+            complete: false,
+          },
+          {
+            label: "Disclosures",
+            href: `/applications/${applicationId}/disclosures`,
+            icon: FileCheck,
+            complete: false,
+          },
+          {
+            label: "Review & Submit",
+            href: `/applications/${applicationId}/review`,
+            icon: CheckCircle,
+            complete: false,
+          },
+        ]
+
+      case Role.BROKER:
+        return [
+          {
+            label: "Pipeline",
+            href: `/broker`,
+            icon: ClipboardList,
+          },
+          {
+            label: "QA Workspace",
+            href: `/broker/${applicationId}/qa`,
+            icon: FileCheck,
+          },
+          {
+            label: "Submit",
+            href: `/broker/${applicationId}/submit`,
+            icon: Upload,
+          },
+        ]
+
+      case Role.ADMIN:
+        return [
+          {
+            label: "Intake Inbox",
+            href: `/agent/inbox`,
+            icon: Inbox,
+          },
+          {
+            label: "Review Workspace",
+            href: `/agent/review/${applicationId}`,
+            icon: Eye,
+          },
+          {
+            label: "Templates",
+            href: `/agent/templates`,
+            icon: Settings,
+          },
+        ]
+
+      case Role.BOARD:
+        return [
+          {
+            label: "Review Application",
+            href: `/board/review/${applicationId}`,
+            icon: Eye,
+          },
+        ]
+
+      default:
+        return []
+    }
+  }
+
+  const sections = getNavigationForRole()
+
+  const getSectionTitle = () => {
+    if (!user) return "Navigation"
+
+    switch (user.role) {
+      case Role.APPLICANT:
+      case Role.CO_APPLICANT:
+      case Role.GUARANTOR:
+        return "Application Sections"
+      case Role.BROKER:
+        return "Broker Tools"
+      case Role.ADMIN:
+        return "Admin Tools"
+      case Role.BOARD:
+        return "Board Review"
+      default:
+        return "Navigation"
+    }
+  }
+
+  if (!user) return null
 
   return (
     <nav className="flex h-full flex-col gap-2 p-4">
       <div className="mb-2">
         <h2 className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Application Sections
+          {getSectionTitle()}
         </h2>
       </div>
 
@@ -100,7 +204,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             >
               <Icon className="h-4 w-4" />
               <span className="flex-1">{section.label}</span>
-              {section.complete && (
+              {'complete' in section && section.complete && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                   ✓
                 </Badge>

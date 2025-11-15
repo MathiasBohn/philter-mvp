@@ -1,6 +1,4 @@
 "use client";
-
-import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -32,6 +30,7 @@ import Link from "next/link";
 
 interface InboxTableProps {
   applications: Application[];
+  onStatusChange?: (appId: string, newStatus: ApplicationStatus) => void;
 }
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -78,15 +77,11 @@ function getRelativeTime(date: Date): string {
   }
 }
 
-export function InboxTable({ applications }: InboxTableProps) {
-  const [localApplications, setLocalApplications] = useState(applications);
-
+export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
   const handleStatusChange = (appId: string, newStatus: ApplicationStatus) => {
-    setLocalApplications((prev) =>
-      prev.map((app) =>
-        app.id === appId ? { ...app, status: newStatus } : app
-      )
-    );
+    if (onStatusChange) {
+      onStatusChange(appId, newStatus);
+    }
   };
 
   if (applications.length === 0) {
@@ -115,7 +110,7 @@ export function InboxTable({ applications }: InboxTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {localApplications.map((app) => {
+            {applications.map((app) => {
               const applicants =
                 app.people && app.people.length > 0
                   ? app.people.map((p) => p.fullName).join(", ")
@@ -189,7 +184,7 @@ export function InboxTable({ applications }: InboxTableProps) {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link
-                            href={`/admin/review/${app.id}`}
+                            href={`/agent/review/${app.id}`}
                             className="flex items-center"
                           >
                             <ExternalLink className="mr-2 h-4 w-4" />
@@ -210,7 +205,7 @@ export function InboxTable({ applications }: InboxTableProps) {
 
       {/* Mobile Card View - visible only on mobile */}
       <div className="md:hidden space-y-4">
-        {localApplications.map((app) => {
+        {applications.map((app) => {
           const applicants =
             app.people && app.people.length > 0
               ? app.people.map((p) => p.fullName).join(", ")
@@ -239,7 +234,7 @@ export function InboxTable({ applications }: InboxTableProps) {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href={`/admin/review/${app.id}`}>
+                        <Link href={`/agent/review/${app.id}`}>
                           <ExternalLink className="mr-2 h-4 w-4" />
                           Open Review Workspace
                         </Link>

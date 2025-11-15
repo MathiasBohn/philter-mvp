@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,18 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { useUser } from "@/lib/user-context"
 
 interface TopBarProps {
   onMenuClick: () => void
 }
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  // Mock user data - will be replaced with real data later
-  const user = {
-    name: "John Applicant",
-    email: "john@example.com",
-    role: "APPLICANT" as const,
-  }
+  const { user, setUser, isLoading } = useUser()
+  const router = useRouter()
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
@@ -32,10 +30,15 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       CO_APPLICANT: "Co-applicant",
       GUARANTOR: "Guarantor",
       BROKER: "Broker",
-      ADMIN: "Property Manager",
+      ADMIN: "Transaction Agent",
       BOARD: "Board Member",
     }
     return labels[role] || role
+  }
+
+  const handleSignOut = () => {
+    setUser(null)
+    router.push("/")
   }
 
   return (
@@ -62,37 +65,42 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
         {/* Right: Role Badge + Theme Toggle + User Menu */}
         <div className="flex items-center gap-4">
-          <Badge variant="secondary" className="hidden sm:flex">
-            {getRoleLabel(user.role)}
-          </Badge>
+          {user && (
+            <Badge variant="secondary" className="hidden sm:flex">
+              {getRoleLabel(user.role)}
+            </Badge>
+          )}
 
           <ThemeToggle />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <div className="flex h-full w-full items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-                  {user.name.charAt(0)}
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.name}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>My Applications</DropdownMenuItem>
-              <DropdownMenuItem>Settings</DropdownMenuItem>
-              <DropdownMenuItem>Help & Support</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>Sign Out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {user && !isLoading && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 rounded-full px-3 gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+                    {user.name.charAt(0)}
+                  </div>
+                  <span className="text-sm font-medium">{user.name}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.name}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>My Applications</DropdownMenuItem>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem>Help & Support</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>Sign Out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
     </header>

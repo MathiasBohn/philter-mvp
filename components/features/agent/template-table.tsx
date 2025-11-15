@@ -17,23 +17,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { StatusTag } from "./status-tag";
-import { Application } from "@/lib/types";
-import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Template } from "@/lib/types";
+import { MoreHorizontal, Edit, Eye, Copy, Trash2, FileText } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { mockBuildings } from "@/lib/mock-data";
 
-interface ApplicationTableProps {
-  applications: Application[];
+interface TemplateTableProps {
+  templates: Template[];
 }
 
-export function ApplicationTable({ applications }: ApplicationTableProps) {
-  const [sortColumn, setSortColumn] = useState<keyof Application | null>(null);
+export function TemplateTable({ templates }: TemplateTableProps) {
+  const [sortColumn, setSortColumn] = useState<keyof Template | null>(null);
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
-  const handleSort = (column: keyof Application) => {
+  const handleSort = (column: keyof Template) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
@@ -42,7 +42,7 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
     }
   };
 
-  const sortedApplications = [...applications].sort((a, b) => {
+  const sortedTemplates = [...templates].sort((a, b) => {
     if (!sortColumn) return 0;
 
     const aValue = a[sortColumn];
@@ -69,21 +69,26 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
     return `${Math.floor(diffInDays / 30)} months ago`;
   };
 
-  if (applications.length === 0) {
+  const getBuildingName = (buildingId: string) => {
+    const building = mockBuildings.find((b) => b.id === buildingId);
+    return building?.name || "Unknown Building";
+  };
+
+  if (templates.length === 0) {
     return (
       <Card>
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center mb-4">
             <FileText className="h-6 w-6 text-muted-foreground" />
           </div>
-          <CardTitle>No Applications Yet</CardTitle>
+          <CardTitle>No Templates Yet</CardTitle>
           <CardDescription>
-            Get started by creating your first application
+            Get started by creating your first application template
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center">
-          <Link href="/broker/new">
-            <Button>Start New Application</Button>
+          <Link href="/agent/templates/new">
+            <Button>Create Template</Button>
           </Link>
         </CardContent>
       </Card>
@@ -99,9 +104,9 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
             <TableRow>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("createdAt")}
+                onClick={() => handleSort("name")}
               >
-                Applicant(s)
+                Template Name
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
@@ -111,63 +116,53 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("transactionType")}
+                onClick={() => handleSort("version")}
               >
-                Transaction Type
+                Version
               </TableHead>
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("completionPercentage")}
-              >
-                Completion
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("lastActivityAt")}
-              >
-                Last Activity
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("status")}
+                onClick={() => handleSort("isPublished")}
               >
                 Status
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort("createdAt")}
+              >
+                Created
               </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sortedApplications.map((application) => (
-              <TableRow key={application.id}>
-                <TableCell className="font-medium">
-                  {application.people.length > 0
-                    ? application.people.map((p) => p.fullName).join(", ")
-                    : "New Application"}
-                </TableCell>
+            {sortedTemplates.map((template) => (
+              <TableRow key={template.id}>
                 <TableCell>
                   <div>
-                    <p className="font-medium">{application.building?.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {application.building?.address.street}
-                    </p>
+                    <p className="font-medium">{template.name}</p>
+                    {template.description && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {template.description}
+                      </p>
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  {application.transactionType.replace(/_/g, " ")}
+                  {getBuildingName(template.buildingId)}
                 </TableCell>
                 <TableCell>
-                  <div className="space-y-1">
-                    <Progress value={application.completionPercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground">
-                      {application.completionPercentage}%
-                    </p>
-                  </div>
+                  <Badge variant="outline">v{template.version}</Badge>
+                </TableCell>
+                <TableCell>
+                  {template.isPublished ? (
+                    <Badge variant="default">Published</Badge>
+                  ) : (
+                    <Badge variant="secondary">Draft</Badge>
+                  )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {getRelativeTime(application.lastActivityAt)}
-                </TableCell>
-                <TableCell>
-                  <StatusTag status={application.status} />
+                  {getRelativeTime(template.createdAt)}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -181,20 +176,25 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <Link href={`/broker/${application.id}/qa`}>
+                        <Link href={`/agent/templates/${template.id}`}>
                           <Eye className="mr-2 h-4 w-4" />
-                          Open QA Workspace
+                          View Template
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={`/agent/templates/${template.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit Template
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem>
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        Invite Applicant
+                        <Copy className="mr-2 h-4 w-4" />
+                        Duplicate Template
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href={`/applications/${application.id}`}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          View Details
-                        </Link>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Template
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -207,18 +207,16 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
 
       {/* Mobile Card View - visible only on mobile */}
       <div className="md:hidden space-y-4">
-        {sortedApplications.map((application) => (
-          <Card key={application.id}>
+        {sortedTemplates.map((template) => (
+          <Card key={template.id}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="text-base">
-                    {application.people.length > 0
-                      ? application.people.map((p) => p.fullName).join(", ")
-                      : "New Application"}
+                    {template.name}
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    {application.building?.name}
+                    {getBuildingName(template.buildingId)}
                   </CardDescription>
                 </div>
                 <DropdownMenu>
@@ -232,20 +230,25 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href={`/broker/${application.id}/qa`}>
+                      <Link href={`/agent/templates/${template.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
-                        Open QA Workspace
+                        View Template
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/agent/templates/${template.id}/edit`}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Template
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
-                      <UserPlus className="mr-2 h-4 w-4" />
-                      Invite Applicant
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplicate Template
                     </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/applications/${application.id}`}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        View Details
-                      </Link>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive focus:text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Template
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -254,30 +257,31 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
             <CardContent className="space-y-3">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="text-muted-foreground text-xs">Type</p>
-                  <p className="font-medium mt-0.5">
-                    {application.transactionType.replace(/_/g, " ")}
-                  </p>
+                  <p className="text-muted-foreground text-xs">Version</p>
+                  <Badge variant="outline" className="mt-1">v{template.version}</Badge>
                 </div>
                 <div>
                   <p className="text-muted-foreground text-xs">Status</p>
-                  <div className="mt-0.5">
-                    <StatusTag status={application.status} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Completion</p>
                   <div className="mt-1">
-                    <Progress value={application.completionPercentage} className="h-2" />
-                    <p className="text-xs mt-1">{application.completionPercentage}%</p>
+                    {template.isPublished ? (
+                      <Badge variant="default">Published</Badge>
+                    ) : (
+                      <Badge variant="secondary">Draft</Badge>
+                    )}
                   </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground text-xs">Last Activity</p>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground text-xs">Created</p>
                   <p className="text-sm mt-0.5">
-                    {getRelativeTime(application.lastActivityAt)}
+                    {getRelativeTime(template.createdAt)}
                   </p>
                 </div>
+                {template.description && (
+                  <div className="col-span-2">
+                    <p className="text-muted-foreground text-xs">Description</p>
+                    <p className="text-sm mt-0.5">{template.description}</p>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
