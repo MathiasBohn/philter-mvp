@@ -13,7 +13,7 @@ import { FileText, Eye } from "lucide-react";
 type DataPanelProps = {
   application: Application;
   sectionKey: string;
-  showFullSSN?: boolean; // Admin sees full SSN, broker sees last 4
+  showFullSSN?: boolean; // Property Manager sees full SSN, broker sees last 4
 };
 
 export function DataPanel({

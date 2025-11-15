@@ -84,7 +84,7 @@ export default function AdminReviewPage({ params }: { params: Promise<{ id: stri
       sectionKey: data.sectionKey,
       status: RFIStatus.OPEN,
       assigneeRole: data.assigneeRole,
-      createdBy: "user-4", // Admin user
+      createdBy: "user-4", // Property Manager user
       createdAt: new Date(),
       messages: [
         {

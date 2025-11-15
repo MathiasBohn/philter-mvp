@@ -13,28 +13,28 @@ export default function Home() {
       description: "Start a new board application as a buyer or seller",
       icon: User,
       href: "/applications/new",
-      color: "text-blue-600",
+      color: "text-blue-600 dark:text-blue-400",
     },
     {
       title: "Broker",
       description: "Manage your pipeline of applications and submissions",
       icon: Briefcase,
       href: "/broker",
-      color: "text-purple-600",
+      color: "text-purple-600 dark:text-purple-400",
     },
     {
-      title: "Admin",
+      title: "Property Manager",
       description: "Review submitted applications and manage templates",
       icon: Shield,
       href: "/admin/inbox",
-      color: "text-green-600",
+      color: "text-green-600 dark:text-green-400",
     },
     {
       title: "Board Member",
       description: "Review and approve applications",
       icon: Users,
       href: "/board/review/app-1",
-      color: "text-orange-600",
+      color: "text-orange-600 dark:text-orange-400",
     },
   ];
 

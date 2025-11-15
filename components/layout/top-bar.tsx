@@ -32,7 +32,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       CO_APPLICANT: "Co-applicant",
       GUARANTOR: "Guarantor",
       BROKER: "Broker",
-      ADMIN: "Admin",
+      ADMIN: "Property Manager",
       BOARD: "Board Member",
     }
     return labels[role] || role
