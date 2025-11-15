@@ -21,29 +21,13 @@ import { InboxMobileCard } from "./mobile-cards/inbox-mobile-card";
 import { MoreVertical, ExternalLink } from "lucide-react";
 import { Application, ApplicationStatus, TransactionType } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
+import { getStatusColor, getTransactionTypeLabel } from "@/lib/constants/labels";
 import Link from "next/link";
 
 interface InboxTableProps {
   applications: Application[];
   onStatusChange?: (appId: string, newStatus: ApplicationStatus) => void;
 }
-
-const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  [ApplicationStatus.IN_PROGRESS]: "bg-gray-500 dark:bg-gray-600",
-  [ApplicationStatus.SUBMITTED]: "bg-blue-500 dark:bg-blue-600",
-  [ApplicationStatus.IN_REVIEW]: "bg-purple-500 dark:bg-purple-600",
-  [ApplicationStatus.RFI]: "bg-orange-500 dark:bg-orange-600",
-  [ApplicationStatus.APPROVED]: "bg-green-500 dark:bg-green-600",
-  [ApplicationStatus.CONDITIONAL]: "bg-yellow-500 dark:bg-yellow-600",
-  [ApplicationStatus.DENIED]: "bg-red-500 dark:bg-red-600",
-};
-
-const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
-  [TransactionType.COOP_PURCHASE]: "Co-op Purchase",
-  [TransactionType.CONDO_PURCHASE]: "Condo Purchase",
-  [TransactionType.COOP_SUBLET]: "Co-op Sublet",
-  [TransactionType.CONDO_LEASE]: "Condo Lease",
-};
 
 function getDaysSinceSubmission(submittedAt?: Date): number {
   if (!submittedAt) return 0;
@@ -90,7 +74,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
       key: "transactionType",
       label: "Type",
       sortable: false,
-      render: (value) => TRANSACTION_TYPE_LABELS[value as TransactionType],
+      render: (value) => getTransactionTypeLabel(value as TransactionType),
     },
     {
       key: "status",
@@ -104,7 +88,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
           }
         >
           <SelectTrigger className="w-[140px] h-8" aria-label="Change application status">
-            <Badge className={STATUS_COLORS[app.status]} variant="default">
+            <Badge className={getStatusColor(app.status)} variant="default">
               {app.status}
             </Badge>
           </SelectTrigger>

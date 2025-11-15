@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useUser } from "@/lib/user-context"
+import { getRoleLabel } from "@/lib/constants/labels"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -23,18 +24,6 @@ interface TopBarProps {
 export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, setUser, isLoading } = useUser()
   const router = useRouter()
-
-  const getRoleLabel = (role: string) => {
-    const labels: Record<string, string> = {
-      APPLICANT: "Applicant",
-      CO_APPLICANT: "Co-applicant",
-      GUARANTOR: "Guarantor",
-      BROKER: "Broker",
-      ADMIN: "Transaction Agent",
-      BOARD: "Board Member",
-    }
-    return labels[role] || role
-  }
 
   const handleSignOut = () => {
     setUser(null)
