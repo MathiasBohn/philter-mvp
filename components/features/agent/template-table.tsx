@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Template } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, Edit, Eye, Copy, Trash2, FileText } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -56,18 +57,6 @@ export function TemplateTable({ templates }: TemplateTableProps) {
       return aValue < bValue ? 1 : -1;
     }
   });
-
-  const getRelativeTime = (date: Date) => {
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return "Today";
-    if (diffInDays === 1) return "Yesterday";
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    return `${Math.floor(diffInDays / 30)} months ago`;
-  };
 
   const getBuildingName = (buildingId: string) => {
     const building = mockBuildings.find((b) => b.id === buildingId);
@@ -162,7 +151,7 @@ export function TemplateTable({ templates }: TemplateTableProps) {
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {getRelativeTime(template.createdAt)}
+                  {formatDate(template.createdAt, "relative")}
                 </TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -273,7 +262,7 @@ export function TemplateTable({ templates }: TemplateTableProps) {
                 <div className="col-span-2">
                   <p className="text-muted-foreground text-xs">Created</p>
                   <p className="text-sm mt-0.5">
-                    {getRelativeTime(template.createdAt)}
+                    {formatDate(template.createdAt, "relative")}
                   </p>
                 </div>
                 {template.description && (

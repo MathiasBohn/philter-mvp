@@ -1,16 +1,6 @@
 "use client"
 
-import { RouteGuard } from "@/components/auth/route-guard"
+import { createProtectedLayout } from "@/lib/create-protected-layout"
 import { Role } from "@/lib/types"
 
-export default function AgentLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <RouteGuard allowedRoles={[Role.ADMIN]}>
-      {children}
-    </RouteGuard>
-  )
-}
+export default createProtectedLayout([Role.ADMIN])

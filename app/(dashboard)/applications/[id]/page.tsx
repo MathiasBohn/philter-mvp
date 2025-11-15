@@ -7,7 +7,7 @@ import { InviteWidget } from "@/components/features/application/invite-widget";
 import { RFIBanner } from "@/components/features/application/rfi-banner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Role } from "@/lib/types";
+import { Role, BuildingType } from "@/lib/types";
 import { notFound } from "next/navigation";
 import { storage } from "@/lib/persistence";
 import { mockRFIs } from "@/lib/mock-data/rfis";
@@ -45,6 +45,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
               id: parsedApp.buildingCode,
               code: parsedApp.buildingCode,
               name: "Demo Building",
+              type: BuildingType.CONDO,
               address: {
                 street: "123 Main St",
                 city: "New York",

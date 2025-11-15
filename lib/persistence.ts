@@ -176,7 +176,7 @@ export const storage = {
       const decisions: DecisionRecord[] = JSON.parse(stored)
       return decisions.map(decision => ({
         ...decision,
-        timestamp: new Date(decision.timestamp)
+        decidedAt: new Date(decision.decidedAt)
       }))
     } catch (error) {
       console.error("Error loading decisions from localStorage:", error)

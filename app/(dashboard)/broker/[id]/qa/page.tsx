@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, Eye, Loader2 } from "lucide-react";
-import { Application } from "@/lib/types";
+import { Application, Role } from "@/lib/types";
 
 export default function BrokerQAPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -58,7 +58,7 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
               dob: new Date(),
               ssnLast4: "",
               addressHistory: [],
-              role: "APPLICANT" as const
+              role: Role.APPLICANT
             }] : [],
             employmentRecords: [],
             financialEntries: [],

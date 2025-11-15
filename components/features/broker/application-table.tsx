@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { StatusTag } from "./status-tag";
 import { Application } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -56,18 +57,6 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
       return aValue < bValue ? 1 : -1;
     }
   });
-
-  const getRelativeTime = (date: Date) => {
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) return "Today";
-    if (diffInDays === 1) return "Yesterday";
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    return `${Math.floor(diffInDays / 30)} months ago`;
-  };
 
   if (applications.length === 0) {
     return (
@@ -164,7 +153,7 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {getRelativeTime(application.lastActivityAt)}
+                  {formatDate(application.lastActivityAt, "relative")}
                 </TableCell>
                 <TableCell>
                   <StatusTag status={application.status} />
@@ -275,7 +264,7 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
                 <div>
                   <p className="text-muted-foreground text-xs">Last Activity</p>
                   <p className="text-sm mt-0.5">
-                    {getRelativeTime(application.lastActivityAt)}
+                    {formatDate(application.lastActivityAt, "relative")}
                   </p>
                 </div>
               </div>

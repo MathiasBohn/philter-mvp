@@ -6,7 +6,7 @@ import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, AlertCircle, FileText, Clock, Loader2 } from "lucide-react";
-import { Application } from "@/lib/types";
+import { Application, Role } from "@/lib/types";
 
 export default function BrokerSubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -56,7 +56,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
               dob: new Date(),
               ssnLast4: "",
               addressHistory: [],
-              role: "APPLICANT" as const
+              role: Role.APPLICANT
             }] : [],
             employmentRecords: [],
             financialEntries: [],

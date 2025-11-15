@@ -1,16 +1,11 @@
 "use client"
 
-import { RouteGuard } from "@/components/auth/route-guard"
+import { createProtectedLayout } from "@/lib/create-protected-layout"
 import { Role } from "@/lib/types"
 
-export default function ApplicationsLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <RouteGuard allowedRoles={[Role.APPLICANT, Role.CO_APPLICANT, Role.GUARANTOR, Role.BROKER]}>
-      {children}
-    </RouteGuard>
-  )
-}
+export default createProtectedLayout([
+  Role.APPLICANT,
+  Role.CO_APPLICANT,
+  Role.GUARANTOR,
+  Role.BROKER
+])

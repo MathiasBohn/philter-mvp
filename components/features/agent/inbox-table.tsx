@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { MoreVertical, ExternalLink } from "lucide-react";
 import { Application, ApplicationStatus, TransactionType } from "@/lib/types";
+import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 
 interface InboxTableProps {
@@ -57,24 +58,6 @@ function getDaysSinceSubmission(submittedAt?: Date): number {
   const diffTime = Math.abs(now.getTime() - submitted.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays;
-}
-
-function getRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffTime = now.getTime() - new Date(date).getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-  const diffMinutes = Math.floor(diffTime / (1000 * 60));
-
-  if (diffDays > 0) {
-    return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
-  } else if (diffHours > 0) {
-    return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-  } else if (diffMinutes > 0) {
-    return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-  } else {
-    return "Just now";
-  }
 }
 
 export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
@@ -169,7 +152,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
                     {app.submittedAt ? `${age} day${age === 1 ? "" : "s"}` : "—"}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
-                    {getRelativeTime(app.lastActivityAt)}
+                    {formatDate(app.lastActivityAt, "relative")}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -306,7 +289,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
                   <div className="col-span-2">
                     <p className="text-muted-foreground text-xs">Last Activity</p>
                     <p className="text-sm mt-0.5">
-                      {getRelativeTime(app.lastActivityAt)}
+                      {formatDate(app.lastActivityAt, "relative")}
                     </p>
                   </div>
                 </div>

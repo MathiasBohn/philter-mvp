@@ -19,6 +19,8 @@ import {
   ActivityLogEntry,
   RFIMessage,
   DecisionRecord,
+  Decision,
+  ApplicationStatus,
 } from "@/lib/types";
 
 export default function AgentReviewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -140,11 +142,23 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
     setRfis(storage.getRFIsForApplication(id, mockRFIs));
   };
 
+  // Helper function to map Decision to ApplicationStatus
+  const mapDecisionToStatus = (decision: Decision): ApplicationStatus => {
+    switch (decision) {
+      case Decision.APPROVE:
+        return ApplicationStatus.APPROVED;
+      case Decision.CONDITIONAL:
+        return ApplicationStatus.CONDITIONAL;
+      case Decision.DENY:
+        return ApplicationStatus.DENIED;
+    }
+  };
+
   const handleDecisionSubmit = (decisionRecord: DecisionRecord) => {
     // Save decision to storage
     storage.saveDecision(decisionRecord);
     // Update application status based on decision
-    storage.updateApplicationStatus(id, decisionRecord.decision);
+    storage.updateApplicationStatus(id, mapDecisionToStatus(decisionRecord.decision));
   };
 
   const getStatusBadgeVariant = (status: string) => {
