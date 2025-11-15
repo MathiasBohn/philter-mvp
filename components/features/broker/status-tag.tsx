@@ -51,12 +51,12 @@ export function StatusTag({ status }: StatusTagProps) {
   const getStatusColor = () => {
     switch (status) {
       case ApplicationStatus.APPROVED:
-        return "bg-green-600 text-white hover:bg-green-700";
+        return "bg-green-600 dark:bg-green-700 text-white hover:bg-green-700 dark:hover:bg-green-600";
       case ApplicationStatus.CONDITIONAL:
-        return "bg-yellow-600 text-white hover:bg-yellow-700";
+        return "bg-yellow-600 dark:bg-yellow-700 text-white hover:bg-yellow-700 dark:hover:bg-yellow-600";
       case ApplicationStatus.DENIED:
       case ApplicationStatus.RFI:
-        return "bg-red-600 text-white hover:bg-red-700";
+        return "bg-red-600 dark:bg-red-700 text-white hover:bg-red-700 dark:hover:bg-red-600";
       default:
         return "";
     }

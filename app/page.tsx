@@ -33,7 +33,7 @@ export default function Home() {
       title: "Board Member",
       description: "Review and approve applications",
       icon: Users,
-      href: "/board/review/app-001",
+      href: "/board/review/app-1",
       color: "text-orange-600",
     },
   ];
@@ -48,7 +48,11 @@ export default function Home() {
       <div className="w-full max-w-5xl space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-5xl font-bold tracking-tight">philter</h1>
+          <Link href="/" className="inline-block">
+            <h1 className="text-5xl font-bold tracking-tight hover:opacity-80 transition-opacity cursor-pointer">
+              philter
+            </h1>
+          </Link>
           <p className="text-lg text-muted-foreground">
             Transaction Platform MVP - Beta Testing
           </p>

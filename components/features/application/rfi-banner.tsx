@@ -42,7 +42,7 @@ export function RFIBanner({ rfis, applicationId }: RFIBannerProps) {
         </p>
         <div className="space-y-2">
           {openRFIs.map((rfi) => (
-            <div key={rfi.id} className="flex items-center justify-between bg-white/10 rounded-lg p-3">
+            <div key={rfi.id} className="flex items-center justify-between bg-white/10 dark:bg-black/20 rounded-lg p-3">
               <div>
                 <p className="font-medium">{getSectionLabel(rfi.sectionKey)}</p>
                 <p className="text-sm opacity-90">

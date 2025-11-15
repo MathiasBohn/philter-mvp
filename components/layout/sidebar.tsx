@@ -22,8 +22,11 @@ interface SidebarProps {
 export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname()
 
-  // Mock application ID - will be dynamic later
-  const applicationId = "app_123"
+  // Extract application ID from URL or use default
+  // URL pattern: /applications/[id]/...
+  const pathParts = pathname.split('/')
+  const applicationIdFromUrl = pathParts[2] // gets the [id] part
+  const applicationId = applicationIdFromUrl || "app-1" // default to first mock application
 
   const sections = [
     {

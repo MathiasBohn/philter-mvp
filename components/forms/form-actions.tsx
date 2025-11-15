@@ -31,7 +31,7 @@ export function FormActions({
   const loading = isLoading || isSaving
 
   return (
-    <div className="flex items-center justify-end gap-3 border-t bg-white px-6 py-4">
+    <div className="flex items-center justify-end gap-3 border-t dark:border-gray-800 bg-white dark:bg-gray-950 px-6 py-4">
       {onCancel && (
         <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
           {cancelLabel}

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -53,7 +54,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </Button>
 
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight">philter</h1>
+            <Link href="/" className="hover:opacity-80 transition-opacity">
+              <h1 className="text-xl font-semibold tracking-tight">philter</h1>
+            </Link>
           </div>
         </div>
 

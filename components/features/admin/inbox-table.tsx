@@ -35,13 +35,13 @@ interface InboxTableProps {
 }
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
-  [ApplicationStatus.IN_PROGRESS]: "bg-gray-500",
-  [ApplicationStatus.SUBMITTED]: "bg-blue-500",
-  [ApplicationStatus.IN_REVIEW]: "bg-purple-500",
-  [ApplicationStatus.RFI]: "bg-orange-500",
-  [ApplicationStatus.APPROVED]: "bg-green-500",
-  [ApplicationStatus.CONDITIONAL]: "bg-yellow-500",
-  [ApplicationStatus.DENIED]: "bg-red-500",
+  [ApplicationStatus.IN_PROGRESS]: "bg-gray-500 dark:bg-gray-600",
+  [ApplicationStatus.SUBMITTED]: "bg-blue-500 dark:bg-blue-600",
+  [ApplicationStatus.IN_REVIEW]: "bg-purple-500 dark:bg-purple-600",
+  [ApplicationStatus.RFI]: "bg-orange-500 dark:bg-orange-600",
+  [ApplicationStatus.APPROVED]: "bg-green-500 dark:bg-green-600",
+  [ApplicationStatus.CONDITIONAL]: "bg-yellow-500 dark:bg-yellow-600",
+  [ApplicationStatus.DENIED]: "bg-red-500 dark:bg-red-600",
 };
 
 const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {

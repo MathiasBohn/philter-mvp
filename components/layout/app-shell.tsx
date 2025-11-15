@@ -14,7 +14,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 dark:bg-gray-950">
       {/* Skip Links for accessibility */}
       <a
         href="#main-content"
@@ -29,7 +29,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
         {showSidebar && (
           <>
             {/* Desktop Sidebar */}
-            <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white" aria-label="Sidebar navigation">
+            <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white dark:bg-gray-950 dark:border-gray-800" aria-label="Sidebar navigation">
               <Sidebar />
             </aside>
 
