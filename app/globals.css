@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (.dark &);
 
 /*
  * Responsive Breakpoints (Tailwind CSS v4 defaults):
