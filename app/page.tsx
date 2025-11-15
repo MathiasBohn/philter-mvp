@@ -1,12 +1,18 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Briefcase, Shield, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useUser } from "@/lib/user-context";
+import { Role } from "@/lib/types";
+import { mockUsers } from "@/lib/mock-data/users";
 
 export default function Home() {
+  const router = useRouter();
+  const { setUser } = useUser();
+
   const userFlows = [
     {
       title: "Applicant",
@@ -14,6 +20,7 @@ export default function Home() {
       icon: User,
       href: "/applications/new",
       color: "text-blue-600 dark:text-blue-400",
+      role: Role.APPLICANT,
     },
     {
       title: "Broker",
@@ -21,6 +28,7 @@ export default function Home() {
       icon: Briefcase,
       href: "/broker",
       color: "text-purple-600 dark:text-purple-400",
+      role: Role.BROKER,
     },
     {
       title: "Property Manager",
@@ -28,6 +36,7 @@ export default function Home() {
       icon: Shield,
       href: "/admin/inbox",
       color: "text-green-600 dark:text-green-400",
+      role: Role.ADMIN,
     },
     {
       title: "Board Member",
@@ -35,8 +44,18 @@ export default function Home() {
       icon: Users,
       href: "/board/review/app-1",
       color: "text-orange-600 dark:text-orange-400",
+      role: Role.BOARD,
     },
   ];
+
+  const handleFlowClick = (flow: typeof userFlows[0]) => {
+    // Find a mock user with the selected role
+    const user = mockUsers.find((u) => u.role === flow.role);
+    if (user) {
+      setUser(user);
+      router.push(flow.href);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4 dark:from-gray-900 dark:to-gray-800">
@@ -74,10 +93,12 @@ export default function Home() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button asChild className="w-full" size="lg">
-                    <Link href={flow.href}>
-                      Enter as {flow.title}
-                    </Link>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={() => handleFlowClick(flow)}
+                  >
+                    Enter as {flow.title}
                   </Button>
                 </CardContent>
               </Card>
