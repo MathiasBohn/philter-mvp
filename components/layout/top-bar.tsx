@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -37,7 +38,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white">
+    <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Logo + Mobile Menu Button */}
         <div className="flex items-center gap-4">
@@ -56,11 +57,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </div>
         </div>
 
-        {/* Right: Role Badge + User Menu */}
+        {/* Right: Role Badge + Theme Toggle + User Menu */}
         <div className="flex items-center gap-4">
           <Badge variant="secondary" className="hidden sm:flex">
             {getRoleLabel(user.role)}
           </Badge>
+
+          <ThemeToggle />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
