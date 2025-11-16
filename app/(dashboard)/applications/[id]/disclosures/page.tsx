@@ -80,6 +80,42 @@ const DISCLOSURE_TEMPLATES = {
     acknowledged: false,
     requiresUpload: true,
   },
+  FLOOD_DISCLOSURE: {
+    id: "flood-disclosure",
+    type: DisclosureType.FLOOD_DISCLOSURE,
+    title: "NY State Flood History and Risk Notice",
+    description:
+      "New York State law requires disclosure of flood history and flood risk information for all residential properties. This disclosure informs you about the property's location in relation to flood zones and any history of flood damage.",
+    pdfUrl: "/disclosures/ny-state-flood-disclosure.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    floodOptions: [],
+    signature: "",
+  },
+  HOUSE_RULES: {
+    id: "house-rules",
+    type: DisclosureType.HOUSE_RULES,
+    title: "House Rules Acknowledgement",
+    description:
+      "Please review the building's house rules, which outline the policies and regulations governing residence in the building. You must acknowledge that you have received and reviewed these rules.",
+    pdfUrl: "/samples/house-rules-template.pdf",
+    houseRulesUrl: "/samples/house-rules-template.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
+  CONSUMER_REPORT_AUTH: {
+    id: "consumer-report-auth",
+    type: DisclosureType.CONSUMER_REPORT_AUTH,
+    title: "Consumer Report Authorization",
+    description:
+      "Federal law requires your written authorization before we can obtain consumer reports (including credit reports and background checks) as part of your application. This form authorizes the building management and board to obtain such reports.",
+    pdfUrl: "/samples/consumer-report-authorization.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
 }
 
 export default function DisclosuresPage({ params }: { params: Promise<{ id: string }> }) {
@@ -118,6 +154,47 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
             loadedTxType === TransactionType.CONDO_LEASE ||
             loadedTxType === TransactionType.COOP_SUBLET
           ) {
+            // Load profile data to pre-populate consumer report authorization
+            const profileData = localStorage.getItem(`profile-data-${id}`)
+            const consumerReportTemplate: Disclosure = {
+              ...DISCLOSURE_TEMPLATES.CONSUMER_REPORT_AUTH,
+              consumerReportData: {
+                firstName: "",
+                middleName: "",
+                lastName: "",
+                ssn: "",
+                address: {
+                  street: "",
+                  unit: "",
+                  city: "",
+                  state: "",
+                  zip: "",
+                },
+              }
+            }
+
+            if (profileData) {
+              try {
+                const profile = JSON.parse(profileData)
+                consumerReportTemplate.consumerReportData = {
+                  firstName: profile.firstName || "",
+                  middleName: profile.middleName || "",
+                  lastName: profile.lastName || "",
+                  ssn: profile.ssn || "",
+                  dob: profile.dob ? new Date(profile.dob) : undefined,
+                  address: profile.currentAddress || {
+                    street: "",
+                    unit: "",
+                    city: "",
+                    state: "",
+                    zip: "",
+                  },
+                }
+              } catch (error) {
+                console.error("Error parsing profile data:", error)
+              }
+            }
+
             loadedDisclosures = [
               DISCLOSURE_TEMPLATES.LEAD_PAINT_CERTIFICATION,
               DISCLOSURE_TEMPLATES.LEAD_WARNING_STATEMENT,
@@ -126,6 +203,9 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
               DISCLOSURE_TEMPLATES.LOCAL_LAW_38,
               DISCLOSURE_TEMPLATES.LOCAL_LAW_55,
               DISCLOSURE_TEMPLATES.WINDOW_GUARD,
+              DISCLOSURE_TEMPLATES.FLOOD_DISCLOSURE,
+              DISCLOSURE_TEMPLATES.HOUSE_RULES,
+              consumerReportTemplate,
             ]
           }
         }
@@ -177,6 +257,34 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
     )
   }
 
+  const handleFloodOptionsChange = (disclosureId: string, options: string[]) => {
+    setDisclosures((prev) =>
+      prev.map((d) =>
+        d.id === disclosureId ? { ...d, floodOptions: options } : d
+      )
+    )
+  }
+
+  const handleSignatureChange = (disclosureId: string, signature: string) => {
+    setDisclosures((prev) =>
+      prev.map((d) =>
+        d.id === disclosureId ? { ...d, signature } : d
+      )
+    )
+  }
+
+  const calculateAge = (birthDate: Date | undefined): number => {
+    if (!birthDate) return 0
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    return age
+  }
+
   const validate = () => {
     const newErrors: string[] = []
 
@@ -196,6 +304,50 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
       newErrors.push(
         "You must upload all required signed disclosure forms"
       )
+    }
+
+    // Check flood disclosure completion
+    const floodDisclosure = disclosures.find(
+      (d) => d.type === DisclosureType.FLOOD_DISCLOSURE
+    )
+    if (floodDisclosure) {
+      if (!floodDisclosure.floodOptions || floodDisclosure.floodOptions.length === 0) {
+        newErrors.push(
+          "You must select at least one flood zone option for the Flood Disclosure"
+        )
+      }
+      if (!floodDisclosure.signature || floodDisclosure.signature.trim() === "") {
+        newErrors.push(
+          "You must provide a digital signature for the Flood Disclosure"
+        )
+      }
+    }
+
+    // Check consumer report authorization completion
+    const consumerReportAuth = disclosures.find(
+      (d) => d.type === DisclosureType.CONSUMER_REPORT_AUTH
+    )
+    if (consumerReportAuth) {
+      // Check age requirement (must be 18+)
+      if (consumerReportAuth.consumerReportData?.dob) {
+        const age = calculateAge(consumerReportAuth.consumerReportData.dob)
+        if (age < 18) {
+          newErrors.push(
+            "You must be at least 18 years old to sign the Consumer Report Authorization"
+          )
+        }
+      } else {
+        newErrors.push(
+          "Date of birth is required for the Consumer Report Authorization. Please complete your profile first."
+        )
+      }
+
+      // Check signature
+      if (!consumerReportAuth.signature || consumerReportAuth.signature.trim() === "") {
+        newErrors.push(
+          "You must provide a digital signature for the Consumer Report Authorization"
+        )
+      }
     }
 
     setErrors(newErrors)
@@ -288,6 +440,12 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
             }
             onDocumentUpload={(file) => handleDocumentUpload(disclosure.id, file)}
             onDocumentRemove={() => handleDocumentRemove(disclosure.id)}
+            onFloodOptionsChange={(options) =>
+              handleFloodOptionsChange(disclosure.id, options)
+            }
+            onSignatureChange={(signature) =>
+              handleSignatureChange(disclosure.id, signature)
+            }
           />
         ))}
       </div>
