@@ -59,13 +59,13 @@ export function FilterBar({
   dateRange,
   onDateRangeChange,
 }: BrokerFilterBarProps) {
-  const handleChange = (key: string, value: string) => {
+  const handleChange = (key: string, value: unknown) => {
     if (key === "status") {
       onStatusFilterChange(value as ApplicationStatus | "ALL");
     } else if (key === "building") {
-      onBuildingFilterChange(value);
+      onBuildingFilterChange(String(value));
     } else if (key === "dateRange") {
-      onDateRangeChange(value);
+      onDateRangeChange(value as { from: Date | undefined; to: Date | undefined });
     }
   };
 

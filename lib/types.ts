@@ -61,6 +61,11 @@ export enum Decision {
 }
 
 export enum DisclosureType {
+  LEAD_PAINT_CERTIFICATION = "LEAD_PAINT_CERTIFICATION",
+  LEAD_WARNING_STATEMENT = "LEAD_WARNING_STATEMENT",
+  LEAD_DISCLOSURE = "LEAD_DISCLOSURE",
+  EPA_LEAD_PAMPHLET = "EPA_LEAD_PAMPHLET",
+  LOCAL_LAW_38 = "LOCAL_LAW_38",
   LOCAL_LAW_55 = "LOCAL_LAW_55",
   WINDOW_GUARD = "WINDOW_GUARD",
 }
@@ -142,6 +147,38 @@ export type AddressHistoryEntry = {
   fromDate: Date;
   toDate?: Date;
   isCurrent: boolean;
+};
+
+export enum ReferenceType {
+  PERSONAL = "PERSONAL",
+  PROFESSIONAL = "PROFESSIONAL",
+  LANDLORD = "LANDLORD",
+  BANK = "BANK",
+}
+
+export type ReferenceLetterEntry = {
+  id: string;
+  type: ReferenceType;
+  name: string;
+  phone: string;
+  email: string;
+  relationship?: string; // For personal references
+  company?: string; // For professional references
+  institution?: string; // For bank references
+  occupiedFrom?: Date; // For landlord references
+  occupiedTo?: Date; // For landlord references
+  letterDocumentId?: string; // Optional uploaded letter
+};
+
+export type LeaseTerms = {
+  monthlyRent: number;
+  annualRent: number; // Auto-calculated
+  securityDeposit: number;
+  leaseLengthYears: number; // 1, 2, 3, or 5
+  leaseStartDate: Date;
+  leaseEndDate: Date; // Auto-calculated or manual
+  moveInDate: Date;
+  specialConditions?: string;
 };
 
 export type Person = {

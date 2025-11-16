@@ -14,6 +14,13 @@ export interface SectionDefinition {
 
 const sectionDefinitions: SectionDefinition[] = [
   {
+    key: "lease-terms",
+    title: "Lease Terms",
+    description: "Proposed lease terms and financial details",
+    href: "/lease-terms",
+    isRequired: true,
+  },
+  {
     key: "profile",
     title: "Profile",
     description: "Personal information and address history",

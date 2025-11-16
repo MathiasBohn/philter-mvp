@@ -48,11 +48,12 @@ export function InboxFilterBar({
   onStatusChange,
   onBuildingChange,
 }: InboxFilterBarProps) {
-  const handleChange = (key: string, value: string) => {
+  const handleChange = (key: string, value: unknown) => {
+    const stringValue = String(value);
     if (key === "status") {
-      onStatusChange(value);
+      onStatusChange(stringValue);
     } else if (key === "building") {
-      onBuildingChange(value);
+      onBuildingChange(stringValue);
     }
   };
 

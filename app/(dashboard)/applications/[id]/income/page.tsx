@@ -18,6 +18,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   const router = useRouter()
   const [employers, setEmployers] = useState<EmploymentRecord[]>([])
   const [documents, setDocuments] = useState<UploadedFile[]>([])
+  const [isSelfEmployed, setIsSelfEmployed] = useState(false)
+  const [cpaLetterDocuments, setCpaLetterDocuments] = useState<UploadedFile[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSaving, setIsSaving] = useState(false)
 
@@ -54,6 +56,12 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           if (data.documents) {
             setDocuments(data.documents)
           }
+          if (data.isSelfEmployed !== undefined) {
+            setIsSelfEmployed(data.isSelfEmployed)
+          }
+          if (data.cpaLetterDocuments) {
+            setCpaLetterDocuments(data.cpaLetterDocuments)
+          }
         } else {
           // Initialize with one empty employer
           addEmployer()
@@ -89,6 +97,17 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     })
   }
 
+  const handleCpaLetterAdded = (newFiles: UploadedFile[]) => {
+    setCpaLetterDocuments([...cpaLetterDocuments, ...newFiles])
+
+    // Simulate upload progress
+    newFiles.forEach((file) => {
+      if (file.status === "pending") {
+        simulateCpaUpload(file.id)
+      }
+    })
+  }
+
   const simulateUpload = (fileId: string) => {
     setDocuments((prev) =>
       prev.map((doc) =>
@@ -118,8 +137,41 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     }, 300)
   }
 
+  const simulateCpaUpload = (fileId: string) => {
+    setCpaLetterDocuments((prev) =>
+      prev.map((doc) =>
+        doc.id === fileId ? { ...doc, status: "uploading" as const } : doc
+      )
+    )
+
+    let progress = 0
+    const interval = setInterval(() => {
+      progress += 10
+      setCpaLetterDocuments((prev) =>
+        prev.map((doc) =>
+          doc.id === fileId ? { ...doc, progress } : doc
+        )
+      )
+
+      if (progress >= 100) {
+        clearInterval(interval)
+        setCpaLetterDocuments((prev) =>
+          prev.map((doc) =>
+            doc.id === fileId
+              ? { ...doc, status: "complete" as const, progress: 100 }
+              : doc
+          )
+        )
+      }
+    }, 300)
+  }
+
   const removeDocument = (id: string) => {
     setDocuments(documents.filter((d) => d.id !== id))
+  }
+
+  const removeCpaDocument = (id: string) => {
+    setCpaLetterDocuments(cpaLetterDocuments.filter((d) => d.id !== id))
   }
 
   const validate = () => {
@@ -137,6 +189,21 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       }
     })
 
+    // Validate employment verification documents
+    if (isSelfEmployed) {
+      // If self-employed, require CPA letter
+      const hasCompletedCpaLetter = cpaLetterDocuments.some((doc) => doc.status === "complete")
+      if (!hasCompletedCpaLetter) {
+        newErrors["cpa-letter"] = "CPA letter is required for self-employed applicants"
+      }
+    } else {
+      // If not self-employed, require at least one employment verification document
+      const hasCompletedVerification = documents.some((doc) => doc.status === "complete")
+      if (!hasCompletedVerification) {
+        newErrors["employment-verification"] = "At least one employment verification document is required"
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -152,6 +219,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     const data = {
       employers,
       documents,
+      isSelfEmployed,
+      cpaLetterDocuments,
       updatedAt: new Date().toISOString(),
     }
     localStorage.setItem(`income-data-${id}`, JSON.stringify(data))
@@ -229,33 +298,100 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold">Income Verification Documents</h2>
+          <h2 className="text-xl font-semibold">
+            Income Verification Documents <span className="text-red-500">*</span>
+          </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Upload documents that verify your income (pay stubs, W-2, 1099, tax returns, etc.)
           </p>
         </div>
 
-        <UploadDropzone onFilesAdded={handleFilesAdded} />
+        {/* Self-employed Checkbox */}
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="self-employed"
+            checked={isSelfEmployed}
+            onChange={(e) => setIsSelfEmployed(e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300"
+          />
+          <label htmlFor="self-employed" className="text-sm font-medium cursor-pointer">
+            I am self-employed
+          </label>
+        </div>
 
-        {documents.length > 0 && (
-          <div className="space-y-3">
-            <h3 className="font-medium">Uploaded Documents ({documents.length})</h3>
-            {documents.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                document={doc}
-                onDelete={() => removeDocument(doc.id)}
-              />
-            ))}
-          </div>
-        )}
+        {/* Show CPA Letter upload for self-employed, otherwise show regular employment verification */}
+        {isSelfEmployed ? (
+          <>
+            <div>
+              <h3 className="text-lg font-medium">
+                CPA Letter <span className="text-red-500">*</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload a letter from your CPA verifying your income
+              </p>
+            </div>
 
-        {documents.length === 0 && (
-          <Alert>
-            <AlertDescription>
-              No documents uploaded yet. Please upload income verification documents to continue.
-            </AlertDescription>
-          </Alert>
+            <UploadDropzone onFilesAdded={handleCpaLetterAdded} />
+
+            {cpaLetterDocuments.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-medium">Uploaded CPA Letter ({cpaLetterDocuments.length})</h3>
+                {cpaLetterDocuments.map((doc) => (
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    onDelete={() => removeCpaDocument(doc.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {cpaLetterDocuments.length === 0 && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  CPA letter is required for self-employed applicants. Please upload your CPA letter to continue.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {errors["cpa-letter"] && (
+              <Alert variant="destructive">
+                <AlertDescription>{errors["cpa-letter"]}</AlertDescription>
+              </Alert>
+            )}
+          </>
+        ) : (
+          <>
+            <UploadDropzone onFilesAdded={handleFilesAdded} />
+
+            {documents.length > 0 && (
+              <div className="space-y-3">
+                <h3 className="font-medium">Uploaded Documents ({documents.length})</h3>
+                {documents.map((doc) => (
+                  <DocumentCard
+                    key={doc.id}
+                    document={doc}
+                    onDelete={() => removeDocument(doc.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {documents.length === 0 && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  No documents uploaded yet. Employment verification is required. Please upload at least one document to continue.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {errors["employment-verification"] && (
+              <Alert variant="destructive">
+                <AlertDescription>{errors["employment-verification"]}</AlertDescription>
+              </Alert>
+            )}
+          </>
         )}
       </div>
 

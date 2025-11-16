@@ -101,10 +101,12 @@ export function PdfViewerClient({
 
     const generateThumbnails = async () => {
       const thumbs: string[] = [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pdfDoc = pdf as any;
 
-      for (let i = 1; i <= pdf.numPages; i++) {
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
         try {
-          const page = await pdf.getPage(i);
+          const page = await pdfDoc.getPage(i);
           const viewport = page.getViewport({ scale: 0.2 });
 
           const canvas = document.createElement("canvas");
@@ -138,7 +140,8 @@ export function PdfViewerClient({
     const renderPage = async () => {
       setRendering(true);
       try {
-        const page = await pdf.getPage(currentPage);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const page = await (pdf as any).getPage(currentPage);
         const canvas = canvasRef.current;
         if (!canvas) return;
 

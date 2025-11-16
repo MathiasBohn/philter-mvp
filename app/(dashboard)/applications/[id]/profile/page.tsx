@@ -13,11 +13,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertCircle, Save, CheckCircle } from "lucide-react";
 import { AddressHistoryList } from "@/components/features/application/address-history-list";
+import { ReferenceList } from "@/components/features/application/reference-list";
 import { AddPersonButton } from "@/components/features/application/add-person-button";
 import { MaskedSSNInput } from "@/components/forms/masked-ssn-input";
 import { DateInput } from "@/components/forms/date-input";
 import { profileSchema } from "@/lib/validators";
-import { AddressHistoryEntry } from "@/lib/types";
+import { AddressHistoryEntry, ReferenceLetterEntry } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -29,6 +30,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [addresses, setAddresses] = useState<AddressHistoryEntry[]>([]);
+  const [references, setReferences] = useState<ReferenceLetterEntry[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const [newAddress, setNewAddress] = useState({
     street: "",
@@ -76,6 +78,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         setAddresses(loadedAddresses);
         setValue("addressHistory", loadedAddresses);
       }
+      if (parsed.references) {
+        const loadedReferences = parsed.references.map((ref: ReferenceLetterEntry & { occupiedFrom?: string; occupiedTo?: string }) => ({
+          ...ref,
+          occupiedFrom: ref.occupiedFrom ? new Date(ref.occupiedFrom) : undefined,
+          occupiedTo: ref.occupiedTo ? new Date(ref.occupiedTo) : undefined,
+        }));
+        setReferences(loadedReferences);
+      }
     }
   }, [id, setValue]);
 
@@ -98,6 +108,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         ...addr,
         fromDate: addr.fromDate.toISOString(),
         toDate: addr.toDate ? addr.toDate.toISOString() : undefined,
+      })),
+      references: references.map(ref => ({
+        ...ref,
+        occupiedFrom: ref.occupiedFrom ? ref.occupiedFrom.toISOString() : undefined,
+        occupiedTo: ref.occupiedTo ? ref.occupiedTo.toISOString() : undefined,
       })),
     }));
 
@@ -139,6 +154,25 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const handleRemoveAddress = (id: string) => {
     setAddresses(addresses.filter((addr) => addr.id !== id));
+  };
+
+  const handleAddReference = (reference: ReferenceLetterEntry) => {
+    setReferences([...references, reference]);
+  };
+
+  const handleRemoveReference = (id: string) => {
+    setReferences(references.filter((ref) => ref.id !== id));
+  };
+
+  const handleUploadReferenceLetter = (referenceId: string, file: File) => {
+    // In a real app, this would upload the file and get a document ID
+    // For now, we'll just mark it as uploaded with a mock ID
+    const updatedReferences = references.map((ref) =>
+      ref.id === referenceId
+        ? { ...ref, letterDocumentId: `doc-${Date.now()}` }
+        : ref
+    );
+    setReferences(updatedReferences);
   };
 
   const handleAddPerson = () => {
@@ -298,6 +332,24 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             {errors.addressHistory && (
               <p className="text-sm text-red-600 mt-2">{errors.addressHistory.message}</p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Reference Letters */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Reference Letters</CardTitle>
+            <CardDescription>
+              Provide contact information for your references. Letters of recommendation are optional but encouraged.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ReferenceList
+              references={references}
+              onAdd={handleAddReference}
+              onRemove={handleRemoveReference}
+              onUpload={handleUploadReferenceLetter}
+            />
           </CardContent>
         </Card>
 

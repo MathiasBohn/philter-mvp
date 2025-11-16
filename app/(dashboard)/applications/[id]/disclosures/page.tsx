@@ -7,12 +7,62 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Info } from "lucide-react"
 import { DisclosureCard, type Disclosure } from "@/components/features/application/disclosure-card"
 import { FormActions } from "@/components/forms/form-actions"
-import { TransactionType } from "@/lib/types"
+import { TransactionType, DisclosureType } from "@/lib/types"
 
 const DISCLOSURE_TEMPLATES = {
+  LEAD_PAINT_CERTIFICATION: {
+    id: "lead-paint-certification",
+    type: DisclosureType.LEAD_PAINT_CERTIFICATION,
+    title: "Lead Paint Certification and Acknowledgement of Responsibility",
+    description:
+      "Required certification acknowledging your responsibilities regarding lead-based paint hazards in residential housing built before 1978.",
+    pdfUrl: "/disclosures/lead-paint-certification.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
+  LEAD_WARNING_STATEMENT: {
+    id: "lead-warning-statement",
+    type: DisclosureType.LEAD_WARNING_STATEMENT,
+    title: "Lead Warning Statement",
+    description:
+      "Federal law requires disclosure of known information on lead-based paint and lead-based paint hazards before sale or lease of housing built before 1978.",
+    pdfUrl: "/disclosures/lead-paint-warning-statement.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
+  LEAD_DISCLOSURE: {
+    id: "lead-disclosure",
+    type: DisclosureType.LEAD_DISCLOSURE,
+    title: "Lead-Based Paint Disclosure",
+    description:
+      "Disclosure of information and acknowledgment regarding the presence of lead-based paint and/or lead-based paint hazards.",
+    pdfUrl: "/disclosures/lead-disclosure.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
+  EPA_LEAD_PAMPHLET: {
+    id: "epa-lead-pamphlet",
+    type: DisclosureType.EPA_LEAD_PAMPHLET,
+    title: "EPA Lead Pamphlet: Protect Your Family from Lead in Your Home",
+    description:
+      "EPA-approved pamphlet providing information about lead-based paint hazards and how to protect your family.",
+    pdfUrl: "/disclosures/epa-lead-pamphlet.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
+  LOCAL_LAW_38: {
+    id: "local-law-38",
+    type: DisclosureType.LOCAL_LAW_38,
+    title: "NYC Local Law 38: Window Falls Prevention",
+    description:
+      "New York City Local Law 38 requires landlords to provide annual notices about window guard installation to prevent window falls.",
+    pdfUrl: "/disclosures/local-law-38.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+  },
   LOCAL_LAW_55: {
     id: "local-law-55",
-    type: "LOCAL_LAW_55" as const,
+    type: DisclosureType.LOCAL_LAW_55,
     title: "Local Law 55: Indoor Allergen Hazards",
     description:
       "New York City Local Law 55 requires landlords to provide tenants with information about indoor allergen hazards, including mold, mice, rats, and cockroaches. This disclosure informs you of your rights and the landlord's responsibilities regarding these allergens.",
@@ -22,7 +72,7 @@ const DISCLOSURE_TEMPLATES = {
   },
   WINDOW_GUARD: {
     id: "window-guard",
-    type: "WINDOW_GUARD" as const,
+    type: DisclosureType.WINDOW_GUARD,
     title: "Window Guard Lease Notice",
     description:
       "New York City law requires landlords to install window guards in apartments where children 10 years old or younger reside. This notice informs you of your right to request window guard installation and your responsibility to notify the landlord if a child under 11 resides or will reside in the apartment.",
@@ -69,6 +119,11 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
             loadedTxType === TransactionType.COOP_SUBLET
           ) {
             loadedDisclosures = [
+              DISCLOSURE_TEMPLATES.LEAD_PAINT_CERTIFICATION,
+              DISCLOSURE_TEMPLATES.LEAD_WARNING_STATEMENT,
+              DISCLOSURE_TEMPLATES.LEAD_DISCLOSURE,
+              DISCLOSURE_TEMPLATES.EPA_LEAD_PAMPHLET,
+              DISCLOSURE_TEMPLATES.LOCAL_LAW_38,
               DISCLOSURE_TEMPLATES.LOCAL_LAW_55,
               DISCLOSURE_TEMPLATES.WINDOW_GUARD,
             ]

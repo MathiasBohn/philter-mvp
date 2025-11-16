@@ -64,10 +64,10 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
             financialEntries: [],
             documents: [],
             disclosures: [],
-            sections: Object.entries(parsedApp.sections || {}).map(([key, value]: [string, { complete?: boolean }]) => ({
+            sections: Object.entries(parsedApp.sections || {}).map(([key, value]) => ({
               key: key,
               label: key.charAt(0).toUpperCase() + key.slice(1),
-              isComplete: value.complete || false,
+              isComplete: (value as { complete?: boolean }).complete || false,
               data: undefined
             })),
             completionPercentage: 0,

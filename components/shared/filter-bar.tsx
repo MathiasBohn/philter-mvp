@@ -60,7 +60,8 @@ export function FilterBar({
     if (filter.type === "select") {
       return value && value !== "ALL" && value !== "all";
     } else if (filter.type === "date-range") {
-      return value?.from !== undefined || value?.to !== undefined;
+      const dateRange = value as { from?: Date; to?: Date } | undefined;
+      return dateRange?.from !== undefined || dateRange?.to !== undefined;
     }
     return false;
   });
@@ -86,7 +87,7 @@ export function FilterBar({
                   {filter.label}
                 </label>
                 <Select
-                  value={values[filter.key] || "ALL"}
+                  value={String(values[filter.key] || "ALL")}
                   onValueChange={(value) => onChange(filter.key, value)}
                 >
                   <SelectTrigger>
@@ -103,7 +104,7 @@ export function FilterBar({
               </div>
             );
           } else if (filter.type === "date-range") {
-            const dateRange = values[filter.key] || { from: undefined, to: undefined };
+            const dateRange = (values[filter.key] as { from?: Date; to?: Date }) || { from: undefined, to: undefined };
             return (
               <div key={filter.key} className="flex-1 min-w-[200px]">
                 <label className="text-sm font-medium mb-2 block">

@@ -7,11 +7,12 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { DisclosureType } from "@/lib/types"
 import type { UploadedFile } from "./upload-dropzone"
 
 export interface Disclosure {
   id: string
-  type: "LOCAL_LAW_55" | "WINDOW_GUARD"
+  type: DisclosureType
   title: string
   description: string
   pdfUrl: string
