@@ -225,7 +225,7 @@ export const storage = {
         'disclosures'
       ];
 
-      const formData: Record<string, any> = {};
+      const formData: Record<string, unknown> = {};
       let hasData = false;
 
       // Collect all form data

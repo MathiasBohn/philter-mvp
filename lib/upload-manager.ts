@@ -4,7 +4,7 @@
  * Handles simulated file uploads with pause/resume capability and localStorage/IndexedDB storage
  */
 
-import type { UploadedFile } from "@/components/features/application/upload-dropzone"
+// Upload Manager types are defined inline below
 
 interface UploadTask {
   fileId: string

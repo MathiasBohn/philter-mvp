@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -40,11 +41,15 @@ export function DocumentPreview({ file, isOpen, onClose }: DocumentPreviewProps)
           )}
 
           {isImage && (
-            <img
-              src={fileUrl}
-              alt={file.name}
-              className="max-h-full w-full rounded object-contain"
-            />
+            <div className="relative h-[600px] w-full">
+              <Image
+                src={fileUrl}
+                alt={file.name}
+                fill
+                className="rounded object-contain"
+                unoptimized
+              />
+            </div>
           )}
 
           {!isPdf && !isImage && (

@@ -66,7 +66,6 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     }
 
     loadData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const updateEmployer = (id: string, updated: EmploymentRecord) => {

@@ -43,8 +43,8 @@ export interface DateRange {
 
 interface FilterBarProps {
   filters: FilterConfig[];
-  values: Record<string, any>;
-  onChange: (key: string, value: any) => void;
+  values: Record<string, unknown>;
+  onChange: (key: string, value: unknown) => void;
   showClearButton?: boolean;
 }
 

@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import {
   X,
   Eye,
@@ -100,10 +101,13 @@ export function DocumentCard({
       <div className="flex items-start gap-3">
         {document.preview ? (
           <div className="relative h-14 w-14 flex-shrink-0">
-            <img
+            <Image
               src={document.preview}
               alt={document.file.name}
+              width={56}
+              height={56}
               className="h-full w-full rounded object-cover"
+              unoptimized
             />
           </div>
         ) : (

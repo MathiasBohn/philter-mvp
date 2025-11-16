@@ -20,8 +20,8 @@ import {
 import { cn } from "@/lib/utils";
 
 // Dynamic import type for PDF.js
-type PDFDocumentProxy = any;
-type PDFPageProxy = any;
+// Using unknown instead of any for better type safety
+type PDFDocumentProxy = unknown;
 
 interface PdfViewerClientProps {
   url: string;
@@ -411,6 +411,7 @@ export function PdfViewerClient({
                         : "border-transparent"
                     )}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={thumb}
                       alt={`Page ${index + 1}`}

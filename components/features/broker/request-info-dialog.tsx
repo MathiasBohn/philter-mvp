@@ -31,7 +31,6 @@ interface RequestInfoDialogProps {
 export function RequestInfoDialog({
   open,
   onOpenChange,
-  applicationId,
   sections,
 }: RequestInfoDialogProps) {
   const [selectedSection, setSelectedSection] = useState("");

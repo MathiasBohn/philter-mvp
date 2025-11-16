@@ -23,7 +23,6 @@ export function RepeatableGroup({
   addLabel = "Add Another",
   showRemove = false,
   removeLabel = "Remove",
-  index,
   title,
 }: RepeatableGroupProps) {
   return (

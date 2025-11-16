@@ -48,7 +48,7 @@ export function InboxFilterBar({
   onStatusChange,
   onBuildingChange,
 }: InboxFilterBarProps) {
-  const handleChange = (key: string, value: any) => {
+  const handleChange = (key: string, value: string) => {
     if (key === "status") {
       onStatusChange(value);
     } else if (key === "building") {

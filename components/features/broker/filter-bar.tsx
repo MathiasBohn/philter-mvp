@@ -1,6 +1,6 @@
 "use client";
 
-import { FilterBar as GenericFilterBar, FilterConfig, DateRange } from "@/components/shared/filter-bar";
+import { FilterBar as GenericFilterBar, FilterConfig } from "@/components/shared/filter-bar";
 import { ApplicationStatus } from "@/lib/types";
 import { mockBuildings } from "@/lib/mock-data";
 
@@ -59,7 +59,7 @@ export function FilterBar({
   dateRange,
   onDateRangeChange,
 }: BrokerFilterBarProps) {
-  const handleChange = (key: string, value: any) => {
+  const handleChange = (key: string, value: string) => {
     if (key === "status") {
       onStatusFilterChange(value as ApplicationStatus | "ALL");
     } else if (key === "building") {

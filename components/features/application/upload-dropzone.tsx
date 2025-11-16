@@ -35,7 +35,7 @@ export function UploadDropzone({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dragCounter = useRef(0)
 
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (file.size === 0) {
       return "File is empty"
     }
@@ -58,14 +58,14 @@ export function UploadDropzone({
     }
 
     return null
-  }
+  }, [maxSize])
 
-  const createPreview = async (file: File): Promise<string | undefined> => {
+  const createPreview = useCallback(async (file: File): Promise<string | undefined> => {
     if (file.type.startsWith("image/")) {
       return URL.createObjectURL(file)
     }
     return undefined
-  }
+  }, [])
 
   const processFiles = useCallback(
     async (fileList: FileList) => {
@@ -89,7 +89,7 @@ export function UploadDropzone({
 
       onFilesAdded(uploadedFiles)
     },
-    [onFilesAdded, maxSize]
+    [onFilesAdded, validateFile, createPreview]
   )
 
   const handleDrop = useCallback(

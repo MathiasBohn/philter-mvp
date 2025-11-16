@@ -15,7 +15,7 @@ export interface InviteWidgetProps {
   onInvite?: (email: string, role: Role.CO_APPLICANT | Role.GUARANTOR) => void;
 }
 
-export function InviteWidget({ applicationId, onInvite }: InviteWidgetProps) {
+export function InviteWidget({ onInvite }: InviteWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role.CO_APPLICANT | Role.GUARANTOR>(Role.CO_APPLICANT);

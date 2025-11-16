@@ -31,7 +31,7 @@ export function FieldRow({
 
   // Clone children to add aria attributes
   const enhancedChildren = isValidElement(children)
-    ? cloneElement(children as React.ReactElement<any>, {
+    ? cloneElement(children as React.ReactElement<Record<string, unknown>>, {
         id: htmlFor,
         "aria-required": required || undefined,
         "aria-invalid": error ? "true" : undefined,

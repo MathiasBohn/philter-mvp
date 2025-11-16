@@ -26,16 +26,27 @@ export function ThemeProvider({
   storageKey = "philter-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(defaultTheme);
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    // Load theme from localStorage on mount
-    const storedTheme = localStorage.getItem(storageKey) as Theme | null;
-    if (storedTheme) {
-      setTheme(storedTheme);
+  // Initialize theme from localStorage or use default
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const storedTheme = localStorage.getItem(storageKey) as Theme | null;
+      return storedTheme || defaultTheme;
     }
-  }, [storageKey]);
+    return defaultTheme;
+  });
+
+  // Initialize resolved theme
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      if (theme === "system") {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+      return theme;
+    }
+    return "light";
+  });
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -56,6 +67,10 @@ export function ThemeProvider({
     }
 
     root.classList.add(effectiveTheme);
+
+    // Update resolved theme for external consumption
+    // This setState is intentional for synchronizing DOM state with React state
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setResolvedTheme(effectiveTheme);
   }, [theme]);
 

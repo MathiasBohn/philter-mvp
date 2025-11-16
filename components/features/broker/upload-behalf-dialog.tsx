@@ -41,7 +41,6 @@ const documentCategories = [
 export function UploadBehalfDialog({
   open,
   onOpenChange,
-  applicationId,
 }: UploadBehalfDialogProps) {
   const [category, setCategory] = useState("");
   const [files, setFiles] = useState<UploadedFile[]>([]);

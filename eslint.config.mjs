@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Ignore public folder (contains binary files like PDFs)
+    "public/**",
   ]),
 ]);
 

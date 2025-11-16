@@ -62,7 +62,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
             financialEntries: [],
             documents: [],
             disclosures: [],
-            sections: Object.entries(parsedApp.sections || {}).map(([key, value]: [string, any]) => ({
+            sections: Object.entries(parsedApp.sections || {}).map(([key, value]: [string, { complete?: boolean }]) => ({
               key: key,
               label: key.charAt(0).toUpperCase() + key.slice(1),
               isComplete: value.complete || false,

@@ -1,13 +1,13 @@
 "use client";
 
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect } from "react";
 import { mockApplications } from "@/lib/mock-data";
 import { SectionList } from "@/components/features/application/section-list";
 import { InviteWidget } from "@/components/features/application/invite-widget";
 import { RFIBanner } from "@/components/features/application/rfi-banner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Role, BuildingType } from "@/lib/types";
+import { BuildingType } from "@/lib/types";
 import { notFound } from "next/navigation";
 import { storage } from "@/lib/persistence";
 import { mockRFIs } from "@/lib/mock-data/rfis";
@@ -25,7 +25,6 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
     return mockApp;
   });
   const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(!mockApplications.find((app) => app.id === id));
-  const hasLoadedRFIs = useRef(false);
 
   useEffect(() => {
     // Sync form data to application storage
@@ -65,7 +64,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
             financialEntries: [],
             documents: [],
             disclosures: [],
-            sections: Object.entries(parsedApp.sections || {}).map(([key, value]: [string, any]) => ({
+            sections: Object.entries(parsedApp.sections || {}).map(([key, value]: [string, { complete?: boolean }]) => ({
               key: key,
               label: key.charAt(0).toUpperCase() + key.slice(1),
               isComplete: value.complete || false,
@@ -97,6 +96,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
         setIsLoadingFromStorage(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, isLoadingFromStorage]);
 
   // Show loading state while checking localStorage
@@ -115,7 +115,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
     notFound();
   }
 
-  const handleInvite = (email: string, role: Role.CO_APPLICANT | Role.GUARANTOR) => {
+  const handleInvite = () => {
     // In a real app, this would make an API call
     // Could also update localStorage or mock data here
   };

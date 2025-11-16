@@ -17,7 +17,7 @@ import { AddPersonButton } from "@/components/features/application/add-person-bu
 import { MaskedSSNInput } from "@/components/forms/masked-ssn-input";
 import { DateInput } from "@/components/forms/date-input";
 import { profileSchema } from "@/lib/validators";
-import { AddressHistoryEntry, Role } from "@/lib/types";
+import { AddressHistoryEntry } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -141,7 +141,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     setAddresses(addresses.filter((addr) => addr.id !== id));
   };
 
-  const handleAddPerson = (name: string, email: string, role: Role.CO_APPLICANT | Role.GUARANTOR) => {
+  const handleAddPerson = () => {
     // In a real app, this would make an API call to invite the person
   };
 
@@ -255,7 +255,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <Label htmlFor="dob">
                   Date of Birth <span className="text-red-500">*</span>
                 </Label>
-                {/* eslint-disable-next-line react-hooks/incompatible-library */}
                 <DateInput
                   id="dob"
                   value={watch("dob")}
