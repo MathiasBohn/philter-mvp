@@ -17,6 +17,10 @@ export const ROLE_LABELS: Record<Role, string> = {
   [Role.BROKER]: "Broker",
   [Role.ADMIN]: "Admin",
   [Role.BOARD]: "Board Member",
+  [Role.UNIT_OWNER]: "Unit Owner",
+  [Role.OWNER_BROKER]: "Owner's Broker",
+  [Role.OWNER_ATTORNEY]: "Owner's Attorney",
+  [Role.APPLICANT_ATTORNEY]: "Applicant's Attorney",
 } as const
 
 /**
