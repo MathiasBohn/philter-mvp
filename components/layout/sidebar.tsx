@@ -14,6 +14,7 @@ import {
   Settings,
   ClipboardList,
   Eye,
+  BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -45,6 +46,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
     applicationId = pathParts[3]
   } else if (pathname.startsWith('/board/review/') && pathParts[3]) {
     // Pattern: /board/review/[id]
+    applicationId = pathParts[3]
+  } else if (pathname.startsWith('/board/summary/') && pathParts[3]) {
+    // Pattern: /board/summary/[id]
     applicationId = pathParts[3]
   }
 
@@ -141,6 +145,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
       case Role.BOARD:
         return [
+          {
+            label: "Application Summary",
+            href: `/board/summary/${applicationId}`,
+            icon: BarChart3,
+          },
           {
             label: "Review Application",
             href: `/board/review/${applicationId}`,
