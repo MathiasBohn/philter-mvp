@@ -164,6 +164,79 @@ const DISCLOSURE_TEMPLATES = {
     requiresSignature: true,
     signature: "",
   },
+  // Phase 2 Acknowledgements
+  PERSONAL_INFO_AUTH: {
+    id: "personal-info-auth",
+    type: DisclosureType.PERSONAL_INFO_AUTH,
+    title: "Personal Information Authorization",
+    description:
+      "I authorize the building management, board of directors, and their representatives to collect, use, and verify the personal information provided in this application for the purpose of evaluating my application for residence. This includes but is not limited to employment history, financial records, and personal references.",
+    pdfUrl: "/disclosures/personal-info-authorization.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
+  BACKGROUND_CHECK_CONSENT: {
+    id: "background-check-consent",
+    type: DisclosureType.BACKGROUND_CHECK_CONSENT,
+    title: "Background Check Consent",
+    description:
+      "I consent to a comprehensive background check including but not limited to criminal history, previous residency verification, and litigation search. I understand this information will be used solely for the purpose of evaluating my application and will be kept confidential in accordance with applicable law.",
+    pdfUrl: "/disclosures/background-check-consent.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
+  REFERENCE_CONTACT_AUTH: {
+    id: "reference-contact-auth",
+    type: DisclosureType.REFERENCE_CONTACT_AUTH,
+    title: "Reference Contact Authorization",
+    description:
+      "I authorize the building management and board to contact my personal and professional references as listed in this application. I release these references from any liability for providing truthful information about my character, reliability, and suitability as a prospective resident.",
+    pdfUrl: "/disclosures/reference-contact-authorization.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
+  EMPLOYMENT_VERIFICATION_AUTH: {
+    id: "employment-verification-auth",
+    type: DisclosureType.EMPLOYMENT_VERIFICATION_AUTH,
+    title: "Employment Verification Authorization",
+    description:
+      "I authorize the building management and board to verify my employment history and current employment status with my current and former employers. I authorize my employers to release information regarding my position, salary, employment dates, and job performance.",
+    pdfUrl: "/disclosures/employment-verification-authorization.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
+  FINANCIAL_VERIFICATION_AUTH: {
+    id: "financial-verification-auth",
+    type: DisclosureType.FINANCIAL_VERIFICATION_AUTH,
+    title: "Financial Statement Verification Authorization",
+    description:
+      "I authorize the building management and board to verify the financial information provided in this application, including but not limited to bank account balances, investment accounts, assets, and liabilities. I authorize my financial institutions to release this information for verification purposes.",
+    pdfUrl: "/disclosures/financial-verification-authorization.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
+  MOVE_IN_DATE_COMMITMENT: {
+    id: "move-in-date-commitment",
+    type: DisclosureType.MOVE_IN_DATE_COMMITMENT,
+    title: "Move-In Date Commitment",
+    description:
+      "I acknowledge that if my application is approved, I commit to the proposed move-in date stated in this application. I understand that any changes to the move-in date must be approved by the building management and board in advance. Failure to move in on the committed date without prior approval may result in application denial or additional fees.",
+    pdfUrl: "/disclosures/move-in-date-commitment.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
 }
 
 export default function DisclosuresPage({ params }: { params: Promise<{ id: string }> }) {
@@ -259,6 +332,13 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
               DISCLOSURE_TEMPLATES.PET_ACKNOWLEDGEMENT,
               DISCLOSURE_TEMPLATES.SMOKE_DETECTOR,
               DISCLOSURE_TEMPLATES.CARBON_MONOXIDE_DETECTOR,
+              // Phase 2 Acknowledgements
+              DISCLOSURE_TEMPLATES.PERSONAL_INFO_AUTH,
+              DISCLOSURE_TEMPLATES.BACKGROUND_CHECK_CONSENT,
+              DISCLOSURE_TEMPLATES.REFERENCE_CONTACT_AUTH,
+              DISCLOSURE_TEMPLATES.EMPLOYMENT_VERIFICATION_AUTH,
+              DISCLOSURE_TEMPLATES.FINANCIAL_VERIFICATION_AUTH,
+              DISCLOSURE_TEMPLATES.MOVE_IN_DATE_COMMITMENT,
             ]
           }
         }
@@ -452,6 +532,61 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
     if (coDetector && (!coDetector.signature || coDetector.signature.trim() === "")) {
       newErrors.push(
         "You must provide a digital signature for the Carbon Monoxide Detector Acknowledgement"
+      )
+    }
+
+    // Phase 2 Acknowledgements - Check signatures
+    const personalInfoAuth = disclosures.find(
+      (d) => d.type === DisclosureType.PERSONAL_INFO_AUTH
+    )
+    if (personalInfoAuth && (!personalInfoAuth.signature || personalInfoAuth.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Personal Information Authorization"
+      )
+    }
+
+    const backgroundCheckConsent = disclosures.find(
+      (d) => d.type === DisclosureType.BACKGROUND_CHECK_CONSENT
+    )
+    if (backgroundCheckConsent && (!backgroundCheckConsent.signature || backgroundCheckConsent.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Background Check Consent"
+      )
+    }
+
+    const referenceContactAuth = disclosures.find(
+      (d) => d.type === DisclosureType.REFERENCE_CONTACT_AUTH
+    )
+    if (referenceContactAuth && (!referenceContactAuth.signature || referenceContactAuth.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Reference Contact Authorization"
+      )
+    }
+
+    const employmentVerificationAuth = disclosures.find(
+      (d) => d.type === DisclosureType.EMPLOYMENT_VERIFICATION_AUTH
+    )
+    if (employmentVerificationAuth && (!employmentVerificationAuth.signature || employmentVerificationAuth.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Employment Verification Authorization"
+      )
+    }
+
+    const financialVerificationAuth = disclosures.find(
+      (d) => d.type === DisclosureType.FINANCIAL_VERIFICATION_AUTH
+    )
+    if (financialVerificationAuth && (!financialVerificationAuth.signature || financialVerificationAuth.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Financial Statement Verification Authorization"
+      )
+    }
+
+    const moveInDateCommitment = disclosures.find(
+      (d) => d.type === DisclosureType.MOVE_IN_DATE_COMMITMENT
+    )
+    if (moveInDateCommitment && (!moveInDateCommitment.signature || moveInDateCommitment.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Move-In Date Commitment"
       )
     }
 
