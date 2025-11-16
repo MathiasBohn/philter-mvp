@@ -75,6 +75,16 @@ export enum DisclosureType {
   FLOOD_DISCLOSURE = "FLOOD_DISCLOSURE",
   HOUSE_RULES = "HOUSE_RULES",
   CONSUMER_REPORT_AUTH = "CONSUMER_REPORT_AUTH",
+  SUBLET_POLICY = "SUBLET_POLICY",
+  PET_ACKNOWLEDGEMENT = "PET_ACKNOWLEDGEMENT",
+  SMOKE_DETECTOR = "SMOKE_DETECTOR",
+  CARBON_MONOXIDE_DETECTOR = "CARBON_MONOXIDE_DETECTOR",
+}
+
+export enum PetType {
+  DOG = "DOG",
+  CAT = "CAT",
+  OTHER = "OTHER",
 }
 
 export enum FinancialEntryType {
@@ -89,6 +99,14 @@ export enum AssetCategory {
   SAVINGS = "SAVINGS",
   INVESTMENT = "INVESTMENT",
   REAL_ESTATE = "REAL_ESTATE",
+  CONTRACT_DEPOSIT = "CONTRACT_DEPOSIT",
+  INVESTMENT_IN_BUSINESS = "INVESTMENT_IN_BUSINESS",
+  ACCOUNTS_RECEIVABLE = "ACCOUNTS_RECEIVABLE",
+  AUTOMOBILES = "AUTOMOBILES",
+  PERSONAL_PROPERTY = "PERSONAL_PROPERTY",
+  LIFE_INSURANCE_CASH_VALUE = "LIFE_INSURANCE_CASH_VALUE",
+  KEOGH = "KEOGH",
+  PROFIT_SHARING_OR_PENSION = "PROFIT_SHARING_OR_PENSION",
   OTHER = "OTHER",
 }
 
@@ -97,11 +115,16 @@ export enum LiabilityCategory {
   AUTO_LOAN = "AUTO_LOAN",
   CREDIT_CARD = "CREDIT_CARD",
   STUDENT_LOAN = "STUDENT_LOAN",
+  NOTES_PAYABLE_TO_BANKS = "NOTES_PAYABLE_TO_BANKS",
+  NOTES_TO_RELATIVES = "NOTES_TO_RELATIVES",
   OTHER = "OTHER",
 }
 
 export enum IncomeCategory {
   EMPLOYMENT = "EMPLOYMENT",
+  OVERTIME = "OVERTIME",
+  BONUSES = "BONUSES",
+  COMMISSIONS = "COMMISSIONS",
   RENTAL = "RENTAL",
   INVESTMENT = "INVESTMENT",
   OTHER = "OTHER",
@@ -119,6 +142,23 @@ export enum PayCadence {
   MONTHLY = "MONTHLY",
   BIWEEKLY = "BIWEEKLY",
   WEEKLY = "WEEKLY",
+}
+
+export enum EmploymentStatus {
+  FULL_TIME = "FULL_TIME",
+  PART_TIME = "PART_TIME",
+  UNEMPLOYED = "UNEMPLOYED",
+  RETIRED = "RETIRED",
+  STUDENT = "STUDENT",
+}
+
+export enum PropertyType {
+  SINGLE_FAMILY = "SINGLE_FAMILY",
+  MULTI_FAMILY = "MULTI_FAMILY",
+  CONDO = "CONDO",
+  COOP = "COOP",
+  COMMERCIAL = "COMMERCIAL",
+  LAND = "LAND",
 }
 
 // Core Types
@@ -238,6 +278,23 @@ export type Person = {
   role: Role.APPLICANT | Role.CO_APPLICANT | Role.GUARANTOR;
 };
 
+export type Address = {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+};
+
+export type PreviousEmployer = {
+  name: string;
+  address: Address;
+  employedFrom: Date;
+  employedTo: Date;
+  annualSalary: number;
+  supervisorName: string;
+  supervisorPhone: string;
+};
+
 export type EmploymentRecord = {
   id: string;
   employer: string;
@@ -247,6 +304,34 @@ export type EmploymentRecord = {
   payCadence: PayCadence;
   annualIncome: number;
   isCurrent: boolean;
+  // Phase 2 additions
+  employmentStatus?: EmploymentStatus;
+  isSelfEmployed?: boolean;
+  natureOfBusiness?: string;
+  employerAddress?: Address;
+  supervisorName?: string;
+  supervisorPhone?: string;
+  yearsInLineOfWork?: number;
+  previousEmployer?: PreviousEmployer;
+  incomeEstimateThisYear?: number;
+  actualIncomeLastYear?: number;
+  dividendPartnershipIncome?: {
+    year1: number;
+    year2: number;
+    year3: number;
+  };
+};
+
+export type RealEstateProperty = {
+  id: string;
+  address: Address;
+  propertyType: PropertyType;
+  marketValue: number;
+  mortgageBalance: number;
+  monthlyMortgagePayment: number;
+  monthlyMaintenanceHOA: number;
+  monthlyRealEstateTaxes: number;
+  monthlyInsurance: number;
 };
 
 export type FinancialEntry = {
@@ -361,6 +446,16 @@ export type ActivityLogEntry = {
   metadata?: Record<string, unknown>;
 };
 
+export type BuildingPolicies = {
+  maxFinancePercent: number; // e.g., 75 for 75%
+  allowGuarantors: boolean;
+  alterationPolicies?: string;
+  insuranceRequirements?: string;
+  allowCorpOwnership: boolean;
+  allowPiedATerre: boolean;
+  allowTrustOwnership: boolean;
+};
+
 export type Template = {
   id: string;
   buildingId: string;
@@ -372,6 +467,7 @@ export type Template = {
   requiredDocuments: DocumentCategory[];
   optionalDocuments: DocumentCategory[];
   enabledDisclosures: DisclosureType[];
+  buildingPolicies?: BuildingPolicies; // Phase 2 addition
   createdAt: Date;
   publishedAt?: Date;
   isPublished: boolean;

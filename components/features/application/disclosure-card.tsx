@@ -1,14 +1,23 @@
 "use client"
 
 import { useState } from "react"
-import { Download, Upload, FileText } from "lucide-react"
+import { Download, Upload, FileText, Plus, X } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { DisclosureType } from "@/lib/types"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { DisclosureType, PetType } from "@/lib/types"
 import type { UploadedFile } from "./upload-dropzone"
+
+export interface Pet {
+  id: string
+  type: PetType
+  breed: string
+  weight: number
+}
 
 export interface Disclosure {
   id: string
@@ -40,6 +49,9 @@ export interface Disclosure {
       zip: string
     }
   }
+  // Pet acknowledgement specific fields
+  hasPets?: boolean
+  pets?: Pet[]
 }
 
 interface DisclosureCardProps {
@@ -49,6 +61,7 @@ interface DisclosureCardProps {
   onDocumentRemove?: () => void
   onFloodOptionsChange?: (options: string[]) => void
   onSignatureChange?: (signature: string) => void
+  onPetDataChange?: (hasPets: boolean, pets?: Pet[]) => void
 }
 
 export function DisclosureCard({
@@ -58,9 +71,12 @@ export function DisclosureCard({
   onDocumentRemove,
   onFloodOptionsChange,
   onSignatureChange,
+  onPetDataChange,
 }: DisclosureCardProps) {
   const [file, setFile] = useState<File | null>(null)
   const [signature, setSignature] = useState<string>(disclosure.signature || "")
+  const [hasPets, setHasPets] = useState<boolean>(disclosure.hasPets || false)
+  const [pets, setPets] = useState<Pet[]>(disclosure.pets || [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -303,6 +319,202 @@ export function DisclosureCard({
                 <strong>Notice:</strong> Flood insurance may be available from the National Flood
                 Insurance Program or private insurers. For more information, visit FloodSmart.gov
                 or contact your insurance agent.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {disclosure.type === DisclosureType.PET_ACKNOWLEDGEMENT && (
+          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm font-medium">Pet Information</p>
+
+            <div className="flex items-center space-x-3">
+              <Checkbox
+                id={`${disclosure.id}-has-pets`}
+                checked={hasPets}
+                onCheckedChange={(checked) => {
+                  const newHasPets = checked as boolean
+                  setHasPets(newHasPets)
+                  if (!newHasPets) {
+                    setPets([])
+                    onPetDataChange?.(newHasPets, [])
+                  } else {
+                    onPetDataChange?.(newHasPets, pets)
+                  }
+                }}
+              />
+              <Label htmlFor={`${disclosure.id}-has-pets`} className="text-sm cursor-pointer">
+                Do you have pets? <span className="text-destructive">*</span>
+              </Label>
+            </div>
+
+            {hasPets && (
+              <div className="space-y-4 pt-2">
+                {pets.map((pet, index) => (
+                  <div key={pet.id} className="rounded-md border bg-background p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">Pet {index + 1}</p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newPets = pets.filter((_, i) => i !== index)
+                          setPets(newPets)
+                          onPetDataChange?.(hasPets, newPets)
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div>
+                        <Label className="text-xs">Type <span className="text-destructive">*</span></Label>
+                        <Select
+                          value={pet.type}
+                          onValueChange={(value) => {
+                            const newPets = [...pets]
+                            newPets[index] = { ...pet, type: value as PetType }
+                            setPets(newPets)
+                            onPetDataChange?.(hasPets, newPets)
+                          }}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={PetType.DOG}>Dog</SelectItem>
+                            <SelectItem value={PetType.CAT}>Cat</SelectItem>
+                            <SelectItem value={PetType.OTHER}>Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Breed <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1"
+                          value={pet.breed}
+                          onChange={(e) => {
+                            const newPets = [...pets]
+                            newPets[index] = { ...pet, breed: e.target.value }
+                            setPets(newPets)
+                            onPetDataChange?.(hasPets, newPets)
+                          }}
+                          placeholder="e.g., Golden Retriever"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Weight (lbs) <span className="text-destructive">*</span></Label>
+                        <Input
+                          className="mt-1"
+                          type="number"
+                          value={pet.weight || ""}
+                          onChange={(e) => {
+                            const newPets = [...pets]
+                            newPets[index] = { ...pet, weight: parseFloat(e.target.value) || 0 }
+                            setPets(newPets)
+                            onPetDataChange?.(hasPets, newPets)
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPet: Pet = {
+                      id: Math.random().toString(36).substring(7),
+                      type: PetType.DOG,
+                      breed: "",
+                      weight: 0,
+                    }
+                    const newPets = [...pets, newPet]
+                    setPets(newPets)
+                    onPetDataChange?.(hasPets, newPets)
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Another Pet
+                </Button>
+
+                <div className="pt-3 border-t">
+                  <Label htmlFor={`${disclosure.id}-signature`} className="text-sm font-medium">
+                    Digital Signature <span className="text-destructive">*</span>
+                  </Label>
+                  <input
+                    id={`${disclosure.id}-signature`}
+                    type="text"
+                    placeholder="Type your full name to sign"
+                    value={signature}
+                    onChange={(e) => {
+                      setSignature(e.target.value)
+                      onSignatureChange?.(e.target.value)
+                    }}
+                    className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  />
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    By typing your name, you acknowledge the pet information provided is accurate.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {(disclosure.type === DisclosureType.SMOKE_DETECTOR || disclosure.type === DisclosureType.CARBON_MONOXIDE_DETECTOR) && (
+          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm font-medium">
+              {disclosure.type === DisclosureType.SMOKE_DETECTOR ? "Smoke Detector" : "Carbon Monoxide Detector"} Acknowledgement
+            </p>
+            <div className="rounded-md bg-background p-4 text-xs leading-relaxed">
+              <p className="mb-3">
+                {disclosure.type === DisclosureType.SMOKE_DETECTOR ? (
+                  <>
+                    New York City law requires that all residential units be equipped with working smoke detectors.
+                    As a tenant/resident, you are responsible for:
+                  </>
+                ) : (
+                  <>
+                    New York City law requires that all residential units be equipped with working carbon monoxide detectors.
+                    As a tenant/resident, you are responsible for:
+                  </>
+                )}
+              </p>
+              <ul className="list-disc list-inside space-y-2 mb-3">
+                <li>Testing the {disclosure.type === DisclosureType.SMOKE_DETECTOR ? "smoke" : "carbon monoxide"} detector(s) regularly</li>
+                <li>Replacing batteries as needed (if battery-operated)</li>
+                <li>Notifying building management immediately if the detector is not functioning properly</li>
+                <li>Not removing, disconnecting, or tampering with the detector(s)</li>
+              </ul>
+              <p className="font-medium">
+                Failure to maintain working {disclosure.type === DisclosureType.SMOKE_DETECTOR ? "smoke" : "carbon monoxide"} detectors
+                may result in fines and poses serious safety risks.
+              </p>
+            </div>
+
+            <div className="pt-3">
+              <Label htmlFor={`${disclosure.id}-signature`} className="text-sm font-medium">
+                Digital Signature <span className="text-destructive">*</span>
+              </Label>
+              <input
+                id={`${disclosure.id}-signature`}
+                type="text"
+                placeholder="Type your full name to sign"
+                value={signature}
+                onChange={(e) => {
+                  setSignature(e.target.value)
+                  onSignatureChange?.(e.target.value)
+                }}
+                className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                By typing your name, you acknowledge your responsibilities for {disclosure.type === DisclosureType.SMOKE_DETECTOR ? "smoke" : "carbon monoxide"} detector maintenance.
               </p>
             </div>
           </div>

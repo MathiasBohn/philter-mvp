@@ -116,6 +116,54 @@ const DISCLOSURE_TEMPLATES = {
     requiresSignature: true,
     signature: "",
   },
+  SUBLET_POLICY: {
+    id: "sublet-policy",
+    type: DisclosureType.SUBLET_POLICY,
+    title: "Sublet Policy Acknowledgement",
+    description:
+      "Please review the building's sublet policy, which outlines the terms and conditions for subletting your unit. This policy must be acknowledged before your sublet application can proceed.",
+    pdfUrl: "/samples/sublet-policy.pdf",
+    acknowledged: false,
+    requiresUpload: true,
+  },
+  PET_ACKNOWLEDGEMENT: {
+    id: "pet-acknowledgement",
+    type: DisclosureType.PET_ACKNOWLEDGEMENT,
+    title: "Pet Acknowledgement",
+    description:
+      "Please provide information about any pets you plan to bring into the unit. Building pet policies must be followed at all times.",
+    pdfUrl: "/samples/pet-policy.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+    hasPets: false,
+    pets: [],
+  },
+  SMOKE_DETECTOR: {
+    id: "smoke-detector",
+    type: DisclosureType.SMOKE_DETECTOR,
+    title: "Smoke Detector Acknowledgement",
+    description:
+      "New York City law requires all residential units to have working smoke detectors. You acknowledge your responsibility for maintaining these devices.",
+    pdfUrl: "/samples/smoke-detector-notice.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
+  CARBON_MONOXIDE_DETECTOR: {
+    id: "carbon-monoxide-detector",
+    type: DisclosureType.CARBON_MONOXIDE_DETECTOR,
+    title: "Carbon Monoxide Detector Acknowledgement",
+    description:
+      "New York City law requires all residential units to have working carbon monoxide detectors. You acknowledge your responsibility for maintaining these devices.",
+    pdfUrl: "/samples/carbon-monoxide-detector-notice.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    requiresSignature: true,
+    signature: "",
+  },
 }
 
 export default function DisclosuresPage({ params }: { params: Promise<{ id: string }> }) {
@@ -206,6 +254,11 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
               DISCLOSURE_TEMPLATES.FLOOD_DISCLOSURE,
               DISCLOSURE_TEMPLATES.HOUSE_RULES,
               consumerReportTemplate,
+              // Only include sublet policy for sublet transactions
+              ...(loadedTxType === TransactionType.COOP_SUBLET ? [DISCLOSURE_TEMPLATES.SUBLET_POLICY] : []),
+              DISCLOSURE_TEMPLATES.PET_ACKNOWLEDGEMENT,
+              DISCLOSURE_TEMPLATES.SMOKE_DETECTOR,
+              DISCLOSURE_TEMPLATES.CARBON_MONOXIDE_DETECTOR,
             ]
           }
         }
@@ -269,6 +322,14 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
     setDisclosures((prev) =>
       prev.map((d) =>
         d.id === disclosureId ? { ...d, signature } : d
+      )
+    )
+  }
+
+  const handlePetDataChange = (disclosureId: string, hasPets: boolean, pets?: any[]) => {
+    setDisclosures((prev) =>
+      prev.map((d) =>
+        d.id === disclosureId ? { ...d, hasPets, pets } : d
       )
     )
   }
@@ -348,6 +409,50 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
           "You must provide a digital signature for the Consumer Report Authorization"
         )
       }
+    }
+
+    // Check pet acknowledgement
+    const petAcknowledgement = disclosures.find(
+      (d) => d.type === DisclosureType.PET_ACKNOWLEDGEMENT
+    )
+    if (petAcknowledgement) {
+      if (petAcknowledgement.hasPets && petAcknowledgement.pets) {
+        // Check if all pet fields are filled
+        const incompletePets = petAcknowledgement.pets.filter(
+          (pet: any) => !pet.type || !pet.breed || !pet.weight
+        )
+        if (incompletePets.length > 0) {
+          newErrors.push(
+            "Please complete all fields for each pet (type, breed, and weight)"
+          )
+        }
+      }
+      // Check signature if they have pets
+      if (petAcknowledgement.hasPets && (!petAcknowledgement.signature || petAcknowledgement.signature.trim() === "")) {
+        newErrors.push(
+          "You must provide a digital signature for the Pet Acknowledgement"
+        )
+      }
+    }
+
+    // Check smoke detector acknowledgement signature
+    const smokeDetector = disclosures.find(
+      (d) => d.type === DisclosureType.SMOKE_DETECTOR
+    )
+    if (smokeDetector && (!smokeDetector.signature || smokeDetector.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Smoke Detector Acknowledgement"
+      )
+    }
+
+    // Check carbon monoxide detector acknowledgement signature
+    const coDetector = disclosures.find(
+      (d) => d.type === DisclosureType.CARBON_MONOXIDE_DETECTOR
+    )
+    if (coDetector && (!coDetector.signature || coDetector.signature.trim() === "")) {
+      newErrors.push(
+        "You must provide a digital signature for the Carbon Monoxide Detector Acknowledgement"
+      )
     }
 
     setErrors(newErrors)
@@ -445,6 +550,9 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
             }
             onSignatureChange={(signature) =>
               handleSignatureChange(disclosure.id, signature)
+            }
+            onPetDataChange={(hasPets, pets) =>
+              handlePetDataChange(disclosure.id, hasPets, pets)
             }
           />
         ))}
