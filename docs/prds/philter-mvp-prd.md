@@ -13,6 +13,17 @@
 - Board reviewer read‑only workspace with compiled package download (signed URL).
 - Security & privacy: RLS‑first, PII masking (SSN full → Applicant/Admin; last‑4 → Broker; redacted → Board), short‑lived signed URLs for files.
 
+**Phase 1 Enhancements (Implemented):**
+See `docs/prds/phase-1-enhancements.md` for detailed specifications on the following additions:
+- Reference letter collection system
+- NYC-specific legal compliance (Lead Paint & Flood Zone disclosures)
+- Consumer report authorization (FCRA compliant)
+- Enhanced lease terms capture (move-in date, rent budget)
+- Comprehensive housing history tracking
+- Emergency contact management
+- Unit owner/seller party information
+- Admin compliance toggles for NYC requirements
+
 **Out‑of‑scope (later phases):** Embedded e‑signature, payments, automated document parsing/classification/extraction, advanced analytics.
 
 ---

@@ -21,6 +21,13 @@ const sectionDefinitions: SectionDefinition[] = [
     isRequired: true,
   },
   {
+    key: "parties",
+    title: "Deal Parties",
+    description: "Unit owner, brokers, and attorneys involved in the transaction",
+    href: "/parties",
+    isRequired: true,
+  },
+  {
     key: "profile",
     title: "Profile",
     description: "Personal information and address history",

@@ -6,6 +6,10 @@ export enum Role {
   BROKER = "BROKER",
   ADMIN = "ADMIN",
   BOARD = "BOARD",
+  UNIT_OWNER = "UNIT_OWNER",
+  OWNER_BROKER = "OWNER_BROKER",
+  OWNER_ATTORNEY = "OWNER_ATTORNEY",
+  APPLICANT_ATTORNEY = "APPLICANT_ATTORNEY",
 }
 
 export enum TransactionType {
@@ -322,6 +326,7 @@ export type Application = {
   financialEntries: FinancialEntry[];
   documents: Document[];
   disclosures: Disclosure[];
+  participants: Participant[]; // Deal parties (owner, brokers, attorneys)
 
   // Section completion tracking
   sections: ApplicationSection[];
@@ -379,4 +384,14 @@ export type BoardNote = {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type Participant = {
+  id: string;
+  role: Role.UNIT_OWNER | Role.OWNER_BROKER | Role.OWNER_ATTORNEY | Role.APPLICANT_ATTORNEY;
+  name: string;
+  email: string;
+  phoneWork?: string;
+  phoneCell?: string;
+  phoneHome?: string;
 };

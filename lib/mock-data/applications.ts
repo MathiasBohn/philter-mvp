@@ -112,6 +112,7 @@ export const mockApplications: Application[] = [
     financialEntries: sampleFinancials,
     documents: [],
     disclosures: [],
+    participants: [],
     sections: [
       { key: "profile", label: "Profile", isComplete: true },
       { key: "income", label: "Employment & Income", isComplete: true },
@@ -138,6 +139,7 @@ export const mockApplications: Application[] = [
     financialEntries: [],
     documents: [],
     disclosures: [],
+    participants: [],
     sections: [
       { key: "profile", label: "Profile", isComplete: true },
       { key: "income", label: "Employment & Income", isComplete: true },
@@ -164,6 +166,7 @@ export const mockApplications: Application[] = [
     financialEntries: [],
     documents: [],
     disclosures: [],
+    participants: [],
     sections: [
       { key: "profile", label: "Profile", isComplete: true },
       { key: "income", label: "Employment & Income", isComplete: true },

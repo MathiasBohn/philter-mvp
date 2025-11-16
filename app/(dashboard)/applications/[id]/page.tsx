@@ -64,6 +64,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
             financialEntries: [],
             documents: [],
             disclosures: [],
+            participants: [],
             sections: Object.entries(parsedApp.sections || {}).map(([key, value]) => ({
               key: key,
               label: key.charAt(0).toUpperCase() + key.slice(1),
