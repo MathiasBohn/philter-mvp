@@ -420,6 +420,10 @@ export type Application = {
   completionPercentage: number;
   rfis: RFI[];
   isLocked: boolean;
+
+  // Expedited review option (Phase 2)
+  expeditedReview?: boolean;
+  expeditedReviewFee?: number; // Default: 500
 };
 
 export type DecisionRecord = {

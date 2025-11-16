@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { InboxMobileCard } from "./mobile-cards/inbox-mobile-card";
-import { MoreVertical, ExternalLink } from "lucide-react";
+import { MoreVertical, ExternalLink, Zap } from "lucide-react";
 import { Application, ApplicationStatus, TransactionType } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { getStatusColor, getTransactionTypeLabel } from "@/lib/constants/labels";
@@ -38,6 +38,12 @@ function getDaysSinceSubmission(submittedAt?: Date): number {
   return diffDays;
 }
 
+function getAgeColorClass(days: number): string {
+  if (days > 14) return "text-red-600 font-semibold";
+  if (days > 7) return "text-yellow-600 font-semibold";
+  return "";
+}
+
 export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
   const handleStatusChange = (appId: string, newStatus: ApplicationStatus) => {
     if (onStatusChange) {
@@ -55,7 +61,17 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
           app.people && app.people.length > 0
             ? app.people.map((p) => p.fullName).join(", ")
             : "—";
-        return <span className="font-medium">{applicants}</span>;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{applicants}</span>
+            {app.expeditedReview && (
+              <Badge variant="secondary" className="flex items-center gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                <Zap className="h-3 w-3" />
+                Expedited
+              </Badge>
+            )}
+          </div>
+        );
       },
     },
     {
@@ -114,16 +130,23 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
     {
       key: "submittedAt",
       label: "Age",
-      sortable: false,
+      sortable: true,
       render: (_, app) => {
         const age = getDaysSinceSubmission(app.submittedAt);
-        return app.submittedAt ? `${age} day${age === 1 ? "" : "s"}` : "—";
+        const colorClass = getAgeColorClass(age);
+        return app.submittedAt ? (
+          <span className={colorClass}>
+            {age} day{age === 1 ? "" : "s"}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
       },
     },
     {
       key: "lastActivityAt",
       label: "Last Activity",
-      sortable: false,
+      sortable: true,
       className: "text-muted-foreground text-sm",
       render: (value) => formatDate(value as string, "relative"),
     },
@@ -168,7 +191,6 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
       mobileCardRenderer={(app) => (
         <InboxMobileCard application={app} onStatusChange={onStatusChange} />
       )}
-      sortable={false}
     />
   );
 }
