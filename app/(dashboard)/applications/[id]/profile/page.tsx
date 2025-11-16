@@ -18,9 +18,10 @@ import { AddPersonButton } from "@/components/features/application/add-person-bu
 import { MaskedSSNInput } from "@/components/forms/masked-ssn-input";
 import { DateInput } from "@/components/forms/date-input";
 import { profileSchema } from "@/lib/validators";
-import { AddressHistoryEntry, ReferenceLetterEntry } from "@/lib/types";
+import { AddressHistoryEntry, ReferenceLetterEntry, HousingHistory, LandlordInfo, EmergencyContact, KeyHolder } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
@@ -42,6 +43,26 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     toDate: "",
     isCurrent: false,
   });
+
+  // Housing History State
+  const [ownsPrivateHouse, setOwnsPrivateHouse] = useState<boolean | undefined>(undefined);
+  const [currentLandlord, setCurrentLandlord] = useState<LandlordInfo | undefined>(undefined);
+  const [previousLandlord, setPreviousLandlord] = useState<LandlordInfo | undefined>(undefined);
+  const [reasonForMoving, setReasonForMoving] = useState("");
+
+  // Emergency Contact State
+  const [emergencyContact, setEmergencyContact] = useState<EmergencyContact>({
+    name: "",
+    email: "",
+    address: "",
+    daytimePhone: "",
+    eveningPhone: "",
+    cellPhone: "",
+    fax: "",
+    hasKeyHolders: false,
+    keyHolders: [],
+  });
+  const [keyHolders, setKeyHolders] = useState<KeyHolder[]>([]);
 
   const {
     register,
@@ -86,6 +107,34 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         }));
         setReferences(loadedReferences);
       }
+      // Load housing history
+      if (parsed.housingHistory) {
+        setOwnsPrivateHouse(parsed.housingHistory.ownsPrivateHouse);
+        if (parsed.housingHistory.currentLandlord) {
+          setCurrentLandlord({
+            ...parsed.housingHistory.currentLandlord,
+            occupiedFrom: new Date(parsed.housingHistory.currentLandlord.occupiedFrom),
+            occupiedTo: parsed.housingHistory.currentLandlord.occupiedTo ? new Date(parsed.housingHistory.currentLandlord.occupiedTo) : undefined,
+          });
+        }
+        if (parsed.housingHistory.previousLandlord) {
+          setPreviousLandlord({
+            ...parsed.housingHistory.previousLandlord,
+            occupiedFrom: new Date(parsed.housingHistory.previousLandlord.occupiedFrom),
+            occupiedTo: parsed.housingHistory.previousLandlord.occupiedTo ? new Date(parsed.housingHistory.previousLandlord.occupiedTo) : undefined,
+          });
+        }
+        if (parsed.housingHistory.reasonForMoving) {
+          setReasonForMoving(parsed.housingHistory.reasonForMoving);
+        }
+      }
+      // Load emergency contact
+      if (parsed.emergencyContact) {
+        setEmergencyContact(parsed.emergencyContact);
+        if (parsed.emergencyContact.keyHolders) {
+          setKeyHolders(parsed.emergencyContact.keyHolders);
+        }
+      }
     }
   }, [id, setValue]);
 
@@ -99,6 +148,22 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Build housing history object
+    const housingHistory: HousingHistory | undefined = ownsPrivateHouse !== undefined ? {
+      ownsPrivateHouse,
+      currentLandlord: currentLandlord ? {
+        ...currentLandlord,
+        occupiedFrom: currentLandlord.occupiedFrom,
+        occupiedTo: currentLandlord.occupiedTo,
+      } : undefined,
+      previousLandlord: previousLandlord ? {
+        ...previousLandlord,
+        occupiedFrom: previousLandlord.occupiedFrom,
+        occupiedTo: previousLandlord.occupiedTo,
+      } : undefined,
+      reasonForMoving,
+    } : undefined;
 
     // Save to localStorage
     localStorage.setItem(`profile_${id}`, JSON.stringify({
@@ -114,6 +179,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         occupiedFrom: ref.occupiedFrom ? ref.occupiedFrom.toISOString() : undefined,
         occupiedTo: ref.occupiedTo ? ref.occupiedTo.toISOString() : undefined,
       })),
+      housingHistory: housingHistory ? {
+        ...housingHistory,
+        currentLandlord: housingHistory.currentLandlord ? {
+          ...housingHistory.currentLandlord,
+          occupiedFrom: housingHistory.currentLandlord.occupiedFrom.toISOString(),
+          occupiedTo: housingHistory.currentLandlord.occupiedTo ? housingHistory.currentLandlord.occupiedTo.toISOString() : undefined,
+        } : undefined,
+        previousLandlord: housingHistory.previousLandlord ? {
+          ...housingHistory.previousLandlord,
+          occupiedFrom: housingHistory.previousLandlord.occupiedFrom.toISOString(),
+          occupiedTo: housingHistory.previousLandlord.occupiedTo ? housingHistory.previousLandlord.occupiedTo.toISOString() : undefined,
+        } : undefined,
+      } : undefined,
+      emergencyContact: emergencyContact.name ? {
+        ...emergencyContact,
+        keyHolders,
+      } : undefined,
     }));
 
     setIsSaving(false);
@@ -335,6 +417,255 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           </CardContent>
         </Card>
 
+        {/* Housing History */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Housing History</CardTitle>
+            <CardDescription>
+              Information about your current and previous landlords
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Own Private House */}
+            <div className="space-y-3">
+              <Label>Do you own a private house? <span className="text-red-500">*</span></Label>
+              <RadioGroup
+                value={ownsPrivateHouse === undefined ? undefined : ownsPrivateHouse ? "yes" : "no"}
+                onValueChange={(value) => {
+                  const owns = value === "yes";
+                  setOwnsPrivateHouse(owns);
+                  if (owns) {
+                    setCurrentLandlord(undefined);
+                  }
+                }}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="owns-yes" />
+                  <Label htmlFor="owns-yes" className="font-normal cursor-pointer">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="owns-no" />
+                  <Label htmlFor="owns-no" className="font-normal cursor-pointer">No</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {/* Current Landlord - only if not owning */}
+            {ownsPrivateHouse === false && (
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="font-semibold">Current Landlord</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="current-landlord-name">Name <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="current-landlord-name"
+                      value={currentLandlord?.name || ""}
+                      onChange={(e) => setCurrentLandlord({
+                        id: currentLandlord?.id || `landlord-${Date.now()}`,
+                        name: e.target.value,
+                        phone: currentLandlord?.phone || "",
+                        email: currentLandlord?.email || "",
+                        occupiedFrom: currentLandlord?.occupiedFrom || new Date(),
+                        monthlyPayment: currentLandlord?.monthlyPayment || 0,
+                        fax: currentLandlord?.fax,
+                        referenceLetterDocumentId: currentLandlord?.referenceLetterDocumentId,
+                      })}
+                      placeholder="Landlord name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="current-landlord-phone">Phone <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="current-landlord-phone"
+                      type="tel"
+                      value={currentLandlord?.phone || ""}
+                      onChange={(e) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, phone: e.target.value } : undefined)}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="current-landlord-email">Email <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="current-landlord-email"
+                      type="email"
+                      value={currentLandlord?.email || ""}
+                      onChange={(e) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, email: e.target.value } : undefined)}
+                      placeholder="landlord@example.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="current-landlord-fax">Fax (Optional)</Label>
+                    <Input
+                      id="current-landlord-fax"
+                      type="tel"
+                      value={currentLandlord?.fax || ""}
+                      onChange={(e) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, fax: e.target.value } : undefined)}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="current-landlord-from">Occupied From <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="current-landlord-from"
+                      type="date"
+                      value={currentLandlord?.occupiedFrom ? currentLandlord.occupiedFrom.toISOString().split('T')[0] : ""}
+                      onChange={(e) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, occupiedFrom: new Date(e.target.value) } : undefined)}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="current-landlord-payment">Monthly Payment <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="current-landlord-payment"
+                      type="number"
+                      value={currentLandlord?.monthlyPayment || ""}
+                      onChange={(e) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, monthlyPayment: parseFloat(e.target.value) || 0 } : undefined)}
+                      placeholder="0"
+                    />
+                  </div>
+
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="current-landlord-letter">Reference Letter (Optional but encouraged)</Label>
+                    <Input
+                      id="current-landlord-letter"
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && currentLandlord) {
+                          // In a real app, upload the file and get document ID
+                          setCurrentLandlord({ ...currentLandlord, referenceLetterDocumentId: `doc-${Date.now()}` });
+                        }
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">Upload a reference letter from your current landlord</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Previous Landlord */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-semibold">Previous Landlord (Optional)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-name">Name</Label>
+                  <Input
+                    id="previous-landlord-name"
+                    value={previousLandlord?.name || ""}
+                    onChange={(e) => setPreviousLandlord({
+                      id: previousLandlord?.id || `prev-landlord-${Date.now()}`,
+                      name: e.target.value,
+                      phone: previousLandlord?.phone || "",
+                      email: previousLandlord?.email || "",
+                      occupiedFrom: previousLandlord?.occupiedFrom || new Date(),
+                      monthlyPayment: previousLandlord?.monthlyPayment || 0,
+                      fax: previousLandlord?.fax,
+                      occupiedTo: previousLandlord?.occupiedTo,
+                      referenceLetterDocumentId: previousLandlord?.referenceLetterDocumentId,
+                    })}
+                    placeholder="Previous landlord name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-phone">Phone</Label>
+                  <Input
+                    id="previous-landlord-phone"
+                    type="tel"
+                    value={previousLandlord?.phone || ""}
+                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, phone: e.target.value } : undefined)}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-email">Email</Label>
+                  <Input
+                    id="previous-landlord-email"
+                    type="email"
+                    value={previousLandlord?.email || ""}
+                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, email: e.target.value } : undefined)}
+                    placeholder="landlord@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-fax">Fax</Label>
+                  <Input
+                    id="previous-landlord-fax"
+                    type="tel"
+                    value={previousLandlord?.fax || ""}
+                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, fax: e.target.value } : undefined)}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-from">Occupied From</Label>
+                  <Input
+                    id="previous-landlord-from"
+                    type="date"
+                    value={previousLandlord?.occupiedFrom ? previousLandlord.occupiedFrom.toISOString().split('T')[0] : ""}
+                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, occupiedFrom: new Date(e.target.value) } : undefined)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-to">Occupied To</Label>
+                  <Input
+                    id="previous-landlord-to"
+                    type="date"
+                    value={previousLandlord?.occupiedTo ? previousLandlord.occupiedTo.toISOString().split('T')[0] : ""}
+                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, occupiedTo: new Date(e.target.value) } : undefined)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="previous-landlord-payment">Monthly Payment</Label>
+                  <Input
+                    id="previous-landlord-payment"
+                    type="number"
+                    value={previousLandlord?.monthlyPayment || ""}
+                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, monthlyPayment: parseFloat(e.target.value) || 0 } : undefined)}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="previous-landlord-letter">Reference Letter (Optional)</Label>
+                  <Input
+                    id="previous-landlord-letter"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file && previousLandlord) {
+                        setPreviousLandlord({ ...previousLandlord, referenceLetterDocumentId: `doc-${Date.now()}` });
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Reason for Moving */}
+            <div className="space-y-2 border-t pt-4">
+              <Label htmlFor="reason-moving">Reason for Moving (Optional)</Label>
+              <Input
+                id="reason-moving"
+                value={reasonForMoving}
+                onChange={(e) => setReasonForMoving(e.target.value)}
+                placeholder="e.g., Job relocation, seeking larger space, etc."
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Reference Letters */}
         <Card>
           <CardHeader>
@@ -350,6 +681,211 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               onRemove={handleRemoveReference}
               onUpload={handleUploadReferenceLetter}
             />
+          </CardContent>
+        </Card>
+
+        {/* Emergency Contact */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Emergency Contact</CardTitle>
+            <CardDescription>
+              Provide emergency contact information and key holder details
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Emergency Contact Information */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Emergency Contact Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-name">Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="emergency-name"
+                    value={emergencyContact.name}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, name: e.target.value })}
+                    placeholder="Emergency contact name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-email">Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="emergency-email"
+                    type="email"
+                    value={emergencyContact.email}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, email: e.target.value })}
+                    placeholder="emergency@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="emergency-address">Address <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="emergency-address"
+                    value={emergencyContact.address}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, address: e.target.value })}
+                    placeholder="123 Main St, City, State ZIP"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-daytime">Daytime Phone <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="emergency-daytime"
+                    type="tel"
+                    value={emergencyContact.daytimePhone}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, daytimePhone: e.target.value })}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-evening">Evening Phone (Optional)</Label>
+                  <Input
+                    id="emergency-evening"
+                    type="tel"
+                    value={emergencyContact.eveningPhone || ""}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, eveningPhone: e.target.value })}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-cell">Cell Phone (Optional)</Label>
+                  <Input
+                    id="emergency-cell"
+                    type="tel"
+                    value={emergencyContact.cellPhone || ""}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, cellPhone: e.target.value })}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-fax">Fax (Optional)</Label>
+                  <Input
+                    id="emergency-fax"
+                    type="tel"
+                    value={emergencyContact.fax || ""}
+                    onChange={(e) => setEmergencyContact({ ...emergencyContact, fax: e.target.value })}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Key Holders */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-semibold">Key Holder Information</h3>
+              <div className="space-y-3">
+                <Label>Does superintendent or another resident have keys to apartment?</Label>
+                <RadioGroup
+                  value={emergencyContact.hasKeyHolders ? "yes" : "no"}
+                  onValueChange={(value) => {
+                    const hasKeys = value === "yes";
+                    setEmergencyContact({ ...emergencyContact, hasKeyHolders: hasKeys });
+                    if (!hasKeys) {
+                      setKeyHolders([]);
+                    }
+                  }}
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="yes" id="keys-yes" />
+                    <Label htmlFor="keys-yes" className="font-normal cursor-pointer">Yes</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="no" id="keys-no" />
+                    <Label htmlFor="keys-no" className="font-normal cursor-pointer">No</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Key Holders List */}
+              {emergencyContact.hasKeyHolders && (
+                <div className="space-y-4 mt-4">
+                  {keyHolders.map((holder, index) => (
+                    <div key={holder.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">Key Holder {index + 1}</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const updated = keyHolders.filter((h) => h.id !== holder.id);
+                            setKeyHolders(updated);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`keyholder-${holder.id}-name`}>Name <span className="text-red-500">*</span></Label>
+                          <Input
+                            id={`keyholder-${holder.id}-name`}
+                            value={holder.name}
+                            onChange={(e) => {
+                              const updated = keyHolders.map((h) =>
+                                h.id === holder.id ? { ...h, name: e.target.value } : h
+                              );
+                              setKeyHolders(updated);
+                            }}
+                            placeholder="Key holder name"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`keyholder-${holder.id}-email`}>Email <span className="text-red-500">*</span></Label>
+                          <Input
+                            id={`keyholder-${holder.id}-email`}
+                            type="email"
+                            value={holder.email}
+                            onChange={(e) => {
+                              const updated = keyHolders.map((h) =>
+                                h.id === holder.id ? { ...h, email: e.target.value } : h
+                              );
+                              setKeyHolders(updated);
+                            }}
+                            placeholder="email@example.com"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`keyholder-${holder.id}-phone`}>Cell Phone <span className="text-red-500">*</span></Label>
+                          <Input
+                            id={`keyholder-${holder.id}-phone`}
+                            type="tel"
+                            value={holder.cellPhone}
+                            onChange={(e) => {
+                              const updated = keyHolders.map((h) =>
+                                h.id === holder.id ? { ...h, cellPhone: e.target.value } : h
+                              );
+                              setKeyHolders(updated);
+                            }}
+                            placeholder="(555) 123-4567"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const newHolder: KeyHolder = {
+                        id: `keyholder-${Date.now()}`,
+                        name: "",
+                        email: "",
+                        cellPhone: "",
+                      };
+                      setKeyHolders([...keyHolders, newHolder]);
+                    }}
+                  >
+                    Add Key Holder
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

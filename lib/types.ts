@@ -184,6 +184,44 @@ export type LeaseTerms = {
   specialConditions?: string;
 };
 
+export type LandlordInfo = {
+  id: string;
+  name: string;
+  phone: string;
+  fax?: string;
+  email: string;
+  occupiedFrom: Date;
+  occupiedTo?: Date; // Only for previous landlord
+  monthlyPayment: number;
+  referenceLetterDocumentId?: string; // Optional uploaded reference letter
+};
+
+export type HousingHistory = {
+  ownsPrivateHouse: boolean;
+  currentLandlord?: LandlordInfo;
+  previousLandlord?: LandlordInfo;
+  reasonForMoving?: string;
+};
+
+export type KeyHolder = {
+  id: string;
+  name: string;
+  email: string;
+  cellPhone: string;
+};
+
+export type EmergencyContact = {
+  name: string;
+  email: string;
+  address: string;
+  daytimePhone: string;
+  eveningPhone?: string;
+  cellPhone?: string;
+  fax?: string;
+  hasKeyHolders: boolean;
+  keyHolders?: KeyHolder[];
+};
+
 export type Person = {
   id: string;
   fullName: string;

@@ -28,6 +28,72 @@ export const addressHistorySchema = z.object({
   isCurrent: z.boolean(),
 });
 
+// Landlord Info validation
+export const landlordInfoSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, "Landlord name is required"),
+  phone: z.string().min(1, "Phone number is required").regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Invalid phone number format"),
+  fax: z.string().optional(),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  occupiedFrom: z.instanceof(Date, { message: "Occupied from date is required" }),
+  occupiedTo: z.instanceof(Date).optional(),
+  monthlyPayment: z.number().min(0, "Monthly payment must be 0 or greater"),
+  referenceLetterDocumentId: z.string().optional(),
+});
+
+// Housing History validation
+export const housingHistorySchema = z.object({
+  ownsPrivateHouse: z.boolean(),
+  currentLandlord: landlordInfoSchema.optional(),
+  previousLandlord: landlordInfoSchema.partial().optional(),
+  reasonForMoving: z.string().optional(),
+}).refine(
+  (data) => {
+    // If not owning house, current landlord is required
+    if (!data.ownsPrivateHouse) {
+      return !!data.currentLandlord;
+    }
+    return true;
+  },
+  {
+    message: "Current landlord information is required if you don't own a house",
+    path: ["currentLandlord"],
+  }
+);
+
+// Key Holder validation
+export const keyHolderSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1, "Name is required"),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  cellPhone: z.string().min(1, "Cell phone is required").regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Invalid phone number format"),
+});
+
+// Emergency Contact validation
+export const emergencyContactSchema = z.object({
+  name: z.string().min(1, "Emergency contact name is required"),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  address: z.string().min(1, "Address is required"),
+  daytimePhone: z.string().min(1, "Daytime phone is required").regex(/^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$/, "Invalid phone number format"),
+  eveningPhone: z.string().optional(),
+  cellPhone: z.string().optional(),
+  fax: z.string().optional(),
+  hasKeyHolders: z.boolean(),
+  keyHolders: z.array(keyHolderSchema).optional(),
+}).refine(
+  (data) => {
+    // If has key holders, at least one key holder is required
+    if (data.hasKeyHolders) {
+      return data.keyHolders && data.keyHolders.length > 0;
+    }
+    return true;
+  },
+  {
+    message: "At least one key holder is required",
+    path: ["keyHolders"],
+  }
+);
+
 // Profile validation
 export const profileSchema = z.object({
   fullName: z.string().min(1, "Full name is required").min(2, "Name must be at least 2 characters"),
@@ -36,6 +102,8 @@ export const profileSchema = z.object({
   dob: z.instanceof(Date, { message: "Date of birth is required" }).refine(isAtLeast18, "You must be at least 18 years old"),
   ssn: z.string().min(1, "SSN is required").regex(/^\d{3}-\d{2}-\d{4}$/, "SSN must be in format XXX-XX-XXXX"),
   addressHistory: z.array(addressHistorySchema).min(1, "At least one address is required"),
+  housingHistory: housingHistorySchema.optional(),
+  emergencyContact: emergencyContactSchema.optional(),
 });
 
 // Employment validation
