@@ -19,9 +19,14 @@ import { MoreHorizontal, FileText, UserPlus, Eye, Zap } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ApplicationTableProps {
   applications: Application[];
+  selectedIds?: string[];
+  onToggleSelection?: (id: string) => void;
+  onSelectAll?: () => void;
+  isAllSelected?: boolean;
 }
 
 function getDaysSinceSubmission(submittedAt?: Date): number {
@@ -121,7 +126,13 @@ const columns: Column<Application>[] = [
   },
 ];
 
-export function ApplicationTable({ applications }: ApplicationTableProps) {
+export function ApplicationTable({
+  applications,
+  selectedIds = [],
+  onToggleSelection,
+  onSelectAll,
+  isAllSelected = false,
+}: ApplicationTableProps) {
   const emptyState = (
     <EmptyState
       icon={FileText}
@@ -166,6 +177,81 @@ export function ApplicationTable({ applications }: ApplicationTableProps) {
     </DropdownMenu>
   );
 
+  // If selection is enabled, wrap the table with custom rendering for checkboxes
+  if (onToggleSelection) {
+    return (
+      <>
+        {/* Desktop View with Checkboxes */}
+        <div className="hidden md:block rounded-md border overflow-auto">
+          <table className="w-full caption-bottom text-sm">
+            <thead className="[&_tr]:border-b">
+              <tr className="border-b transition-colors hover:bg-muted/50">
+                <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground w-12">
+                  <Checkbox
+                    checked={isAllSelected}
+                    onCheckedChange={onSelectAll}
+                    aria-label="Select all"
+                  />
+                </th>
+                {columns.map((col) => (
+                  <th
+                    key={String(col.key)}
+                    className="h-12 px-4 text-left align-middle font-medium text-muted-foreground"
+                  >
+                    {col.label}
+                  </th>
+                ))}
+                <th className="h-12 px-4 text-right align-middle font-medium text-muted-foreground">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="[&_tr:last-child]:border-0">
+              {applications.map((app) => (
+                <tr
+                  key={app.id}
+                  className="border-b transition-colors hover:bg-muted/50"
+                >
+                  <td className="p-4 align-middle">
+                    <Checkbox
+                      checked={selectedIds.includes(app.id)}
+                      onCheckedChange={() => onToggleSelection(app.id)}
+                      aria-label={`Select ${app.people.map((p) => p.fullName).join(", ")}`}
+                    />
+                  </td>
+                  {columns.map((col) => (
+                    <td key={String(col.key)} className={`p-4 align-middle ${col.className || ""}`}>
+                      {col.render ? col.render(app[col.key], app) : String(app[col.key])}
+                    </td>
+                  ))}
+                  <td className="p-4 align-middle text-right">{renderActions(app)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden space-y-4">
+          {applications.map((app) => (
+            <div key={app.id} className="flex gap-3 items-start">
+              <Checkbox
+                checked={selectedIds.includes(app.id)}
+                onCheckedChange={() => onToggleSelection(app.id)}
+                className="mt-4"
+                aria-label={`Select ${app.people.map((p) => p.fullName).join(", ")}`}
+              />
+              <div className="flex-1">
+                <ApplicationMobileCard application={app} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  // Default rendering without checkboxes
   return (
     <DataTable
       data={applications}

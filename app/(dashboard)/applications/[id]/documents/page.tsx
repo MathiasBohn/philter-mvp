@@ -11,6 +11,8 @@ import {
 } from "@/components/features/application/document-checklist"
 import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
+import { mockApplications } from "@/lib/mock-data/applications"
+import type { Application } from "@/lib/types"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
   {
@@ -58,6 +60,10 @@ const INITIAL_CATEGORIES: DocumentCategory[] = [
 export default function DocumentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
+
+  // Get application data
+  const application = mockApplications.find((app) => app.id === id);
+
   const [categories, setCategories] = useState<DocumentCategory[]>(() => {
     // Lazy initialization from localStorage
     if (typeof window !== 'undefined') {
@@ -248,6 +254,7 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
           <DocumentChecklist
             key={category.id}
             category={category}
+            application={application}
             onFilesAdded={(files) => handleFilesAdded(category.id, files)}
             onFileRemoved={(fileId) => handleFileRemoved(category.id, fileId)}
             onSkipReasonChange={(reason) =>

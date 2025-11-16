@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { mockApplications } from "@/lib/mock-data";
 import { ReadOnlyViewer } from "@/components/features/board/read-only-viewer";
+import { ApplicationSummary } from "@/components/features/board/application-summary";
 
 interface PageProps {
   params: Promise<{
@@ -32,6 +33,13 @@ export default async function BoardReviewPage({ params }: PageProps) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Application Summary Dashboard */}
+      <div className="border-b bg-background px-6 py-6">
+        <Suspense fallback={<div>Loading summary...</div>}>
+          <ApplicationSummary application={application} />
+        </Suspense>
       </div>
 
       <Suspense fallback={<div className="p-6">Loading...</div>}>

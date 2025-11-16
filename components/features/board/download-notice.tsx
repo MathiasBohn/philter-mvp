@@ -13,9 +13,16 @@ export function DownloadNotice({ onDownload }: DownloadNoticeProps) {
     <div className="space-y-3">
       <Alert>
         <Clock className="h-4 w-4" />
-        <AlertDescription>
-          This download link expires soon to protect your privacy and maintain
-          document security.
+        <AlertDescription className="space-y-2">
+          <p>
+            This download link expires soon to protect your privacy and maintain
+            document security.
+          </p>
+          <p className="text-xs">
+            <strong>Note:</strong> All downloads are watermarked with confidential
+            markings including your name, download date, and building information
+            for security tracking.
+          </p>
         </AlertDescription>
       </Alert>
 

@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { PrivateNotes } from "./private-notes";
 import { DownloadNotice } from "./download-notice";
 import { formatDate } from "@/lib/utils";
+import { createBoardWatermarkData, watermarkPDFBlob } from "@/lib/pdf-utils";
 
 interface ReadOnlyViewerProps {
   application: Application;
@@ -45,12 +46,49 @@ export function ReadOnlyViewer({ application }: ReadOnlyViewerProps) {
     setReviewedAt(now);
   };
 
-  const handleDownload = () => {
-    // In a real app, this would download the actual PDF
-    // For now, we'll simulate the download
-    alert(
-      "Downloading compiled package...\n\nNote: In production, this would download the actual board package PDF."
-    );
+  const handleDownload = async () => {
+    try {
+      // In a real app, this would fetch the actual PDF from the server
+      // For now, we'll demonstrate the watermarking functionality
+
+      // Create watermark data
+      const watermarkData = createBoardWatermarkData(
+        application,
+        "Board Member Name" // In production, this would come from the authenticated user
+      );
+
+      // In production, you would:
+      // 1. Fetch the actual PDF from the server
+      // 2. Apply watermark
+      // 3. Download the watermarked PDF
+
+      // Example (would need actual PDF blob):
+      // const response = await fetch(`/api/applications/${application.id}/package`);
+      // const pdfBlob = await response.blob();
+      // const watermarkedBlob = await watermarkPDFBlob(pdfBlob, watermarkData);
+      //
+      // const url = URL.createObjectURL(watermarkedBlob);
+      // const link = document.createElement('a');
+      // link.href = url;
+      // link.download = `application-${application.id}-board-package.pdf`;
+      // link.click();
+      // URL.revokeObjectURL(url);
+
+      // For demonstration purposes
+      alert(
+        `Downloading compiled package with watermark...\n\n` +
+        `Watermark will include:\n` +
+        `- "CONFIDENTIAL - BOARD REVIEW ONLY"\n` +
+        `- Building: ${watermarkData.buildingName}\n` +
+        `- Application ID: ${watermarkData.applicationId}\n` +
+        `- Download Date: ${watermarkData.downloadDate}\n` +
+        `- Board Member: ${watermarkData.boardMemberName || "N/A"}\n\n` +
+        `Note: In production, this would download the actual watermarked board package PDF.`
+      );
+    } catch (error) {
+      console.error("Error downloading package:", error);
+      alert("Error downloading package. Please try again.");
+    }
   };
 
   // Helper function to redact SSN

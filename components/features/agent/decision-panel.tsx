@@ -18,7 +18,8 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ReasonTags, type ReasonCode } from "./reason-tags";
 import { Decision, DecisionRecord, Application } from "@/lib/types";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Mail } from "lucide-react";
+import { DecisionEmailPreview } from "./decision-email-preview";
 
 interface DecisionPanelProps {
   application: Application;
@@ -36,6 +37,7 @@ export function DecisionPanel({
   const [notes, setNotes] = useState("");
   const [usesConsumerReport, setUsesConsumerReport] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -146,6 +148,24 @@ export function DecisionPanel({
       setShowConfirmDialog(false);
       setSubmitted(true);
     }, 1000);
+  };
+
+  const handlePreviewEmail = () => {
+    if (!isFormValid || !selectedDecision) return;
+    setShowEmailPreview(true);
+  };
+
+  const handleSendEmail = (editedSubject: string, editedBody: string) => {
+    // Close the preview modal
+    setShowEmailPreview(false);
+
+    // Show confirmation dialog
+    setShowConfirmDialog(true);
+
+    // In a real implementation, you would pass the edited email content
+    // to the API along with the decision
+    console.log("Sending email with subject:", editedSubject);
+    console.log("Sending email with body:", editedBody);
   };
 
   if (submitted) {
@@ -304,20 +324,30 @@ export function DecisionPanel({
             </div>
           )}
 
-          {/* Submit Button */}
-          <div className="pt-4 border-t">
-            <Button
-              onClick={handleSubmit}
-              disabled={!isFormValid}
-              className="w-full"
-              size="lg"
-            >
-              {adverseActionRequired
-                ? "Submit Decision (with Adverse Action Notice)"
-                : "Submit Decision"}
-            </Button>
+          {/* Submit Buttons */}
+          <div className="pt-4 border-t space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={handlePreviewEmail}
+                disabled={!isFormValid}
+                variant="outline"
+                size="lg"
+                className="w-full"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Preview Email
+              </Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={!isFormValid}
+                size="lg"
+                className="w-full"
+              >
+                Submit Decision
+              </Button>
+            </div>
             {!isFormValid && selectedDecision && (
-              <p className="text-sm text-muted-foreground mt-2 text-center">
+              <p className="text-sm text-muted-foreground text-center">
                 {adverseActionRequired
                   ? "Please select at least one reason code to continue"
                   : "Please complete all required fields"}
@@ -369,6 +399,17 @@ export function DecisionPanel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Email Preview Modal */}
+      <DecisionEmailPreview
+        open={showEmailPreview}
+        onOpenChange={setShowEmailPreview}
+        recipientEmail={application.people[0]?.email || "applicant@example.com"}
+        subject={getEmailSubject()}
+        body={getEmailBody()}
+        onSend={handleSendEmail}
+        isSending={isSubmitting}
+      />
     </>
   );
 }

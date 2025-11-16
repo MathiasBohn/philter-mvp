@@ -1,15 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, CheckCircle2, AlertCircle } from "lucide-react"
+import { FileText, CheckCircle2, AlertCircle, Download } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
 import { UploadDropzone, type UploadedFile } from "./upload-dropzone"
 import { DocumentCard } from "./document-card"
 import { cn } from "@/lib/utils"
+import type { Application } from "@/lib/types"
+import { downloadCoverSheet, createCoverSheetData } from "@/lib/pdf-utils"
 
 export interface DocumentCategory {
   id: string
@@ -23,6 +26,7 @@ export interface DocumentCategory {
 
 interface DocumentChecklistProps {
   category: DocumentCategory
+  application?: Application
   onFilesAdded: (files: UploadedFile[]) => void
   onFileRemoved: (fileId: string) => void
   onSkipReasonChange: (reason: string) => void
@@ -31,6 +35,7 @@ interface DocumentChecklistProps {
 
 export function DocumentChecklist({
   category,
+  application,
   onFilesAdded,
   onFileRemoved,
   onSkipReasonChange,
@@ -44,6 +49,12 @@ export function DocumentChecklist({
     if (!checked) {
       onSkipReasonChange("")
     }
+  }
+
+  const handlePrintCoverSheet = () => {
+    if (!application) return;
+    const coverSheetData = createCoverSheetData(application, category.name);
+    downloadCoverSheet(coverSheetData);
   }
 
   const getStatus = () => {
@@ -84,7 +95,7 @@ export function DocumentChecklist({
             </div>
 
             <div className="flex-1">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-semibold">{category.name}</h3>
                 {category.required && (
                   <Badge variant="destructive" className="text-xs">
@@ -95,6 +106,17 @@ export function DocumentChecklist({
                   <Badge variant="secondary" className="text-xs">
                     Optional
                   </Badge>
+                )}
+                {application && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handlePrintCoverSheet}
+                    className="h-auto p-0 text-xs"
+                  >
+                    <Download className="h-3 w-3 mr-1" />
+                    Print Cover Sheet
+                  </Button>
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">

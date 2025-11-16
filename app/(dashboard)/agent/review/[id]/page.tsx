@@ -8,6 +8,7 @@ import { RFIThread } from "@/components/features/agent/rfi-thread";
 import { RFIComposer } from "@/components/features/agent/rfi-composer";
 import { ActivityLog } from "@/components/features/agent/activity-log";
 import { DecisionPanel } from "@/components/features/agent/decision-panel";
+import { ValidationAssistant } from "@/components/features/agent/validation-assistant";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockApplications } from "@/lib/mock-data/applications";
@@ -142,6 +143,15 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
     setRfis(storage.getRFIsForApplication(id, mockRFIs));
   };
 
+  // Adapter for ValidationAssistant to use handleCreateRFI
+  const handleValidationRFI = (sectionKey: string, message: string) => {
+    handleCreateRFI({
+      sectionKey,
+      assigneeRole: Role.APPLICANT, // Default to applicant for validation RFIs
+      message,
+    });
+  };
+
   // Helper function to map Decision to ApplicationStatus
   const mapDecisionToStatus = (decision: Decision): ApplicationStatus => {
     switch (decision) {
@@ -223,14 +233,21 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
           />
         </div>
 
-        {/* Right: RFI Thread + Activity Log + Decision Panel (25%) */}
+        {/* Right: RFI Thread + Activity Log + Validation + Decision Panel (25%) */}
         <div className="w-1/4 min-w-[300px] max-w-[400px]">
-          <Tabs defaultValue="rfis" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3 m-4 mb-0">
+          <Tabs defaultValue="validation" className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-4 m-4 mb-0">
+              <TabsTrigger value="validation">Validate</TabsTrigger>
               <TabsTrigger value="rfis">RFIs</TabsTrigger>
               <TabsTrigger value="activity">Activity</TabsTrigger>
               <TabsTrigger value="decision">Decision</TabsTrigger>
             </TabsList>
+            <TabsContent value="validation" className="flex-1 mt-0 overflow-hidden">
+              <ValidationAssistant
+                application={application}
+                onCreateRFI={handleValidationRFI}
+              />
+            </TabsContent>
             <TabsContent value="rfis" className="flex-1 mt-0 overflow-hidden">
               <RFIThread
                 rfis={rfis}
