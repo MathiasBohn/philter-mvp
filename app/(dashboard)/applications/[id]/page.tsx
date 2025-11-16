@@ -62,6 +62,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
             people: [],
             employmentRecords: [],
             financialEntries: [],
+            realEstateProperties: [],
             documents: [],
             disclosures: [],
             participants: [],

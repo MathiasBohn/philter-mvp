@@ -79,6 +79,13 @@ export enum DisclosureType {
   PET_ACKNOWLEDGEMENT = "PET_ACKNOWLEDGEMENT",
   SMOKE_DETECTOR = "SMOKE_DETECTOR",
   CARBON_MONOXIDE_DETECTOR = "CARBON_MONOXIDE_DETECTOR",
+  // Phase 2 Acknowledgements
+  PERSONAL_INFO_AUTH = "PERSONAL_INFO_AUTH",
+  BACKGROUND_CHECK_CONSENT = "BACKGROUND_CHECK_CONSENT",
+  REFERENCE_CONTACT_AUTH = "REFERENCE_CONTACT_AUTH",
+  EMPLOYMENT_VERIFICATION_AUTH = "EMPLOYMENT_VERIFICATION_AUTH",
+  FINANCIAL_VERIFICATION_AUTH = "FINANCIAL_VERIFICATION_AUTH",
+  MOVE_IN_DATE_COMMITMENT = "MOVE_IN_DATE_COMMITMENT",
 }
 
 export enum PetType {
@@ -409,6 +416,7 @@ export type Application = {
   people: Person[];
   employmentRecords: EmploymentRecord[];
   financialEntries: FinancialEntry[];
+  realEstateProperties: RealEstateProperty[]; // Phase 2
   documents: Document[];
   disclosures: Disclosure[];
   participants: Participant[]; // Deal parties (owner, brokers, attorneys)
@@ -424,6 +432,9 @@ export type Application = {
   // Expedited review option (Phase 2)
   expeditedReview?: boolean;
   expeditedReviewFee?: number; // Default: 500
+
+  // Cover letter / Personal introduction (Phase 2)
+  coverLetter?: string;
 };
 
 export type DecisionRecord = {

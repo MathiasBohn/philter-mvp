@@ -60,6 +60,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
             }] : [],
             employmentRecords: [],
             financialEntries: [],
+            realEstateProperties: [],
             documents: [],
             disclosures: [],
             participants: [],

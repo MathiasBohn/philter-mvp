@@ -62,6 +62,7 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
             }] : [],
             employmentRecords: [],
             financialEntries: [],
+            realEstateProperties: [],
             documents: [],
             disclosures: [],
             participants: [],
