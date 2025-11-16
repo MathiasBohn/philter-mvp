@@ -13,6 +13,7 @@ import { Building2, Plus, Trash2, Home, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Application, RealEstateProperty, PropertyType, Address } from "@/lib/types";
+import { FormSkeleton } from "@/components/loading/form-skeleton";
 
 const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   [PropertyType.SINGLE_FAMILY]: "Single Family",
@@ -26,6 +27,7 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 export default function RealEstatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [properties, setProperties] = useState<RealEstateProperty[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
   const [newProperty, setNewProperty] = useState<Partial<RealEstateProperty>>({
@@ -46,11 +48,24 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
 
   // Load existing properties from localStorage
   useEffect(() => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-    const application = applications.find((app) => app.id === id);
-    if (application?.realEstateProperties) {
-      setProperties(application.realEstateProperties);
-    }
+    const loadData = async () => {
+      try {
+        // Simulate brief loading for better UX
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
+        const application = applications.find((app) => app.id === id);
+        if (application?.realEstateProperties) {
+          setProperties(application.realEstateProperties);
+        }
+      } catch (error) {
+        console.error("Error loading real estate data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [id]);
 
   const handleSave = () => {
@@ -133,6 +148,10 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
 
   const totalMarketValue = properties.reduce((sum, property) => sum + property.marketValue, 0);
   const totalMortgageBalance = properties.reduce((sum, property) => sum + property.mortgageBalance, 0);
+
+  if (isLoading) {
+    return <FormSkeleton sections={2} fieldsPerSection={5} />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -13,6 +13,7 @@ import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
 import { mockApplications } from "@/lib/mock-data/applications"
 import type { Application } from "@/lib/types"
+import { FormSkeleton } from "@/components/loading/form-skeleton"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
   {
@@ -60,6 +61,7 @@ const INITIAL_CATEGORIES: DocumentCategory[] = [
 export default function DocumentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get application data
   const application = mockApplications.find((app) => app.id === id);
@@ -79,6 +81,14 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   })
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+
+  // Handle initial loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleFilesAdded = (categoryId: string, newFiles: UploadedFile[]) => {
     setCategories((prev) =>
@@ -223,6 +233,10 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
     (sum, cat) => sum + cat.documents.length,
     0
   )
+
+  if (isLoading) {
+    return <FormSkeleton sections={3} fieldsPerSection={3} />;
+  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 py-6">

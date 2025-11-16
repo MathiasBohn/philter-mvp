@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,6 +10,7 @@ import { FinancialTable } from "@/components/features/application/financial-tabl
 import { TotalsBar } from "@/components/features/application/totals-bar"
 import { FormActions } from "@/components/forms/form-actions"
 import { RealEstateEntry } from "@/components/features/application/real-estate-entry"
+import { FormSkeleton } from "@/components/loading/form-skeleton"
 import {
   FinancialEntryType,
   AssetCategory,
@@ -67,6 +68,7 @@ const EXPENSE_CATEGORIES = [
 export default function FinancialsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true);
   const [entries, setEntries] = useState<FinancialEntry[]>(() => {
     // Lazy initialization from localStorage
     if (typeof window !== 'undefined') {
@@ -110,6 +112,14 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   const [activeTab, setActiveTab] = useState<FinancialEntryType>(
     FinancialEntryType.ASSET
   )
+
+  // Handle initial loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const addEntry = (entryType: FinancialEntryType) => {
     // Get default category for the entry type
@@ -212,6 +222,10 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   const monthlyExpenses = entries
     .filter((e) => e.entryType === FinancialEntryType.MONTHLY_EXPENSE)
     .reduce((sum, e) => sum + e.amount, 0)
+
+  if (isLoading) {
+    return <FormSkeleton sections={4} fieldsPerSection={4} />;
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 py-6">

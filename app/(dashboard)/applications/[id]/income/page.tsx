@@ -11,11 +11,13 @@ import { UploadDropzone, type UploadedFile } from "@/components/features/applica
 import { DocumentCard } from "@/components/features/application/document-card"
 import { FormActions } from "@/components/forms/form-actions"
 import { ErrorSummary } from "@/components/forms/error-summary"
+import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { PayCadence, type EmploymentRecord } from "@/lib/types"
 
 export default function IncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
   const [employers, setEmployers] = useState<EmploymentRecord[]>([])
   const [documents, setDocuments] = useState<UploadedFile[]>([])
   const [isSelfEmployed, setIsSelfEmployed] = useState(false)
@@ -38,8 +40,11 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
   // Load data from localStorage on mount
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
       try {
+        // Simulate brief loading for better UX
+        await new Promise(resolve => setTimeout(resolve, 300))
+
         const saved = localStorage.getItem(`income-data-${id}`)
         if (saved) {
           const data = JSON.parse(saved)
@@ -70,6 +75,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
         console.error("Error loading income data:", error)
         // Initialize with one empty employer on error
         addEmployer()
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -249,6 +256,10 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       }
     })
     return employerErrors
+  }
+
+  if (isLoading) {
+    return <FormSkeleton sections={3} fieldsPerSection={5} />
   }
 
   return (

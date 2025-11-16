@@ -22,6 +22,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Save, CheckCircle, DollarSign, Calendar } from "lucide-react";
 import { DateInput } from "@/components/forms/date-input";
 import Link from "next/link";
+import { FormSkeleton } from "@/components/loading/form-skeleton";
 
 const leaseTermsSchema = z.object({
   monthlyRent: z.number().min(1, "Monthly rent is required"),
@@ -44,6 +45,7 @@ type LeaseTermsFormData = z.infer<typeof leaseTermsSchema>;
 export default function LeaseTermsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -84,17 +86,30 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
 
   // Load saved data from localStorage on mount
   useEffect(() => {
-    const savedData = localStorage.getItem(`lease-terms_${id}`);
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      if (parsed.monthlyRent) setValue("monthlyRent", parsed.monthlyRent);
-      if (parsed.securityDeposit) setValue("securityDeposit", parsed.securityDeposit);
-      if (parsed.leaseLengthYears) setValue("leaseLengthYears", parsed.leaseLengthYears);
-      if (parsed.leaseStartDate) setValue("leaseStartDate", new Date(parsed.leaseStartDate));
-      if (parsed.leaseEndDate) setValue("leaseEndDate", new Date(parsed.leaseEndDate));
-      if (parsed.moveInDate) setValue("moveInDate", new Date(parsed.moveInDate));
-      if (parsed.specialConditions) setValue("specialConditions", parsed.specialConditions);
-    }
+    const loadData = async () => {
+      try {
+        // Simulate brief loading for better UX
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const savedData = localStorage.getItem(`lease-terms_${id}`);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (parsed.monthlyRent) setValue("monthlyRent", parsed.monthlyRent);
+          if (parsed.securityDeposit) setValue("securityDeposit", parsed.securityDeposit);
+          if (parsed.leaseLengthYears) setValue("leaseLengthYears", parsed.leaseLengthYears);
+          if (parsed.leaseStartDate) setValue("leaseStartDate", new Date(parsed.leaseStartDate));
+          if (parsed.leaseEndDate) setValue("leaseEndDate", new Date(parsed.leaseEndDate));
+          if (parsed.moveInDate) setValue("moveInDate", new Date(parsed.moveInDate));
+          if (parsed.specialConditions) setValue("specialConditions", parsed.specialConditions);
+        }
+      } catch (error) {
+        console.error("Error loading lease terms data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, [id, setValue]);
 
   const onSubmit = async (data: LeaseTermsFormData) => {
@@ -129,6 +144,10 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
       maximumFractionDigits: 0,
     }).format(value);
   };
+
+  if (isLoading) {
+    return <FormSkeleton sections={3} fieldsPerSection={5} />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">

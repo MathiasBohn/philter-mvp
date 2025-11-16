@@ -18,16 +18,20 @@ import { AddPersonButton } from "@/components/features/application/add-person-bu
 import { MaskedSSNInput } from "@/components/forms/masked-ssn-input";
 import { DateInput } from "@/components/forms/date-input";
 import { profileSchema } from "@/lib/validators";
-import { AddressHistoryEntry, ReferenceLetterEntry, HousingHistory, LandlordInfo, EmergencyContact, KeyHolder } from "@/lib/types";
+import { AddressHistoryEntry, ReferenceLetterEntry, HousingHistory, LandlordInfo, EmergencyContact, KeyHolder, EducationInfo, EducationLevel } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { FormSkeleton } from "@/components/loading/form-skeleton";
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [addresses, setAddresses] = useState<AddressHistoryEntry[]>([]);
@@ -64,6 +68,15 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   });
   const [keyHolders, setKeyHolders] = useState<KeyHolder[]>([]);
 
+  // Education State
+  const [educationInfo, setEducationInfo] = useState<EducationInfo>({
+    educationLevel: undefined,
+    lastSchoolAttended: "",
+    fromDate: undefined,
+    toDate: undefined,
+    membershipsAffiliations: "",
+  });
+
   const {
     register,
     handleSubmit,
@@ -82,9 +95,14 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   // Load saved data from localStorage on mount
   useEffect(() => {
-    const savedData = localStorage.getItem(`profile_${id}`);
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
+    const loadData = async () => {
+      try {
+        // Simulate brief loading for better UX
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const savedData = localStorage.getItem(`profile_${id}`);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
       if (parsed.fullName) setValue("fullName", parsed.fullName);
       if (parsed.email) setValue("email", parsed.email);
       if (parsed.phone) setValue("phone", parsed.phone);
@@ -135,8 +153,24 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           setKeyHolders(parsed.emergencyContact.keyHolders);
         }
       }
+      // Load education info
+      if (parsed.educationInfo) {
+        setEducationInfo({
+          ...parsed.educationInfo,
+          fromDate: parsed.educationInfo.fromDate ? new Date(parsed.educationInfo.fromDate) : undefined,
+          toDate: parsed.educationInfo.toDate ? new Date(parsed.educationInfo.toDate) : undefined,
+        });
+      }
     }
-  }, [id, setValue]);
+    } catch (error) {
+      console.error("Error loading profile data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadData();
+}, [id, setValue]);
 
   // Update form value when addresses change
   useEffect(() => {
@@ -195,6 +229,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       emergencyContact: emergencyContact.name ? {
         ...emergencyContact,
         keyHolders,
+      } : undefined,
+      educationInfo: (educationInfo.educationLevel || educationInfo.lastSchoolAttended) ? {
+        ...educationInfo,
+        fromDate: educationInfo.fromDate ? educationInfo.fromDate.toISOString() : undefined,
+        toDate: educationInfo.toDate ? educationInfo.toDate.toISOString() : undefined,
       } : undefined,
     }));
 
@@ -264,6 +303,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const handleContinue = () => {
     router.push(`/applications/${id}/income`);
   };
+
+  if (isLoading) {
+    return <FormSkeleton sections={5} fieldsPerSection={6} />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -392,6 +435,102 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 <p className="text-xs text-muted-foreground">
                   Your SSN is encrypted and securely stored. It will be masked for brokers.
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Education Information (Optional) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Education (Optional)</CardTitle>
+            <CardDescription>
+              Educational background and affiliations - completely optional
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="education-level">Highest Education Level</Label>
+                <Select
+                  value={educationInfo.educationLevel || ""}
+                  onValueChange={(value) =>
+                    setEducationInfo({ ...educationInfo, educationLevel: value as EducationLevel })
+                  }
+                >
+                  <SelectTrigger id="education-level">
+                    <SelectValue placeholder="Select education level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={EducationLevel.ELEMENTARY_SCHOOL}>Elementary School</SelectItem>
+                    <SelectItem value={EducationLevel.HIGH_SCHOOL}>High School</SelectItem>
+                    <SelectItem value={EducationLevel.COLLEGE}>College</SelectItem>
+                    <SelectItem value={EducationLevel.GRADUATE_SCHOOL}>Graduate School</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="last-school">Last School Attended</Label>
+                <Input
+                  id="last-school"
+                  value={educationInfo.lastSchoolAttended || ""}
+                  onChange={(e) =>
+                    setEducationInfo({ ...educationInfo, lastSchoolAttended: e.target.value })
+                  }
+                  placeholder="e.g., Columbia University"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="education-from">From Date</Label>
+                <Input
+                  id="education-from"
+                  type="date"
+                  value={
+                    educationInfo.fromDate
+                      ? educationInfo.fromDate.toISOString().split("T")[0]
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setEducationInfo({
+                      ...educationInfo,
+                      fromDate: e.target.value ? new Date(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="education-to">To Date</Label>
+                <Input
+                  id="education-to"
+                  type="date"
+                  value={
+                    educationInfo.toDate
+                      ? educationInfo.toDate.toISOString().split("T")[0]
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setEducationInfo({
+                      ...educationInfo,
+                      toDate: e.target.value ? new Date(e.target.value) : undefined,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="memberships">Memberships/Affiliations</Label>
+                <Textarea
+                  id="memberships"
+                  value={educationInfo.membershipsAffiliations || ""}
+                  onChange={(e) =>
+                    setEducationInfo({ ...educationInfo, membershipsAffiliations: e.target.value })
+                  }
+                  placeholder="List any club, society, fraternity or board memberships"
+                  rows={3}
+                />
               </div>
             </div>
           </CardContent>

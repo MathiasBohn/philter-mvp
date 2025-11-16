@@ -1,9 +1,11 @@
 /**
  * LocalStorage persistence utility for the Philter MVP
  * Manages all data persistence across user flows
+ * Features: Compression, Chunking, Error Recovery
  */
 
 import { Application, RFI, DecisionRecord, ApplicationStatus } from "./types"
+import * as LZString from "lz-string"
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -13,6 +15,142 @@ const STORAGE_KEYS = {
   CURRENT_USER: "philter_current_user_id",
 } as const
 
+// Configuration
+const CHUNK_SIZE = 50000 // Max chars per chunk (to stay well under localStorage limits)
+const COMPRESSION_THRESHOLD = 1000 // Compress data larger than 1KB
+
+/**
+ * Optimized storage helper utilities
+ * Implements compression and chunking to handle large data
+ */
+const storageHelper = {
+  /**
+   * Compress data using LZ-String if it exceeds threshold
+   */
+  compress: (data: string): string => {
+    if (data.length > COMPRESSION_THRESHOLD) {
+      return LZString.compressToUTF16(data)
+    }
+    return data
+  },
+
+  /**
+   * Decompress data (handles both compressed and uncompressed)
+   */
+  decompress: (data: string): string => {
+    try {
+      const decompressed = LZString.decompressFromUTF16(data)
+      return decompressed || data // If decompression fails, return original
+    } catch {
+      return data // Return original if not compressed
+    }
+  },
+
+  /**
+   * Split data into chunks if it exceeds chunk size
+   */
+  chunkData: (key: string, data: string): void => {
+    const chunks = Math.ceil(data.length / CHUNK_SIZE)
+
+    if (chunks === 1) {
+      // Data fits in one chunk, store normally
+      localStorage.setItem(key, data)
+      // Clean up any old chunks
+      localStorage.removeItem(`${key}_chunks`)
+      let i = 0
+      while (localStorage.getItem(`${key}_chunk_${i}`)) {
+        localStorage.removeItem(`${key}_chunk_${i}`)
+        i++
+      }
+    } else {
+      // Store in chunks
+      localStorage.setItem(`${key}_chunks`, chunks.toString())
+      for (let i = 0; i < chunks; i++) {
+        const chunk = data.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
+        localStorage.setItem(`${key}_chunk_${i}`, chunk)
+      }
+      // Clean up the main key if it exists
+      localStorage.removeItem(key)
+    }
+  },
+
+  /**
+   * Retrieve chunked data
+   */
+  unchunkData: (key: string): string | null => {
+    const chunksCount = localStorage.getItem(`${key}_chunks`)
+
+    if (!chunksCount) {
+      // Not chunked, retrieve normally
+      return localStorage.getItem(key)
+    }
+
+    // Retrieve and combine chunks
+    const chunks: string[] = []
+    const count = parseInt(chunksCount, 10)
+
+    for (let i = 0; i < count; i++) {
+      const chunk = localStorage.getItem(`${key}_chunk_${i}`)
+      if (!chunk) {
+        console.error(`Missing chunk ${i} for key ${key}`)
+        return null
+      }
+      chunks.push(chunk)
+    }
+
+    return chunks.join("")
+  },
+
+  /**
+   * Safe set with compression and chunking
+   */
+  safeSet: (key: string, value: unknown): void => {
+    try {
+      const jsonString = JSON.stringify(value)
+      const compressed = storageHelper.compress(jsonString)
+      storageHelper.chunkData(key, compressed)
+    } catch (error) {
+      console.error(`Error storing data for key ${key}:`, error)
+      // Fallback: try storing without compression
+      try {
+        const jsonString = JSON.stringify(value)
+        storageHelper.chunkData(key, jsonString)
+      } catch (fallbackError) {
+        console.error(`Fallback storage also failed for key ${key}:`, fallbackError)
+      }
+    }
+  },
+
+  /**
+   * Safe get with decompression and unchunking
+   */
+  safeGet: <T>(key: string, defaultValue: T): T => {
+    try {
+      const data = storageHelper.unchunkData(key)
+      if (!data) return defaultValue
+
+      const decompressed = storageHelper.decompress(data)
+      return JSON.parse(decompressed) as T
+    } catch (error) {
+      console.error(`Error retrieving data for key ${key}:`, error)
+      return defaultValue
+    }
+  },
+
+  /**
+   * Remove item and all its chunks
+   */
+  safeRemove: (key: string): void => {
+    localStorage.removeItem(key)
+    localStorage.removeItem(`${key}_chunks`)
+    let i = 0
+    while (localStorage.getItem(`${key}_chunk_${i}`)) {
+      localStorage.removeItem(`${key}_chunk_${i}`)
+      i++
+    }
+  }
+}
+
 // Type-safe storage utilities
 export const storage = {
   /**
@@ -20,10 +158,12 @@ export const storage = {
    */
   getApplications: (mockApplications: Application[]): Application[] => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.APPLICATIONS)
-      if (!stored) return mockApplications
+      const persistedApps: Partial<Application>[] = storageHelper.safeGet(
+        STORAGE_KEYS.APPLICATIONS,
+        []
+      )
 
-      const persistedApps: Partial<Application>[] = JSON.parse(stored)
+      if (persistedApps.length === 0) return mockApplications
 
       // Merge persisted changes with mock data
       return mockApplications.map(mockApp => {
@@ -59,8 +199,10 @@ export const storage = {
    */
   updateApplication: (id: string, updates: Partial<Application>): void => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.APPLICATIONS)
-      const apps: Partial<Application>[] = stored ? JSON.parse(stored) : []
+      const apps: Partial<Application>[] = storageHelper.safeGet(
+        STORAGE_KEYS.APPLICATIONS,
+        []
+      )
 
       const index = apps.findIndex(app => app.id === id)
       if (index >= 0) {
@@ -69,7 +211,7 @@ export const storage = {
         apps.push({ ...updates, id })
       }
 
-      localStorage.setItem(STORAGE_KEYS.APPLICATIONS, JSON.stringify(apps))
+      storageHelper.safeSet(STORAGE_KEYS.APPLICATIONS, apps)
     } catch (error) {
       console.error("Error saving application to localStorage:", error)
     }
@@ -90,10 +232,9 @@ export const storage = {
    */
   getRFIs: (mockRFIs: RFI[]): RFI[] => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.RFIS)
-      if (!stored) return mockRFIs
+      const persistedRFIs: RFI[] = storageHelper.safeGet(STORAGE_KEYS.RFIS, [])
 
-      const persistedRFIs: RFI[] = JSON.parse(stored)
+      if (persistedRFIs.length === 0) return mockRFIs
 
       // Convert date strings back to Date objects
       const parsedRFIs = persistedRFIs.map(rfi => ({
@@ -137,7 +278,7 @@ export const storage = {
    */
   saveRFIs: (rfis: RFI[]): void => {
     try {
-      localStorage.setItem(STORAGE_KEYS.RFIS, JSON.stringify(rfis))
+      storageHelper.safeSet(STORAGE_KEYS.RFIS, rfis)
     } catch (error) {
       console.error("Error saving RFIs to localStorage:", error)
     }
@@ -170,10 +311,10 @@ export const storage = {
    */
   getDecisions: (): DecisionRecord[] => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.DECISIONS)
-      if (!stored) return []
-
-      const decisions: DecisionRecord[] = JSON.parse(stored)
+      const decisions: DecisionRecord[] = storageHelper.safeGet(
+        STORAGE_KEYS.DECISIONS,
+        []
+      )
       return decisions.map(decision => ({
         ...decision,
         decidedAt: new Date(decision.decidedAt)
@@ -206,7 +347,7 @@ export const storage = {
         decisions.push(decision)
       }
 
-      localStorage.setItem(STORAGE_KEYS.DECISIONS, JSON.stringify(decisions))
+      storageHelper.safeSet(STORAGE_KEYS.DECISIONS, decisions)
     } catch (error) {
       console.error("Error saving decision to localStorage:", error)
     }
@@ -259,8 +400,13 @@ export const storage = {
   clearAll: (): void => {
     Object.values(STORAGE_KEYS).forEach(key => {
       if (key !== STORAGE_KEYS.CURRENT_USER) {
-        localStorage.removeItem(key)
+        storageHelper.safeRemove(key)
       }
     })
   }
 }
+
+/**
+ * Export storage helper for direct use in components if needed
+ */
+export { storageHelper }

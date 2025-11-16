@@ -52,6 +52,11 @@ export interface Disclosure {
   // Pet acknowledgement specific fields
   hasPets?: boolean
   pets?: Pet[]
+  // Insurance requirements specific fields
+  insurancePartnerUrl?: string // Link to insurance partner
+  minimumCoverage?: number // Minimum coverage amount from building template
+  requiredInclusions?: string[] // Required policy inclusions
+  proofOfInsuranceUploaded?: boolean // Optional proof of insurance upload
 }
 
 interface DisclosureCardProps {
@@ -520,7 +525,119 @@ export function DisclosureCard({
           </div>
         )}
 
-        {disclosure.requiresUpload && (
+        {disclosure.type === DisclosureType.INSURANCE_REQUIREMENTS && (
+          <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm font-medium">Renter's Insurance Requirements</p>
+            <div className="rounded-md bg-background p-4 text-xs leading-relaxed space-y-3">
+              <p>
+                <strong>Important:</strong> The building requires all residents to obtain and maintain
+                renter's insurance throughout the lease term. This insurance protects both you and the
+                building from potential losses due to fire, theft, water damage, and other covered events.
+              </p>
+
+              {disclosure.minimumCoverage && (
+                <div className="border-t pt-3">
+                  <p className="font-medium mb-2">Minimum Coverage Requirements:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>
+                      Minimum liability coverage: ${disclosure.minimumCoverage.toLocaleString()}
+                    </li>
+                    {disclosure.requiredInclusions && disclosure.requiredInclusions.length > 0 && (
+                      <>
+                        {disclosure.requiredInclusions.map((inclusion, idx) => (
+                          <li key={idx}>{inclusion}</li>
+                        ))}
+                      </>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {disclosure.insurancePartnerUrl && (
+                <div className="border-t pt-3">
+                  <p className="mb-2">
+                    <strong>Preferred Insurance Partner:</strong>
+                  </p>
+                  <p>
+                    We have partnered with a recommended insurance provider to make it easy for you to
+                    obtain the required coverage at competitive rates.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                    onClick={() => window.open(disclosure.insurancePartnerUrl, "_blank")}
+                  >
+                    Get a quote from our partner →
+                  </Button>
+                </div>
+              )}
+
+              <div className="border-t pt-3">
+                <p className="font-medium">
+                  <strong>Important Notice:</strong>
+                </p>
+                <p className="mt-2">
+                  You must provide proof of insurance before your move-in date. The policy must name
+                  the building and property management as additional insured parties. Failure to maintain
+                  continuous coverage may result in lease violation and potential eviction.
+                </p>
+              </div>
+            </div>
+
+            {/* Optional proof of insurance upload */}
+            <div className="pt-3 border-t">
+              <Label className="text-sm font-medium">
+                Proof of Insurance (Optional - can be uploaded later)
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                If you already have proof of insurance, you can upload it now. Otherwise, you must
+                provide it before your move-in date.
+              </p>
+
+              {!file && !disclosure.signedDocument && (
+                <div>
+                  <input
+                    type="file"
+                    id={`upload-insurance-${disclosure.id}`}
+                    className="sr-only"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                  />
+                  <Label
+                    htmlFor={`upload-insurance-${disclosure.id}`}
+                    className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Upload Proof of Insurance
+                  </Label>
+                </div>
+              )}
+
+              {(file || disclosure.signedDocument) && (
+                <div className="flex items-center justify-between rounded-md border bg-background p-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">
+                      {file?.name || disclosure.signedDocument?.file.name}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemove}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {disclosure.requiresUpload && disclosure.type !== DisclosureType.INSURANCE_REQUIREMENTS && (
           <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
             <p className="text-sm font-medium">Signed Document Upload</p>
             <p className="text-xs text-muted-foreground">

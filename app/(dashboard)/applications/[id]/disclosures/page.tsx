@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Info } from "lucide-react"
 import { DisclosureCard, type Disclosure } from "@/components/features/application/disclosure-card"
 import { FormActions } from "@/components/forms/form-actions"
+import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { TransactionType, DisclosureType } from "@/lib/types"
 
 const DISCLOSURE_TEMPLATES = {
@@ -237,11 +238,30 @@ const DISCLOSURE_TEMPLATES = {
     requiresSignature: true,
     signature: "",
   },
+  INSURANCE_REQUIREMENTS: {
+    id: "insurance-requirements",
+    type: DisclosureType.INSURANCE_REQUIREMENTS,
+    title: "Renter's Insurance Requirements",
+    description:
+      "All residents are required to obtain and maintain renter's insurance throughout the lease term with minimum liability coverage as specified by the building.",
+    pdfUrl: "/disclosures/insurance-requirements.pdf",
+    acknowledged: false,
+    requiresUpload: false,
+    insurancePartnerUrl: "https://www.example-insurance-partner.com", // Example insurance partner link
+    minimumCoverage: 300000, // $300,000 minimum liability coverage
+    requiredInclusions: [
+      "Personal liability coverage",
+      "Property damage coverage",
+      "Building and property management listed as additional insured",
+      "Loss of use coverage",
+    ],
+  },
 }
 
 export default function DisclosuresPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
   const [disclosures, setDisclosures] = useState<Disclosure[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -249,8 +269,10 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
 
   // Load transaction type and disclosures from localStorage
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
       try {
+        // Simulate brief loading for better UX
+        await new Promise(resolve => setTimeout(resolve, 300))
         // Try to get transaction type from application data
         const appData = localStorage.getItem(`application-${id}`)
         let loadedTxType: TransactionType | null = null
@@ -339,6 +361,8 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
               DISCLOSURE_TEMPLATES.EMPLOYMENT_VERIFICATION_AUTH,
               DISCLOSURE_TEMPLATES.FINANCIAL_VERIFICATION_AUTH,
               DISCLOSURE_TEMPLATES.MOVE_IN_DATE_COMMITMENT,
+              // Phase 3 Additions
+              DISCLOSURE_TEMPLATES.INSURANCE_REQUIREMENTS,
             ]
           }
         }
@@ -352,6 +376,8 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
         }
       } catch (error) {
         console.error("Error loading disclosures data:", error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -630,6 +656,10 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
       router.push(`/applications/${id}/review`)
     }
   }, [isLeaseOrSublet, transactionType, id, router])
+
+  if (isLoading) {
+    return <FormSkeleton sections={2} fieldsPerSection={3} />
+  }
 
   if (!isLeaseOrSublet && transactionType) {
     return (

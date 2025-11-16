@@ -86,6 +86,8 @@ export enum DisclosureType {
   EMPLOYMENT_VERIFICATION_AUTH = "EMPLOYMENT_VERIFICATION_AUTH",
   FINANCIAL_VERIFICATION_AUTH = "FINANCIAL_VERIFICATION_AUTH",
   MOVE_IN_DATE_COMMITMENT = "MOVE_IN_DATE_COMMITMENT",
+  // Phase 3 Additions
+  INSURANCE_REQUIREMENTS = "INSURANCE_REQUIREMENTS",
 }
 
 export enum PetType {
@@ -157,6 +159,13 @@ export enum EmploymentStatus {
   UNEMPLOYED = "UNEMPLOYED",
   RETIRED = "RETIRED",
   STUDENT = "STUDENT",
+}
+
+export enum EducationLevel {
+  ELEMENTARY_SCHOOL = "ELEMENTARY_SCHOOL",
+  HIGH_SCHOOL = "HIGH_SCHOOL",
+  COLLEGE = "COLLEGE",
+  GRADUATE_SCHOOL = "GRADUATE_SCHOOL",
 }
 
 export enum PropertyType {
@@ -271,6 +280,14 @@ export type EmergencyContact = {
   fax?: string;
   hasKeyHolders: boolean;
   keyHolders?: KeyHolder[];
+};
+
+export type EducationInfo = {
+  educationLevel?: EducationLevel;
+  lastSchoolAttended?: string;
+  fromDate?: Date;
+  toDate?: Date;
+  membershipsAffiliations?: string;
 };
 
 export type Person = {

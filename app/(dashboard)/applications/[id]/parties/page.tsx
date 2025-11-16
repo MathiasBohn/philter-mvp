@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,52 +11,60 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Save, CheckCircle, Trash2, Plus } from "lucide-react";
 import Link from "next/link";
 import { Participant, Role } from "@/lib/types";
+import { FormSkeleton } from "@/components/loading/form-skeleton";
 
 type ParticipantForm = Omit<Participant, "id"> & { id?: string };
 
 export default function PartiesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Load saved data from localStorage
-  const loadSavedData = () => {
-    const savedData = localStorage.getItem(`parties_${id}`);
-    if (!savedData) return null;
-    return JSON.parse(savedData);
-  };
-
   // Unit Owner (required)
-  const [unitOwner, setUnitOwner] = useState<ParticipantForm>(() => {
-    const saved = loadSavedData();
-    return saved?.unitOwner || {
-      role: Role.UNIT_OWNER,
-      name: "",
-      email: "",
-      phoneWork: "",
-      phoneCell: "",
-      phoneHome: "",
-    };
+  const [unitOwner, setUnitOwner] = useState<ParticipantForm>({
+    role: Role.UNIT_OWNER,
+    name: "",
+    email: "",
+    phoneWork: "",
+    phoneCell: "",
+    phoneHome: "",
   });
 
   // Owner's Broker (optional)
-  const [ownerBroker, setOwnerBroker] = useState<ParticipantForm | null>(() => {
-    const saved = loadSavedData();
-    return saved?.ownerBroker || null;
-  });
+  const [ownerBroker, setOwnerBroker] = useState<ParticipantForm | null>(null);
 
   // Owner's Attorney (optional)
-  const [ownerAttorney, setOwnerAttorney] = useState<ParticipantForm | null>(() => {
-    const saved = loadSavedData();
-    return saved?.ownerAttorney || null;
-  });
+  const [ownerAttorney, setOwnerAttorney] = useState<ParticipantForm | null>(null);
 
   // Applicant's Attorney (optional)
-  const [applicantAttorney, setApplicantAttorney] = useState<ParticipantForm | null>(() => {
-    const saved = loadSavedData();
-    return saved?.applicantAttorney || null;
-  });
+  const [applicantAttorney, setApplicantAttorney] = useState<ParticipantForm | null>(null);
+
+  // Load saved data from localStorage on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Simulate brief loading for better UX
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        const savedData = localStorage.getItem(`parties_${id}`);
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          if (parsed.unitOwner) setUnitOwner(parsed.unitOwner);
+          if (parsed.ownerBroker) setOwnerBroker(parsed.ownerBroker);
+          if (parsed.ownerAttorney) setOwnerAttorney(parsed.ownerAttorney);
+          if (parsed.applicantAttorney) setApplicantAttorney(parsed.applicantAttorney);
+        }
+      } catch (error) {
+        console.error("Error loading parties data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [id]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -211,6 +219,10 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
       </CardContent>
     </Card>
   );
+
+  if (isLoading) {
+    return <FormSkeleton sections={4} fieldsPerSection={5} />;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
