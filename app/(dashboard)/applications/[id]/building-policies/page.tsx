@@ -66,7 +66,8 @@ export default function BuildingPoliciesPage({ params }: { params: Promise<{ id:
   );
 
   const handleContinue = () => {
-    router.push(`/applications/${id}/profile`);
+    // Navigate to next section in sequence: Lease Terms
+    router.push(`/applications/${id}/lease-terms`);
   };
 
   return (
@@ -175,7 +176,7 @@ export default function BuildingPoliciesPage({ params }: { params: Promise<{ id:
           <Link href={`/applications/${id}`}>Back to Overview</Link>
         </Button>
         <Button type="button" onClick={handleContinue}>
-          Continue to Profile
+          Continue
         </Button>
       </div>
     </div>

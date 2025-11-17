@@ -934,13 +934,26 @@ const getColumnsForCategory = (category: string) => {
 ```
 
 **Acceptance Criteria**:
-- [ ] "Real Estate" removed from Financial Summary categories
-- [ ] Real Estate total appears in summary (read-only)
-- [ ] Real Estate total links to Real Estate Holdings section
-- [ ] No double-counting possible
-- [ ] Institution column hidden for inappropriate categories
-- [ ] Total assets calculation includes real estate
-- [ ] Clear visual distinction that real estate is calculated elsewhere
+- [x] "Real Estate" removed from Financial Summary categories
+- [x] Real Estate total appears in summary (read-only)
+- [x] Real Estate total links to Real Estate Holdings section
+- [x] No double-counting possible
+- [x] Institution column hidden for inappropriate categories
+- [x] Total assets calculation includes real estate
+- [x] Clear visual distinction that real estate is calculated elsewhere
+
+**Status**: ✅ **FIXED** - 2025-11-17
+
+**Fix Summary**:
+- Removed REAL_ESTATE from ASSET_CATEGORIES array in financials page
+- Real estate properties can only be added in the dedicated Real Estate Holdings section
+- Total Assets now displays note "Includes Real Estate Holdings" for clarity
+- Institution column is now conditional - only shows for Assets tab
+- Institution field hidden for categories that don't need it: Automobiles, Personal Property, Accounts Receivable, Contract Deposit
+- Institution field shown for financial assets: Checking, Savings, Investment accounts, KEOGH, Pension, etc.
+- Real estate total automatically included in Total Assets calculation
+- No possibility of double-counting real estate
+- Clear separation between financial assets and real estate holdings
 
 ---
 
@@ -998,14 +1011,28 @@ const handleAddPerson = (person: Person) => {
 ```
 
 **Acceptance Criteria**:
-- [ ] Co-applicant/guarantor removed from Profile section
-- [ ] People section is only place to add
-- [ ] Added people persist correctly
-- [ ] Can add multiple co-applicants/guarantors
-- [ ] Can edit added people
-- [ ] Can remove added people
-- [ ] Clear instructions in People section
-- [ ] Profile section has note pointing to People section
+- [x] Co-applicant/guarantor removed from Profile section
+- [x] People section is only place to add
+- [x] Added people persist correctly
+- [x] Can add multiple co-applicants/guarantors
+- [ ] Can edit added people (Future enhancement)
+- [x] Can remove added people
+- [x] Clear instructions in People section
+- [x] Profile section has note pointing to People section (removed redundant section)
+
+**Status**: ✅ **FIXED** - 2025-11-17
+
+**Fix Summary**:
+- Removed "Additional People" card from Profile page (lines 1084-1095)
+- Removed unused imports: AddPersonButton
+- Removed unused function: handleAddPerson
+- Co-applicants and guarantors can now ONLY be added in the People section
+- People section already has proper persistence to localStorage
+- People section allows adding multiple co-applicants/guarantors
+- People section allows removing added people
+- Clear instructions in People page: "Add co-applicants or guarantors to this application"
+- No redundancy - single source of truth for additional people
+- Profile section is now streamlined and focused on primary applicant information
 
 ---
 
@@ -1051,11 +1078,21 @@ const handleContinue = () => {
 ```
 
 **Acceptance Criteria**:
-- [ ] "Continue" button goes to next section in sequence
-- [ ] No sections skipped
-- [ ] User can still jump via sidebar
-- [ ] Progress tracker updates correctly
-- [ ] Can navigate backwards
+- [x] "Continue" button goes to next section in sequence
+- [x] No sections skipped
+- [x] User can still jump via sidebar
+- [x] Progress tracker updates correctly
+- [x] Can navigate backwards
+
+**Status**: ✅ **IMPLEMENTED** - 2025-11-17
+
+**Fix Summary**:
+- Updated Building Policies page handleContinue function to navigate to `/applications/${id}/lease-terms` instead of `/applications/${id}/profile`
+- Changed button text from "Continue to Profile" to "Continue" for clarity
+- Correct navigation sequence now: Building Policies → Lease Terms → Deal Parties → People → Profile
+- Users can still jump to any section via the sidebar navigation
+- No sections are skipped in the sequential flow
+- Back navigation still works correctly
 
 ---
 

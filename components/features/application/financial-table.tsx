@@ -4,7 +4,7 @@ import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { FinancialEntryRow } from "./financial-entry-row"
-import { FinancialEntryType, type FinancialEntry } from "@/lib/types"
+import { FinancialEntryType, AssetCategory, type FinancialEntry } from "@/lib/types"
 
 interface FinancialTableProps {
   entries: FinancialEntry[]
@@ -13,6 +13,20 @@ interface FinancialTableProps {
   onDelete: (id: string) => void
   entryType: FinancialEntryType
   categories: Array<{ value: string; label: string }>
+}
+
+// Helper function to determine if a category requires an institution field
+function categoryRequiresInstitution(category: string): boolean {
+  // Categories that DON'T need institution
+  const noInstitutionCategories = [
+    AssetCategory.AUTOMOBILES,
+    AssetCategory.PERSONAL_PROPERTY,
+    AssetCategory.REAL_ESTATE, // In case there are old entries
+    AssetCategory.ACCOUNTS_RECEIVABLE,
+    AssetCategory.CONTRACT_DEPOSIT,
+  ];
+
+  return !noInstitutionCategories.includes(category as AssetCategory);
 }
 
 export function FinancialTable({
@@ -25,6 +39,10 @@ export function FinancialTable({
 }: FinancialTableProps) {
   const filteredEntries = entries.filter((e) => e.entryType === entryType)
 
+  // Determine if we should show the institution column for this entry type
+  // Only show for Assets where some categories need it
+  const showInstitutionColumn = entryType === FinancialEntryType.ASSET
+
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -34,7 +52,9 @@ export function FinancialTable({
               <th className="p-3 text-left text-sm font-medium">
                 Category <span className="text-destructive">*</span>
               </th>
-              <th className="p-3 text-left text-sm font-medium">Institution</th>
+              {showInstitutionColumn && (
+                <th className="p-3 text-left text-sm font-medium">Institution</th>
+              )}
               <th className="p-3 text-left text-sm font-medium">Description</th>
               <th className="p-3 text-left text-sm font-medium">
                 Amount <span className="text-destructive">*</span>
@@ -45,7 +65,7 @@ export function FinancialTable({
           <tbody>
             {filteredEntries.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                <td colSpan={showInstitutionColumn ? 5 : 4} className="p-8 text-center text-muted-foreground">
                   No entries yet. Click &quot;Add Entry&quot; to get started.
                 </td>
               </tr>
@@ -57,6 +77,7 @@ export function FinancialTable({
                   onUpdate={(updated) => onUpdate(entry.id, updated)}
                   onDelete={() => onDelete(entry.id)}
                   categories={categories}
+                  showInstitution={showInstitutionColumn && categoryRequiresInstitution(entry.category)}
                 />
               ))
             )}

@@ -26,7 +26,7 @@ const ASSET_CATEGORIES = [
   { value: AssetCategory.CHECKING, label: "Checking Account" },
   { value: AssetCategory.SAVINGS, label: "Savings Account" },
   { value: AssetCategory.INVESTMENT, label: "Investment Account" },
-  { value: AssetCategory.REAL_ESTATE, label: "Real Estate" },
+  // Real Estate removed - use Real Estate Holdings section below instead
   { value: AssetCategory.CONTRACT_DEPOSIT, label: "Contract Deposit" },
   { value: AssetCategory.INVESTMENT_IN_BUSINESS, label: "Investment in Business" },
   { value: AssetCategory.ACCOUNTS_RECEIVABLE, label: "Accounts Receivable" },

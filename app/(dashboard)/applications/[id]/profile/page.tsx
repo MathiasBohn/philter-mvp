@@ -14,7 +14,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertCircle, Save, CheckCircle } from "lucide-react";
 import { AddressHistoryList } from "@/components/features/application/address-history-list";
 import { ReferenceList } from "@/components/features/application/reference-list";
-import { AddPersonButton } from "@/components/features/application/add-person-button";
 import { MaskedSSNInput } from "@/components/forms/masked-ssn-input";
 import { DateInput } from "@/components/forms/date-input";
 import { profileSchema } from "@/lib/validators";
@@ -294,10 +293,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         : ref
     );
     setReferences(updatedReferences);
-  };
-
-  const handleAddPerson = () => {
-    // In a real app, this would make an API call to invite the person
   };
 
   const handleContinue = async () => {
@@ -1078,19 +1073,6 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Additional People */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Additional People</CardTitle>
-            <CardDescription>
-              Add co-applicants or guarantors to this application
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AddPersonButton onAdd={handleAddPerson} />
           </CardContent>
         </Card>
 

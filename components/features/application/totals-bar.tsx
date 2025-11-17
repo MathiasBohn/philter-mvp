@@ -35,6 +35,9 @@ export function TotalsBar({
           <p className="text-2xl font-bold text-green-600">
             {formatCurrency(assets)}
           </p>
+          <p className="text-xs text-muted-foreground">
+            Includes Real Estate Holdings
+          </p>
         </div>
 
         <div className="space-y-1">
