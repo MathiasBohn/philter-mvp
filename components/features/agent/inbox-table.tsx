@@ -94,12 +94,13 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
         completionPercentage: app.completionPercentage,
         // Include all application data
         people: app.people,
-        profile: app.profile,
-        income: app.income,
-        financials: app.financials,
-        realEstate: app.realEstate,
+        employmentRecords: app.employmentRecords,
+        financialEntries: app.financialEntries,
+        realEstateProperties: app.realEstateProperties,
         documents: app.documents,
         disclosures: app.disclosures,
+        participants: app.participants,
+        sections: app.sections,
       },
     };
 
