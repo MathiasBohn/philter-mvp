@@ -446,10 +446,6 @@ export type Application = {
   rfis: RFI[];
   isLocked: boolean;
 
-  // Expedited review option (Phase 2)
-  expeditedReview?: boolean;
-  expeditedReviewFee?: number; // Default: 500
-
   // Cover letter / Personal introduction (Phase 2)
   coverLetter?: string;
 };

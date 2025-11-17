@@ -25,7 +25,6 @@ Phase 2 delivers important enhancements that bring the Philter MVP to full featu
 - ✅ Expanded financial categorization (8+ categories)
 - ✅ 8 additional acknowledgement forms
 - ✅ Building policies acceptance >95%
-- ✅ Expedited review adoption >20%
 - ✅ Time-to-complete reduction by 15% (via better navigation)
 - ✅ Application quality score increase by 25%
 
@@ -41,10 +40,9 @@ Phase 2 delivers important enhancements that bring the Philter MVP to full featu
 6. [Cover Letter / Personal Introduction](#6-cover-letter--personal-introduction)
 7. [Left Sidebar Navigation](#7-left-sidebar-navigation)
 8. [Application Age & Activity Tracking](#8-application-age--activity-tracking)
-9. [Expedited Review Option](#9-expedited-review-option)
-10. [Technical Implementation](#technical-implementation)
-11. [User Experience Guidelines](#user-experience-guidelines)
-12. [Rollout Plan](#rollout-plan)
+9. [Technical Implementation](#technical-implementation)
+10. [User Experience Guidelines](#user-experience-guidelines)
+11. [Rollout Plan](#rollout-plan)
 
 ---
 
@@ -1119,139 +1117,6 @@ Track application age (time since submission) and last activity to help admins p
 
 ---
 
-## 9. Expedited Review Option
-
-### Overview
-Offer applicants the option to pay for expedited review (1-2 business days) for an additional fee, providing a value-added service and revenue stream.
-
-### Business Value
-- **Revenue:** Additional $500 per expedited application
-- **Applicant Value:** Faster decision for time-sensitive situations
-- **Competitive Advantage:** Service not widely offered by competitors
-- **SLA:** Clear commitment to review timeframe
-
-### Features
-
-#### 9.1 Expedited Review Selection
-**User Story:** As an applicant with a time-sensitive need, I want to pay for faster processing.
-
-**Requirements:**
-- Display on welcome screen, after transaction type selection
-- Section: "Expedited Review (Optional)"
-- Checkbox: "☐ I want expedited processing (1-2 business days)"
-- Fee display: "+ $500 NON-REFUNDABLE fee"
-- Info text:
-  ```
-  Expedited Review includes:
-  ✓ FirstService Residential review within 1-2 business days*
-  ✓ Priority placement in review queue
-  ✓ Dedicated review agent
-
-  *This expedited timeframe applies to FirstService Residential's review only.
-  Board review and approval time is not included and varies by building.
-
-  This fee is NON-REFUNDABLE regardless of application outcome.
-  ```
-- Confirmation modal when checked:
-  ```
-  Confirm Expedited Review
-
-  You have selected expedited review for an additional $500.
-
-  Important:
-  - This fee is non-refundable
-  - Expedited review applies to management company review only (not board)
-  - Review will be completed within 1-2 business days of submission
-  - Standard review time is 5-7 business days
-
-  ☐ I understand and wish to proceed with expedited review
-
-  [Cancel] [Confirm - Add $500]
-  ```
-
-**Acceptance Criteria:**
-- ✅ Expedited section displays on welcome screen
-- ✅ Checkbox functional
-- ✅ Confirmation modal appears when checked
-- ✅ Cannot proceed without confirming
-- ✅ Can uncheck before submission
-- ✅ Selection saves
-
----
-
-#### 9.2 Expedited Fee Handling
-**Requirements:**
-- Add to application fees:
-  - Line item: "Expedited Review Fee"
-  - Amount: $500.00
-  - Note: "NON-REFUNDABLE"
-- Display in fees summary
-- Include in total fees
-- Payment processing:
-  - Charged with application fee
-  - Separate line item in payment receipt
-  - Flagged as non-refundable in system
-
-**Acceptance Criteria:**
-- ✅ Fee adds to total correctly
-- ✅ Displays in fees summary
-- ✅ Marked as non-refundable
-- ✅ Payment processes correctly
-- ✅ Receipt shows separate line item
-
----
-
-#### 9.3 Expedited Processing (Admin)
-**User Story:** As an admin, I need to identify and prioritize expedited applications.
-
-**Requirements:**
-- Admin inbox:
-  - "Expedited" badge on application card (red/urgent)
-  - Filter: "Show expedited only"
-  - Sort: "Expedited first"
-  - Default sort: Expedited at top
-- Application detail:
-  - Expedited banner at top (prominent)
-  - SLA countdown: "Due within: 1 day, 3 hours"
-  - Turns red when approaching SLA deadline
-- Notifications:
-  - Email alert when expedited application submitted
-  - Reminder 4 hours before SLA deadline
-- Reporting:
-  - Expedited SLA compliance rate
-  - Average expedited review time
-
-**Acceptance Criteria:**
-- ✅ Expedited badge visible
-- ✅ Filter/sort works
-- ✅ SLA countdown accurate
-- ✅ Notifications send
-- ✅ Reporting accurate
-
----
-
-#### 9.4 Expedited Refund Policy
-**Requirements:**
-- Non-refundable in all cases:
-  - Application denied
-  - Applicant withdraws
-  - Application incomplete
-- Exception: System error preventing review
-- Clearly communicated at all touchpoints:
-  - Selection screen
-  - Confirmation modal
-  - Fees summary
-  - Payment page
-  - Confirmation email
-  - Terms of service
-
-**Acceptance Criteria:**
-- ✅ Non-refundable policy clear throughout
-- ✅ No refunds processed (except system errors)
-- ✅ Legal terms include policy
-
----
-
 ## Technical Implementation
 
 ### Database Schema Changes
@@ -1354,8 +1219,6 @@ CREATE TABLE acknowledgements (
 
 #### Applications Table Updates
 ```sql
-ALTER TABLE applications ADD COLUMN expedited_review BOOLEAN DEFAULT false;
-ALTER TABLE applications ADD COLUMN expedited_fee DECIMAL(10,2) DEFAULT 0;
 ALTER TABLE applications ADD COLUMN cover_letter TEXT;
 ALTER TABLE applications ADD COLUMN submitted_at TIMESTAMP;
 ALTER TABLE applications ADD COLUMN last_activity_at TIMESTAMP DEFAULT NOW();
@@ -1513,8 +1376,6 @@ export interface Activity {
 
 export interface Application {
   // ... existing fields ...
-  expeditedReview: boolean;
-  expeditedFee: number;
   coverLetter?: string;
   submittedAt?: string;
   lastActivityAt: string;
@@ -1589,14 +1450,12 @@ export interface SectionStatus {
 ### Phase 2C (Weeks 9-10)
 - Left Sidebar Navigation
 - Application Age & Activity Tracking
-- Expedited Review Option
 - Full integration testing
 - Documentation and training
 
 ### Success Metrics (Post-Launch)
 - Application completion rate: >85%
 - Average time-to-complete: <45 minutes
-- Expedited review adoption: >20%
 - RFI reduction: >30%
 - User satisfaction: >4.5/5
 - Application quality score: >80%
@@ -1618,7 +1477,6 @@ export interface SectionStatus {
 | Cover Letter | ✅ Yes | ⚠️ Limited | ❌ No |
 | Progress Navigation | ✅ Sidebar | ⚠️ Top tabs | ⚠️ Top tabs |
 | Activity Tracking | ✅ Full timeline | ❌ No | ⚠️ Limited |
-| Expedited Review | ✅ Yes | ❌ No | ❌ No |
 
 **Legend:**
 - ✅ Full feature

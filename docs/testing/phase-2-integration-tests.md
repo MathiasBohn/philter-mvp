@@ -33,7 +33,6 @@ This document outlines the comprehensive integration testing plan for Phase 2 en
 6. Cover letters / personal introduction
 7. Left sidebar global navigation
 8. Application age and activity tracking
-9. Expedited review option
 
 ### Test Success Criteria
 - All test scenarios pass 100%
@@ -619,75 +618,6 @@ Sincerely,
 
 ---
 
-### 9. Expedited Review Option Tests
-
-#### Test 9.1: Select Expedited Review
-**Priority:** High
-**Role:** Applicant
-
-**Steps:**
-1. Start new application
-2. On welcome screen, after transaction type
-3. Verify "Expedited Review" section displays
-4. Check expedited review checkbox
-5. Verify fee displays: $500 NON-REFUNDABLE
-6. Verify info text displays:
-   "FirstService Residential review time will be 1-2 business days. This does not include Board review and approval time."
-7. Continue application
-
-**Expected Results:**
-- ✅ Expedited section displays after transaction type
-- ✅ Checkbox functional
-- ✅ Fee amount correct ($500)
-- ✅ Info text clear and visible
-- ✅ Selection saves
-- ✅ Can toggle before submission
-
----
-
-#### Test 9.2: Expedited Fee Calculation
-**Priority:** High
-**Role:** Applicant, Broker
-
-**Steps:**
-1. Select expedited review
-2. Navigate to fees summary
-3. Verify expedited fee appears
-4. Calculate total fees:
-   - Base application fee
-   - + Expedited review fee ($500)
-   - + Any other fees
-5. Verify total correct
-
-**Expected Results:**
-- ✅ Expedited fee line item appears
-- ✅ Marked as "NON-REFUNDABLE"
-- ✅ Total fees calculate correctly
-- ✅ Displays in applicant view
-- ✅ Displays in broker/admin view
-
----
-
-#### Test 9.3: Expedited Flag in Admin View
-**Priority:** Medium
-**Role:** Admin
-
-**Steps:**
-1. Submit application with expedited review
-2. Open admin inbox
-3. Verify expedited flag/badge displays
-4. Verify applications sort by expedited
-5. Verify review timeline shows 1-2 business days
-
-**Expected Results:**
-- ✅ Expedited badge visible in application list
-- ✅ Badge stands out (color, icon)
-- ✅ Can filter "Expedited only"
-- ✅ Can sort by expedited status
-- ✅ Timeline reflects expedited processing
-
----
-
 ## Cross-Role Testing
 
 ### Role: Applicant
@@ -700,9 +630,8 @@ Sincerely,
 4. Upload all required documents
 5. Complete all acknowledgements
 6. Write cover letter
-7. Select expedited review
-8. Review and submit application
-9. Track application status
+7. Review and submit application
+8. Track application status
 
 **Expected Results:**
 - ✅ Can complete entire application
@@ -753,9 +682,8 @@ Sincerely,
 **Steps:**
 1. Log in as admin
 2. View admin inbox
-3. Filter by expedited applications
-4. Sort by age and activity
-5. Open application for review
+3. Sort by age and activity
+4. Open application for review
 6. Review all Phase 2 sections
 7. Verify all data complete and accurate
 8. Check acknowledgements completed
@@ -766,7 +694,6 @@ Sincerely,
 **Expected Results:**
 - ✅ All applications visible in inbox
 - ✅ Age and activity columns accurate
-- ✅ Expedited badge visible
 - ✅ Can filter and sort effectively
 - ✅ All Phase 2 data accessible
 - ✅ Can make decisions
@@ -1046,11 +973,10 @@ Sincerely,
 | Cover Letter | 2 | - | - | - | -% |
 | Sidebar Navigation | 4 | - | - | - | -% |
 | Age & Activity | 3 | - | - | - | -% |
-| Expedited Review | 3 | - | - | - | -% |
 | Cross-Role Testing | 4 | - | - | - | -% |
 | Performance Tests | 5 | - | - | - | -% |
 | Mobile Tests | 5 | - | - | - | -% |
-| **TOTAL** | **38** | **-** | **-** | **-** | **-%** |
+| **TOTAL** | **35** | **-** | **-** | **-** | **-%** |
 
 ---
 

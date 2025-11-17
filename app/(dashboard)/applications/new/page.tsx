@@ -4,18 +4,16 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import { BuildingCodeInput } from "@/components/features/application/building-code-input"
 import { TransactionTypeTiles } from "@/components/features/application/transaction-type-tiles"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import type { TransactionType } from "@/lib/types"
-import { Loader2, Info } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 export default function NewApplicationPage() {
   const router = useRouter()
   const [buildingCode, setBuildingCode] = useState("")
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
-  const [expeditedReview, setExpeditedReview] = useState(false)
   const [errors, setErrors] = useState<{ field: string; message: string; anchor?: string }[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -69,8 +67,6 @@ export default function NewApplicationPage() {
         transactionType,
         status: "IN_PROGRESS",
         createdAt: new Date().toISOString(),
-        expeditedReview,
-        expeditedReviewFee: expeditedReview ? 500 : undefined,
         sections: {
           profile: { complete: false },
           income: { complete: false },
@@ -132,35 +128,6 @@ export default function NewApplicationPage() {
               onChange={setTransactionType}
               error={errors.find((e) => e.field === "transactionType")?.message}
             />
-
-            <div className="space-y-4 border-t pt-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Expedited Review (Optional)</h3>
-                <div className="flex items-start space-x-3 rounded-lg border p-4">
-                  <Checkbox
-                    id="expedited-review"
-                    checked={expeditedReview}
-                    onCheckedChange={(checked) => setExpeditedReview(checked === true)}
-                  />
-                  <div className="flex-1">
-                    <label
-                      htmlFor="expedited-review"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      I want expedited processing (1-2 business days) for an additional{" "}
-                      <span className="font-bold text-red-600">NON-REFUNDABLE</span> fee of $500
-                    </label>
-                    <div className="flex items-start gap-2 mt-2 text-sm text-muted-foreground">
-                      <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                      <p>
-                        FirstService Residential review time will be 1-2 business days. This does not
-                        include Board review and approval time.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div className="flex flex-col gap-4 border-t pt-6">
               <Button type="submit" size="lg" className="w-full sm:w-auto sm:ml-auto" disabled={isLoading}>

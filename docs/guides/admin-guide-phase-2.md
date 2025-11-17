@@ -15,9 +15,8 @@
 4. [Acknowledgements Review](#acknowledgements-review)
 5. [Building Policies Management](#building-policies-management)
 6. [Activity Tracking](#activity-tracking)
-7. [Expedited Applications](#expedited-applications)
-8. [Best Practices](#best-practices)
-9. [Troubleshooting](#troubleshooting)
+7. [Best Practices](#best-practices)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -34,7 +33,6 @@ Welcome to the Phase 2 Admin Guide! This release introduces significant enhancem
 ✅ **8 New Acknowledgements** - Comprehensive authorization forms
 ✅ **Cover Letters** - Personal introduction from applicants
 ✅ **Activity Tracking** - See application age and recent activity
-✅ **Expedited Review** - Priority processing option for applicants
 
 ### Who Should Read This Guide
 
@@ -92,15 +90,9 @@ Filters menu → Age → Select range:
 - Custom range
 ```
 
-#### Filter by Expedited Status
-```
-Filters menu → Expedited Review → ☑ Show expedited only
-```
-
 #### Recommended Sort Order
-1. **Expedited first** (due to SLA commitment)
-2. **Then by Age** (oldest first)
-3. **Then by Status** (In Review before Submitted)
+1. **By Age** (oldest first)
+2. **Then by Status** (In Review before Submitted)
 
 ---
 
@@ -109,7 +101,6 @@ Filters menu → Expedited Review → ☑ Show expedited only
 **New metrics displayed:**
 - **Applications >14 days:** Count of urgent/overdue applications
 - **Avg Review Time:** Average days from submission to decision
-- **Expedited SLA Compliance:** % of expedited applications reviewed within 1-2 days
 - **Applications by Age:** Chart showing age distribution
 
 **How to use metrics:**
@@ -587,123 +578,9 @@ Filter by:
 4. Monitor trend: Are applications aging longer?
 
 **Best Practice:**
-- Set internal SLA: 5-7 days for standard, 1-2 for expedited
+- Set internal SLA: 5-7 days for standard review
 - Review applications >14 days daily
 - Report weekly on average review time
-
----
-
-## Expedited Applications
-
-### Overview
-Applicants can pay $500 for expedited review (1-2 business days) for FirstService Residential review.
-
-**Important:**
-- Expedited fee is NON-REFUNDABLE
-- Expedited SLA applies to management review only (not board approval)
-- Board review timeline unchanged
-
----
-
-### Identifying Expedited Applications
-
-**In Application List:**
-- 🔴 Red "Expedited" badge on application card
-- Badge displays prominently
-- Sort/filter: "Expedited applications first"
-
-**In Application Detail:**
-- 🔴 Red banner at top: "EXPEDITED REVIEW - Due within: X hours"
-- SLA countdown timer
-- Timer turns red when <4 hours remaining
-
-**Dashboard:**
-- "Expedited Applications" widget shows count of pending expedited reviews
-- Click to filter list
-
----
-
-### Expedited Review Process
-
-**Step 1: Receive Expedited Application**
-- Email notification sent immediately upon submission
-- Subject: "🔴 EXPEDITED APPLICATION - [Building] - [Applicant Name]"
-- Email includes:
-  - Application ID and link
-  - Applicant name
-  - Building/unit
-  - Submission timestamp
-  - SLA deadline (1-2 business days)
-
-**Step 2: Prioritize Review**
-1. Review expedited applications before standard applications
-2. Follow same review process (no shortcuts!)
-3. Complete thorough review within SLA
-
-**Step 3: SLA Management**
-- Monitor SLA countdown in application detail
-- Email reminder sent 4 hours before deadline
-- If deadline approaching and review incomplete:
-  - Contact supervisor
-  - Request assignment to another admin if needed
-  - Document any delays
-
-**Step 4: Complete Review**
-1. Finish review as usual
-2. Submit decision or forward to board
-3. SLA timer stops when review marked complete
-4. System logs SLA compliance (met/missed)
-
----
-
-### Expedited Fee Details
-
-**Fee Structure:**
-- Amount: $500.00
-- Status: NON-REFUNDABLE
-- Charged with application fee at submission
-
-**Viewing Fee in Application:**
-1. Navigate to "Fees" section
-2. See line item: "Expedited Review Fee - $500.00"
-3. Note: "NON-REFUNDABLE" label
-
-**Refund Policy:**
-- No refunds for:
-  - Application denied
-  - Applicant withdraws
-  - Board denies (after management approval)
-  - Application incomplete
-- Exception: System error preventing review (rare, requires supervisor approval)
-
-**If Applicant Requests Refund:**
-1. Explain non-refundable policy
-2. Reference:
-   - Confirmation checkbox at selection
-   - Fees summary acknowledgment
-   - Payment receipt
-   - Terms of service
-3. Escalate to supervisor if applicant insists
-4. Document refund request in activity log
-
----
-
-### Expedited SLA Reporting
-
-**Navigate to:** Reports → Expedited Review Performance
-
-**Metrics:**
-- Total expedited applications (this month)
-- SLA compliance rate (% reviewed within 1-2 days)
-- Average expedited review time
-- Missed SLAs (count and details)
-- Revenue from expedited fees
-
-**Best Practice:**
-- Target: 95%+ SLA compliance
-- Review missed SLAs weekly
-- Identify causes of delays
-- Adjust staffing if needed
 
 ---
 
@@ -712,10 +589,9 @@ Applicants can pay $500 for expedited review (1-2 business days) for FirstServic
 ### Review Workflow
 
 **Recommended Order:**
-1. **Expedited applications first** (SLA commitment)
-2. **Applications >14 days** (urgent/overdue)
-3. **Recent submissions** (8-14 days)
-4. **New submissions** (<7 days)
+1. **Applications >14 days** (urgent/overdue)
+2. **Recent submissions** (8-14 days)
+3. **New submissions** (<7 days)
 
 **Thorough Review Checklist:**
 - [ ] Personal information complete and verified
@@ -915,11 +791,6 @@ Applicants can pay $500 for expedited review (1-2 business days) for FirstServic
 - **Withdrawn** - Applicant withdrew
 
 ### Contact Information
-
-**FirstService Residential:**
-- Phone: 1-800-XXX-XXXX
-- Email: applications@firstservice.com
-- Hours: M-F 9am-5pm local time
 
 **Philter Support:**
 - Email: support@philter.com

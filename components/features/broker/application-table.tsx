@@ -15,7 +15,7 @@ import { ApplicationMobileCard } from "./mobile-cards/application-mobile-card";
 import { StatusTag } from "./status-tag";
 import { Application } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { MoreHorizontal, FileText, UserPlus, Eye, Zap } from "lucide-react";
+import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
@@ -50,19 +50,11 @@ const columns: Column<Application>[] = [
     label: "Applicant(s)",
     sortable: true,
     render: (_, application) => (
-      <div className="flex items-center gap-2">
-        <span className="font-medium">
-          {application.people.length > 0
-            ? application.people.map((p) => p.fullName).join(", ")
-            : "New Application"}
-        </span>
-        {application.expeditedReview && (
-          <Badge variant="secondary" className="flex items-center gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
-            <Zap className="h-3 w-3" />
-            Expedited
-          </Badge>
-        )}
-      </div>
+      <span className="font-medium">
+        {application.people.length > 0
+          ? application.people.map((p) => p.fullName).join(", ")
+          : "New Application"}
+      </span>
     ),
   },
   {

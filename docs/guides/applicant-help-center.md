@@ -32,11 +32,10 @@ Thank you for choosing Philter for your apartment/co-op application. This help c
 13. [Personal Introduction (Cover Letter)](#personal-introduction-cover-letter)
 
 ### Special Topics
-14. [What is Expedited Review?](#what-is-expedited-review)
-15. [Privacy & Security](#privacy--security)
-16. [After You Submit](#after-you-submit)
-17. [Frequently Asked Questions](#frequently-asked-questions)
-18. [Getting Help](#getting-help)
+14. [Privacy & Security](#privacy--security)
+15. [After You Submit](#after-you-submit)
+16. [Frequently Asked Questions](#frequently-asked-questions)
+17. [Getting Help](#getting-help)
 
 ---
 
@@ -1242,128 +1241,6 @@ A: Address it briefly and positively. Example: "While I'm relocating from abroad
 
 ---
 
-## What is Expedited Review?
-
-### Overview
-
-**Expedited Review** is an optional service that provides faster processing of your application for an additional fee.
-
-**Standard Review:** 5-7 business days (FirstService Residential review)
-**Expedited Review:** 1-2 business days (FirstService Residential review)
-
-**Cost:** $500 (NON-REFUNDABLE)
-
----
-
-### How It Works
-
-**Step 1: Select at Application Start**
-- On the welcome screen, after selecting transaction type
-- Check box: "☑ I want expedited processing (1-2 business days)"
-- Fee displayed: "+ $500 NON-REFUNDABLE fee"
-
-**Step 2: Confirm**
-- Confirmation modal appears
-- You must acknowledge:
-  - Fee is non-refundable
-  - Applies to management review only (not board)
-  - Review within 1-2 business days
-- Click "Confirm - Add $500"
-
-**Step 3: Pay with Application Fee**
-- Expedited fee added to total application fees
-- Paid when you submit application
-- Appears as separate line item on receipt
-
-**Step 4: Expedited Processing**
-- Your application flagged as "Expedited" in admin queue
-- Admin prioritizes expedited applications
-- Review completed within 1-2 business days
-
----
-
-### Important Details
-
-**What IS Expedited:**
-- ✅ FirstService Residential management review: 1-2 business days
-- ✅ Priority placement in admin queue
-- ✅ Dedicated review agent
-
-**What is NOT Expedited:**
-- ❌ Board review and approval (board reviews on their schedule)
-- ❌ Total time to approval (only management portion)
-- ❌ Background check processing time (third-party, variable)
-
-**Refund Policy:**
-- ❌ Non-refundable if application denied
-- ❌ Non-refundable if you withdraw
-- ❌ Non-refundable if board denies (after management approval)
-- ❌ Non-refundable if application incomplete
-- ✅ Refundable ONLY if system error prevents review (rare)
-
-**Business Days:**
-- Weekdays (Monday-Friday) only
-- Excludes weekends
-- Excludes holidays
-- Example: Submit Friday 5pm → Review by Tuesday 5pm
-
----
-
-### Should I Choose Expedited Review?
-
-**Good Reasons to Choose Expedited:**
-- ✅ Job relocation with tight timeline
-- ✅ Current lease expiring soon (< 30 days)
-- ✅ Selling current home with closing date set
-- ✅ Time-sensitive personal situation
-- ✅ You value peace of mind (faster decision)
-- ✅ $500 is immaterial to your budget
-
-**Reasons to Choose Standard Review:**
-- ✅ No time pressure
-- ✅ Budget-conscious ($500 is significant)
-- ✅ Board review is the bottleneck anyway (expedited doesn't help)
-- ✅ Application not yet complete (expedited won't be used)
-
-**Example Timeline Comparison:**
-
-**Standard Review:**
-- Submit: Day 0
-- Management review: Days 1-7
-- Board review: Days 8-28
-- **Total:** 4 weeks
-
-**Expedited Review:**
-- Submit: Day 0
-- Management review: Days 1-2 ⚡
-- Board review: Days 3-23
-- **Total:** 3-3.5 weeks (saves ~1 week)
-
-**Bottom Line:** Expedited review saves ~1 week on total timeline (assuming 3-week board review). Worth it if time-sensitive, otherwise standard is fine.
-
----
-
-### How to Select Expedited Review
-
-**During Application:**
-1. On welcome screen, you'll see "Expedited Review (Optional)" section
-2. Check the box: "☑ I want expedited processing"
-3. Read the fee: "$500 NON-REFUNDABLE"
-4. Confirmation modal appears
-5. Read carefully and check: "☑ I understand this fee is non-refundable"
-6. Click "Confirm - Add $500"
-7. You can uncheck before final submission if you change your mind
-
-**After Application Started:**
-- Cannot add expedited review after initial selection
-- If you want to add it, contact your broker
-
-**Changing Your Mind:**
-- Can toggle on/off BEFORE final submission
-- Cannot remove AFTER submission (fee already charged)
-
----
-
 ## Privacy & Security
 
 ### How We Protect Your Information
@@ -1476,7 +1353,7 @@ A: Address it briefly and positively. Example: "While I'm relocating from abroad
 
 **Step 2: Management Review**
 - Admin/Agent reviews your application
-- Typical timeline: 5-7 business days (or 1-2 if expedited)
+- Typical timeline: 5-7 business days
 - Checks for completeness and accuracy
 - May request additional information (RFI)
 
@@ -1507,12 +1384,12 @@ A: Address it briefly and positively. Example: "While I'm relocating from abroad
 ### Timeline Expectations
 
 **Total Timeline (Submission to Final Decision):**
-- **Fastest:** 2-3 weeks (expedited + board meets weekly)
+- **Fastest:** 2-3 weeks (board meets weekly)
 - **Typical:** 4-6 weeks
 - **Longest:** 8-12 weeks (board meets monthly, complex application)
 
 **Factors Affecting Timeline:**
-- Management review time (5-7 days standard, 1-2 expedited)
+- Management review time (5-7 days standard)
 - RFI response time (if admin requests info)
 - Board meeting schedule (weekly, bi-weekly, monthly)
 - Board decision speed (some decide at meeting, others take days)
@@ -1714,7 +1591,7 @@ A: Don't! Undisclosed pets can result in lease violation, fines, or eviction. Al
 A: Typically 4-6 weeks from submission to final decision. Can be as fast as 2-3 weeks or as long as 8-12 weeks.
 
 **Q: Can I speed up the process?**
-A: Expedited review ($500) speeds up management review to 1-2 days. Board review timeline is not affected. Best way to speed up: submit complete, accurate application the first time.
+A: Best way to speed up: submit complete, accurate application the first time.
 
 **Q: What if I need to move in sooner?**
 A: Discuss with your broker. Some buildings can accommodate rush approvals for strong applications, but there are limits.

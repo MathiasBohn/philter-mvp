@@ -15,9 +15,8 @@
 4. [Pre-Submission QA Process](#pre-submission-qa-process)
 5. [Reviewing Enhanced Sections](#reviewing-enhanced-sections)
 6. [Working with Applicants](#working-with-applicants)
-7. [Expedited Applications](#expedited-applications)
-8. [Best Practices](#best-practices)
-9. [Common Scenarios](#common-scenarios)
+7. [Best Practices](#best-practices)
+8. [Common Scenarios](#common-scenarios)
 
 ---
 
@@ -36,7 +35,6 @@ Welcome to the Phase 2 Broker Guide! This release significantly enhances your ab
 **For Your Clients:**
 - ✅ Clear progress tracking (sidebar navigation)
 - ✅ Comprehensive data collection (one-and-done)
-- ✅ Expedited option available (time-sensitive needs)
 - ✅ Transparent building policies (no surprises)
 
 ---
@@ -131,14 +129,6 @@ Welcome to the Phase 2 Broker Guide! This release significantly enhances your ab
 
 ---
 
-#### 9. Expedited Review Option
-- **What:** Applicants can pay $500 for 1-2 business day review
-- **SLA:** FirstService Residential review within 1-2 business days
-- **Fee:** $500 NON-REFUNDABLE
-- **Why it matters:** Value-added service for time-sensitive clients
-
----
-
 ## Enhanced Dashboard
 
 ### New Dashboard Columns
@@ -178,7 +168,6 @@ When you log in to your broker dashboard, you'll see two new columns:
 **New filter options:**
 - **Age:** All / 0-7 days / 8-14 days / 15+ days / Custom
 - **Last Activity:** All / Last 24 hours / Last 7 days / Custom
-- **Expedited:** Show all / Expedited only
 - **Status:** All / Draft / Submitted / In Review / etc.
 
 **Recommended views:**
@@ -634,66 +623,11 @@ A: "Yes - the more assets you show, the stronger your application. Think of it a
 **Q: "What's a good cover letter?"**
 A: "Introduce yourself, explain why you love this building, and show you're financially responsible and a good neighbor. Be genuine and professional. Would you like to see an example?"
 
-**Q: "Should I do expedited review?"**
-A: "Expedited review gets you a decision from FirstService Residential in 1-2 days instead of 5-7 days. It costs $500 (non-refundable) and is great if you have a tight timeline. Board review time is separate and not expedited. Worth it if time-sensitive, otherwise standard review works great."
-
 **Q: "I don't own real estate - should I leave that section blank?"**
 A: "Yes, if you don't own any real estate, you can leave that section empty. No problem - many renters don't own property."
 
 **Q: "Can I submit without the cover letter?"**
 A: "Technically yes, but I strongly recommend it. It's your chance to make a personal connection with the board. A good letter can make the difference for borderline applications."
-
----
-
-### Expedited Applications - Broker Guide
-
-#### When to Recommend Expedited Review
-
-**Good candidates for expedited:**
-- ✅ Job relocation (need to move quickly)
-- ✅ Expiring lease (< 30 days)
-- ✅ Selling current home (closing date set)
-- ✅ Strong application (likely approval)
-- ✅ High net worth client ($500 is immaterial)
-
-**NOT recommended:**
-- ❌ Weak application (expedited won't fix issues)
-- ❌ Incomplete application (expedited for complete apps only)
-- ❌ Budget-conscious client ($500 is significant)
-- ❌ No time pressure
-
----
-
-#### Setting Expectations
-
-**Important to explain:**
-1. **$500 fee is NON-REFUNDABLE** - even if denied, withdrawn, or incomplete
-2. **Expedited applies to management review only** - board still reviews on their schedule
-3. **SLA is 1-2 business days** - weekends/holidays don't count
-4. **Application must be complete** - incomplete apps won't be reviewed (fee still not refunded)
-
-**Script:**
-```
-"Expedited review costs $500 (non-refundable) and guarantees FirstService Residential will review your application within 1-2 business days instead of the standard 5-7 days. This is great for time-sensitive situations. However, the board still reviews on their normal schedule, so total time to approval is faster but not 1-2 days.
-
-The fee is non-refundable regardless of outcome, so I only recommend this if you have a genuine time constraint and your application is strong.
-
-Does that make sense for your situation?"
-```
-
----
-
-#### Managing Expedited Applications
-
-**As broker, you should:**
-1. **Pre-review thoroughly** - Do NOT submit expedited application with issues
-2. **Ensure completeness** - All sections green checkmark before submission
-3. **Upload quality documents** - Legible, current, complete
-4. **Notify applicant of SLA** - "Expedited review means admin will review within 1-2 business days of submission. I'll submit [Day/Time] so review should complete by [Day/Time]."
-5. **Monitor progress** - Check application age/status daily
-6. **Follow up promptly** - If admin sends RFI, notify applicant immediately (SLA paused until responded)
-
-**Expedited badge:** You'll see a red "Expedited" badge on expedited applications in your dashboard
 
 ---
 
@@ -736,7 +670,7 @@ Does that make sense for your situation?"
 **Efficient workflow:**
 1. **Batch review:** Set aside time weekly to QA all pending applications
 2. **Use dashboard filters:** "Ready for submission" view
-3. **Prioritize:** Expedited > Oldest > Newest
+3. **Prioritize:** Oldest > Newest
 4. **Set applicant deadlines:** "Please complete by Friday so I can review and submit Monday"
 5. **Track in CRM:** Note application status and follow-up dates
 
@@ -851,8 +785,6 @@ Does that make sense for your situation?"
    - Focus on stability and financial strength
    - Mention professional management (CPA, wealth advisor)
 
-**Pro Tip:** These applicants often qualify for expedited review and may appreciate the VIP service
-
 ---
 
 ### Scenario 4: Application with Issues
@@ -884,18 +816,18 @@ Does that make sense for your situation?"
 **Challenge:** Applicant needs approval in < 2 weeks
 
 **Your approach:**
-1. **Recommend expedited review:**
-   - Explain $500 fee
-   - Set realistic expectations (management 1-2 days, board still variable)
+1. **Set realistic expectations:**
+   - Explain typical review timelines
    - Stress importance of complete application
+   - Board review timelines vary
 
 2. **Intensive QA:**
    - Work with applicant daily to complete sections
    - Review in real-time as they fill out
    - Submit as soon as complete (don't wait)
 
-3. **Communicate with admin:**
-   - After submission, send note: "This applicant has tight timeline due to [reason]. Expedited review selected. Please let me know if any issues immediately."
+3. **Communicate with management:**
+   - After submission, send note: "This applicant has tight timeline due to [reason]. Please let me know if any issues immediately."
    - Monitor daily
    - Respond to RFIs within hours
 
@@ -916,9 +848,6 @@ A: You can help, but applicant must review and sign all acknowledgements persona
 
 **Q: What if applicant doesn't have a cover letter?**
 A: Encouraged but not always required (depends on building). I recommend always including one.
-
-**Q: Can expedited fee be refunded?**
-A: No - it's non-refundable in all cases except system error preventing review.
 
 **Q: What's a good quality score?**
 A: 90+ is excellent, 75-89 is good, 60-74 is acceptable. Don't submit below 60 without addressing issues.

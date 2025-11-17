@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { InboxMobileCard } from "./mobile-cards/inbox-mobile-card";
-import { MoreVertical, ExternalLink, Zap } from "lucide-react";
+import { MoreVertical, ExternalLink } from "lucide-react";
 import { Application, ApplicationStatus, TransactionType } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { getStatusColor, getTransactionTypeLabel } from "@/lib/constants/labels";
@@ -61,17 +61,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
           app.people && app.people.length > 0
             ? app.people.map((p) => p.fullName).join(", ")
             : "—";
-        return (
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{applicants}</span>
-            {app.expeditedReview && (
-              <Badge variant="secondary" className="flex items-center gap-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
-                <Zap className="h-3 w-3" />
-                Expedited
-              </Badge>
-            )}
-          </div>
-        );
+        return <span className="font-medium">{applicants}</span>;
       },
     },
     {
