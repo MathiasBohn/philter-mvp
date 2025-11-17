@@ -43,7 +43,7 @@ export default function Home() {
       title: "Board Member",
       description: "Review and approve applications",
       icon: Users,
-      href: "/board/review/app-1",
+      href: "/board",
       color: "text-orange-600 dark:text-orange-400",
       role: Role.BOARD,
     },

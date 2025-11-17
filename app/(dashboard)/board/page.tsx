@@ -206,7 +206,7 @@ export default function BoardDashboardPage() {
                     </Link>
                     <Link href={`/board/review/${app.id}`} className="flex-1">
                       <Button className="w-full">
-                        Open Review Workspace
+                        Review Application
                       </Button>
                     </Link>
                   </div>
