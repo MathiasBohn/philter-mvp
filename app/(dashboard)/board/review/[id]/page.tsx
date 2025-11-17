@@ -25,8 +25,8 @@ export default function BoardReviewPage({ params }: PageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl flex h-full flex-col">
-      <div className="border-b bg-background px-6 py-4">
+    <div className="mx-auto max-w-6xl space-y-6">
+      <div>
         <Button
           variant="ghost"
           className="mb-4 -ml-2"
@@ -35,19 +35,13 @@ export default function BoardReviewPage({ params }: PageProps) {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Board Review
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Read-only application package for board review
-            </p>
-          </div>
-        </div>
+        <h1 className="text-3xl font-bold tracking-tight">Board Review</h1>
+        <p className="mt-2 text-muted-foreground">
+          Read-only application package for board review
+        </p>
       </div>
 
-      <Suspense fallback={<div className="p-6">Loading...</div>}>
+      <Suspense fallback={<div>Loading...</div>}>
         <ReadOnlyViewer application={application} />
       </Suspense>
     </div>
