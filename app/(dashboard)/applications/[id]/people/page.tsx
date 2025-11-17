@@ -195,7 +195,7 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
                     </Label>
                     <Select
                       value={newPerson.role}
-                      onValueChange={(value) => setNewPerson({ ...newPerson, role: value as Role })}
+                      onValueChange={(value) => setNewPerson({ ...newPerson, role: value as Role.CO_APPLICANT | Role.GUARANTOR })}
                     >
                       <SelectTrigger id="role">
                         <SelectValue />
