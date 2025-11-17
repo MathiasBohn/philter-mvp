@@ -300,8 +300,61 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     // In a real app, this would make an API call to invite the person
   };
 
-  const handleContinue = () => {
-    router.push(`/applications/${id}/income`);
+  const handleContinue = async () => {
+    // Validate the main form fields
+    const isFormValid = await handleSubmit(
+      async (data) => {
+        // Form is valid, now check additional required fields
+        const additionalErrors: string[] = [];
+
+        // Validate Emergency Contact (all required fields)
+        if (!emergencyContact.name || !emergencyContact.email || !emergencyContact.address || !emergencyContact.daytimePhone) {
+          additionalErrors.push("Emergency contact information is required (Name, Email, Address, Daytime Phone)");
+        }
+
+        // Validate Housing History
+        if (ownsPrivateHouse === undefined) {
+          additionalErrors.push("Please indicate if you own a private house");
+        }
+
+        // Validate Current Landlord (required if not owning house)
+        if (ownsPrivateHouse === false) {
+          if (!currentLandlord || !currentLandlord.name || !currentLandlord.phone || !currentLandlord.email || !currentLandlord.occupiedFrom || currentLandlord.monthlyPayment === undefined) {
+            additionalErrors.push("Current landlord information is required (Name, Phone, Email, Occupied From, Monthly Payment)");
+          }
+        }
+
+        // Validate key holders if indicated
+        if (emergencyContact.hasKeyHolders && keyHolders.length === 0) {
+          additionalErrors.push("Please add at least one key holder or select 'No' for key holders");
+        }
+
+        // Check if any key holders are incomplete
+        if (emergencyContact.hasKeyHolders && keyHolders.length > 0) {
+          const incompleteKeyHolders = keyHolders.filter(
+            (holder) => !holder.name || !holder.email || !holder.cellPhone
+          );
+          if (incompleteKeyHolders.length > 0) {
+            additionalErrors.push("All key holders must have Name, Email, and Cell Phone");
+          }
+        }
+
+        if (additionalErrors.length > 0) {
+          // Show errors by scrolling to top and triggering a form submission to show errors
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          alert(additionalErrors.join('\n\n'));
+          return;
+        }
+
+        // All validations passed, save and continue
+        await onSubmit(data);
+        router.push(`/applications/${id}/income`);
+      },
+      (errors) => {
+        // Form validation failed, scroll to top to show errors
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    )();
   };
 
   if (isLoading) {

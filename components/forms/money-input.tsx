@@ -33,7 +33,13 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
       onChange?.(formatted)
     }
 
-    const displayValue = value ? `$${value}` : ""
+    // Ensure value is properly converted to string for display
+    // Handle both string and number inputs, and remove any existing $ or commas
+    const numericValue = typeof value === 'number'
+      ? value.toString()
+      : String(value || '').replace(/[^\d.]/g, '')
+
+    const displayValue = numericValue ? `$${numericValue}` : ""
 
     return (
       <Input

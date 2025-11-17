@@ -193,10 +193,29 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   const validate = () => {
     const newErrors: string[] = []
 
+    // Check if any uploads are in progress
+    const hasUploadingDocs = categories.some((cat) =>
+      cat.documents.some((doc) => doc.status === "uploading" || doc.status === "pending")
+    )
+
+    if (hasUploadingDocs) {
+      newErrors.push("Please wait for all document uploads to complete before continuing")
+    }
+
     // Check if government ID is uploaded
     const govtIdCategory = categories.find((cat) => cat.id === "govt-id")
     if (govtIdCategory && govtIdCategory.documents.length === 0) {
       newErrors.push("At least one government-issued ID is required")
+    } else if (govtIdCategory) {
+      // Check if any government ID documents are still uploading
+      const hasUploadingGovtId = govtIdCategory.documents.some(
+        (doc) => doc.status === "uploading" || doc.status === "pending"
+      )
+      const hasCompletedGovtId = govtIdCategory.documents.some((doc) => doc.status === "complete")
+
+      if (!hasCompletedGovtId && !hasUploadingGovtId) {
+        newErrors.push("At least one government-issued ID must be successfully uploaded")
+      }
     }
 
     setErrors(newErrors)

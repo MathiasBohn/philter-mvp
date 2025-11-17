@@ -82,9 +82,15 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>My Applications</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Help & Support</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/my-applications')}>
+                  My Applications
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push('/help-support')}>
+                  Help & Support
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>Sign Out</DropdownMenuItem>
               </DropdownMenuContent>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataTable, Column } from "@/components/ui/data-table";
@@ -18,9 +29,12 @@ import { MoreHorizontal, Edit, Eye, Copy, Trash2, FileText } from "lucide-react"
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
 import { mockBuildings } from "@/lib/mock-data";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface TemplateTableProps {
   templates: Template[];
+  onDuplicate?: (template: Template) => void;
+  onDelete?: (templateId: string) => void;
 }
 
 const getBuildingName = (buildingId: string) => {
@@ -76,7 +90,39 @@ const columns: Column<Template>[] = [
   },
 ];
 
-export function TemplateTable({ templates }: TemplateTableProps) {
+export function TemplateTable({ templates, onDuplicate, onDelete }: TemplateTableProps) {
+  const { toast } = useToast();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
+
+  const handleDuplicate = (template: Template) => {
+    if (onDuplicate) {
+      onDuplicate(template);
+      toast({
+        title: "Template Duplicated",
+        description: `Created a copy of "${template.name}"`,
+      });
+    }
+  };
+
+  const handleDeleteClick = (template: Template) => {
+    setTemplateToDelete(template);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (templateToDelete && onDelete) {
+      onDelete(templateToDelete.id);
+      toast({
+        title: "Template Deleted",
+        description: `"${templateToDelete.name}" has been removed`,
+        variant: "destructive",
+      });
+    }
+    setDeleteDialogOpen(false);
+    setTemplateToDelete(null);
+  };
+
   const emptyState = (
     <EmptyState
       icon={FileText}
@@ -113,12 +159,15 @@ export function TemplateTable({ templates }: TemplateTableProps) {
             Edit Template
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleDuplicate(template)}>
           <Copy className="mr-2 h-4 w-4" />
           Duplicate Template
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive focus:text-destructive">
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onClick={() => handleDeleteClick(template)}
+        >
           <Trash2 className="mr-2 h-4 w-4" />
           Delete Template
         </DropdownMenuItem>
@@ -127,15 +176,38 @@ export function TemplateTable({ templates }: TemplateTableProps) {
   );
 
   return (
-    <DataTable
-      data={templates}
-      columns={columns}
-      keyExtractor={(template) => template.id}
-      emptyState={emptyState}
-      actions={renderActions}
-      mobileCardRenderer={(template) => (
-        <TemplateMobileCard template={template} />
-      )}
-    />
+    <>
+      <DataTable
+        data={templates}
+        columns={columns}
+        keyExtractor={(template) => template.id}
+        emptyState={emptyState}
+        actions={renderActions}
+        mobileCardRenderer={(template) => (
+          <TemplateMobileCard template={template} />
+        )}
+      />
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{templateToDelete?.name}"? This action cannot
+              be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

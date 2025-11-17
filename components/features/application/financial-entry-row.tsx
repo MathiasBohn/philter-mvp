@@ -27,9 +27,14 @@ export function FinancialEntryRow({
   categories,
 }: FinancialEntryRowProps) {
   const handleChange = (field: keyof FinancialEntry, value: unknown) => {
+    // Ensure amount values are stored as numbers, not strings
+    const processedValue = field === 'amount'
+      ? parseFloat(String(value)) || 0
+      : value
+
     onUpdate({
       ...entry,
-      [field]: value,
+      [field]: processedValue,
     })
   }
 

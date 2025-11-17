@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { DataTable, Column } from "@/components/ui/data-table";
 import { ApplicationMobileCard } from "./mobile-cards/application-mobile-card";
 import { StatusTag } from "./status-tag";
+import { InviteApplicantModal } from "./invite-applicant-modal";
 import { Application } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
@@ -125,6 +127,8 @@ export function ApplicationTable({
   onSelectAll,
   isAllSelected = false,
 }: ApplicationTableProps) {
+  const [showInviteModal, setShowInviteModal] = useState(false);
+
   const emptyState = (
     <EmptyState
       icon={FileText}
@@ -155,7 +159,7 @@ export function ApplicationTable({
             Open QA Workspace
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={() => setShowInviteModal(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
           Invite Applicant
         </DropdownMenuItem>
@@ -239,19 +243,33 @@ export function ApplicationTable({
             </div>
           ))}
         </div>
+
+        {/* Invite Applicant Modal */}
+        <InviteApplicantModal
+          open={showInviteModal}
+          onOpenChange={setShowInviteModal}
+        />
       </>
     );
   }
 
   // Default rendering without checkboxes
   return (
-    <DataTable
-      data={applications}
-      columns={columns}
-      keyExtractor={(app) => app.id}
-      emptyState={emptyState}
-      actions={renderActions}
-      mobileCardRenderer={(app) => <ApplicationMobileCard application={app} />}
-    />
+    <>
+      <DataTable
+        data={applications}
+        columns={columns}
+        keyExtractor={(app) => app.id}
+        emptyState={emptyState}
+        actions={renderActions}
+        mobileCardRenderer={(app) => <ApplicationMobileCard application={app} />}
+      />
+
+      {/* Invite Applicant Modal */}
+      <InviteApplicantModal
+        open={showInviteModal}
+        onOpenChange={setShowInviteModal}
+      />
+    </>
   );
 }

@@ -2,18 +2,19 @@
 
 import { use, useState, useEffect } from "react";
 import { mockApplications } from "@/lib/mock-data";
-import { notFound } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QAPanel } from "@/components/features/broker/qa-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, Eye, Loader2 } from "lucide-react";
+import { ArrowRight, ArrowLeft, Eye, Loader2 } from "lucide-react";
 import { Application, Role } from "@/lib/types";
 
 export default function BrokerQAPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [application, setApplication] = useState<Application | undefined>(() =>
     mockApplications.find((app) => app.id === id)
   );
@@ -114,30 +115,40 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
     <div className="space-y-6">
       {/* Header - Responsive */}
       <div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">QA Workspace</h1>
-            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              {application.building?.name} - {application.people[0]?.fullName || "New Application"}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Link href={`/broker/${id}/submit`}>
-              <Button disabled={!isReadyForSubmit} className="w-full sm:w-auto">
-                {isReadyForSubmit ? (
-                  <>
-                    <span className="hidden sm:inline">Ready to Submit</span>
-                    <span className="sm:hidden">Submit</span>
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    <span className="hidden sm:inline">Complete All Sections First</span>
-                    <span className="sm:hidden">Incomplete</span>
-                  </>
-                )}
-              </Button>
-            </Link>
+        <div className="flex flex-col gap-4">
+          <Button
+            variant="ghost"
+            className="self-start -ml-2"
+            onClick={() => router.push('/broker')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Pipeline
+          </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">QA Workspace</h1>
+              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                {application.building?.name} - {application.people[0]?.fullName || "New Application"}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Link href={`/broker/${id}/submit`}>
+                <Button disabled={!isReadyForSubmit} className="w-full sm:w-auto">
+                  {isReadyForSubmit ? (
+                    <>
+                      <span className="hidden sm:inline">Ready to Submit</span>
+                      <span className="sm:hidden">Submit</span>
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      <span className="hidden sm:inline">Complete All Sections First</span>
+                      <span className="sm:hidden">Incomplete</span>
+                    </>
+                  )}
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

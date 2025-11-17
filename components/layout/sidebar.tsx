@@ -114,7 +114,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
           },
           {
             label: "QA Workspace",
-            href: `/broker/${applicationId}/qa`,
+            href: `/broker/qa`,
             icon: FileCheck,
           },
           {
@@ -145,6 +145,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
       case Role.BOARD:
         return [
+          {
+            label: "Dashboard",
+            href: `/board`,
+            icon: Home,
+          },
           {
             label: "Application Summary",
             href: `/board/summary/${applicationId}`,

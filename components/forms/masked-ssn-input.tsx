@@ -42,7 +42,7 @@ export const MaskedSSNInput = forwardRef<HTMLInputElement, MaskedSSNInputProps>(
           <Input
             ref={ref}
             type={showSSN ? "text" : "password"}
-            value={showSSN ? value : maskSSN(value)}
+            value={value}
             onChange={handleChange}
             placeholder="XXX-XX-XXXX"
             maxLength={11}

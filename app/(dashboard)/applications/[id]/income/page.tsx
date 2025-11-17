@@ -196,18 +196,26 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       }
     })
 
+    // Check if any uploads are in progress
+    const hasUploadingDocs = documents.some((doc) => doc.status === "uploading" || doc.status === "pending")
+    const hasUploadingCpaDocs = cpaLetterDocuments.some((doc) => doc.status === "uploading" || doc.status === "pending")
+
+    if (hasUploadingDocs || hasUploadingCpaDocs) {
+      newErrors["upload-in-progress"] = "Please wait for all document uploads to complete before continuing"
+    }
+
     // Validate employment verification documents
     if (isSelfEmployed) {
       // If self-employed, require CPA letter
       const hasCompletedCpaLetter = cpaLetterDocuments.some((doc) => doc.status === "complete")
-      if (!hasCompletedCpaLetter) {
-        newErrors["cpa-letter"] = "CPA letter is required for self-employed applicants"
+      if (!hasCompletedCpaLetter && !hasUploadingCpaDocs) {
+        newErrors["cpa-letter"] = "CPA letter is required for self-employed applicants. Please upload a document."
       }
     } else {
       // If not self-employed, require at least one employment verification document
       const hasCompletedVerification = documents.some((doc) => doc.status === "complete")
-      if (!hasCompletedVerification) {
-        newErrors["employment-verification"] = "At least one employment verification document is required"
+      if (!hasCompletedVerification && !hasUploadingDocs) {
+        newErrors["employment-verification"] = "At least one employment verification document is required. Please upload a document."
       }
     }
 

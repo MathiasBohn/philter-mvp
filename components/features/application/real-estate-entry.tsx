@@ -31,9 +31,23 @@ export function RealEstateEntry({
   errors = {},
 }: RealEstateEntryProps) {
   const handleChange = (field: keyof RealEstateProperty, value: unknown) => {
+    // Ensure numeric fields are stored as numbers, not strings
+    const numericFields: (keyof RealEstateProperty)[] = [
+      'marketValue',
+      'mortgageBalance',
+      'monthlyMortgagePayment',
+      'monthlyMaintenanceHOA',
+      'monthlyRealEstateTaxes',
+      'monthlyInsurance'
+    ]
+
+    const processedValue = numericFields.includes(field)
+      ? parseFloat(String(value)) || 0
+      : value
+
     onUpdate({
       ...property,
-      [field]: value,
+      [field]: processedValue,
     })
   }
 

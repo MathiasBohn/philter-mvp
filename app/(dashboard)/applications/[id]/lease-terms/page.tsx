@@ -132,8 +132,19 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handleContinue = () => {
-    router.push(`/applications/${id}/profile`);
+  const handleContinue = async () => {
+    // Validate the form before continuing
+    await handleSubmit(
+      async (data) => {
+        // Form is valid, save and continue
+        await onSubmit(data);
+        router.push(`/applications/${id}/profile`);
+      },
+      (errors) => {
+        // Form validation failed, scroll to top to show errors
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    )();
   };
 
   const formatCurrency = (value: number) => {

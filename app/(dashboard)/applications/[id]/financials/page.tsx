@@ -76,7 +76,11 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
       if (saved) {
         const data = JSON.parse(saved)
         if (data.entries) {
-          return data.entries
+          // Ensure all amounts are numbers, not strings
+          return data.entries.map((entry: FinancialEntry) => ({
+            ...entry,
+            amount: typeof entry.amount === 'number' ? entry.amount : parseFloat(String(entry.amount)) || 0
+          }))
         }
       }
     }
@@ -89,7 +93,16 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
       if (saved) {
         const data = JSON.parse(saved)
         if (data.realEstateProperties) {
-          return data.realEstateProperties
+          // Ensure all numeric values are numbers, not strings
+          return data.realEstateProperties.map((property: RealEstateProperty) => ({
+            ...property,
+            marketValue: typeof property.marketValue === 'number' ? property.marketValue : parseFloat(String(property.marketValue)) || 0,
+            mortgageBalance: typeof property.mortgageBalance === 'number' ? property.mortgageBalance : parseFloat(String(property.mortgageBalance)) || 0,
+            monthlyMortgagePayment: typeof property.monthlyMortgagePayment === 'number' ? property.monthlyMortgagePayment : parseFloat(String(property.monthlyMortgagePayment)) || 0,
+            monthlyMaintenanceHOA: typeof property.monthlyMaintenanceHOA === 'number' ? property.monthlyMaintenanceHOA : parseFloat(String(property.monthlyMaintenanceHOA)) || 0,
+            monthlyRealEstateTaxes: typeof property.monthlyRealEstateTaxes === 'number' ? property.monthlyRealEstateTaxes : parseFloat(String(property.monthlyRealEstateTaxes)) || 0,
+            monthlyInsurance: typeof property.monthlyInsurance === 'number' ? property.monthlyInsurance : parseFloat(String(property.monthlyInsurance)) || 0,
+          }))
         }
       }
     }
@@ -204,24 +217,27 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
     router.push(`/applications/${id}/documents`)
   }
 
-  // Calculate totals
-  const realEstateTotalValue = realEstateProperties.reduce((sum, p) => sum + p.marketValue, 0)
+  // Calculate totals - ensure all values are numbers to prevent string concatenation
+  const realEstateTotalValue = realEstateProperties.reduce(
+    (sum, p) => sum + (typeof p.marketValue === 'number' ? p.marketValue : parseFloat(String(p.marketValue)) || 0),
+    0
+  )
 
   const assets = entries
     .filter((e) => e.entryType === FinancialEntryType.ASSET)
-    .reduce((sum, e) => sum + e.amount, 0) + realEstateTotalValue
+    .reduce((sum, e) => sum + (typeof e.amount === 'number' ? e.amount : parseFloat(String(e.amount)) || 0), 0) + realEstateTotalValue
 
   const liabilities = entries
     .filter((e) => e.entryType === FinancialEntryType.LIABILITY)
-    .reduce((sum, e) => sum + e.amount, 0)
+    .reduce((sum, e) => sum + (typeof e.amount === 'number' ? e.amount : parseFloat(String(e.amount)) || 0), 0)
 
   const monthlyIncome = entries
     .filter((e) => e.entryType === FinancialEntryType.MONTHLY_INCOME)
-    .reduce((sum, e) => sum + e.amount, 0)
+    .reduce((sum, e) => sum + (typeof e.amount === 'number' ? e.amount : parseFloat(String(e.amount)) || 0), 0)
 
   const monthlyExpenses = entries
     .filter((e) => e.entryType === FinancialEntryType.MONTHLY_EXPENSE)
-    .reduce((sum, e) => sum + e.amount, 0)
+    .reduce((sum, e) => sum + (typeof e.amount === 'number' ? e.amount : parseFloat(String(e.amount)) || 0), 0)
 
   if (isLoading) {
     return <FormSkeleton sections={4} fieldsPerSection={4} />;

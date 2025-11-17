@@ -88,6 +88,31 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
   };
 
   const handleContinue = async () => {
+    // Validate required fields
+    const errors: string[] = [];
+
+    // Unit Owner is required
+    if (!unitOwner.name || !unitOwner.email) {
+      errors.push("Unit Owner Name and Email are required");
+    }
+
+    // Validate optional parties if they exist
+    if (ownerBroker && (!ownerBroker.name || !ownerBroker.email)) {
+      errors.push("Owner's Broker must have Name and Email if added");
+    }
+    if (ownerAttorney && (!ownerAttorney.name || !ownerAttorney.email)) {
+      errors.push("Owner's Attorney must have Name and Email if added");
+    }
+    if (applicantAttorney && (!applicantAttorney.name || !applicantAttorney.email)) {
+      errors.push("Applicant's Attorney must have Name and Email if added");
+    }
+
+    if (errors.length > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      alert(errors.join('\n\n'));
+      return;
+    }
+
     await handleSave();
     router.push(`/applications/${id}/profile`);
   };
