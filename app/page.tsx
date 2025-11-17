@@ -65,7 +65,7 @@ export default function Home() {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-5xl space-y-8">
+      <div className="w-full max-w-6xl space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
           <Link href="/" className="inline-block">

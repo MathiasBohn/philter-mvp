@@ -663,7 +663,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
 
   if (!isLeaseOrSublet && transactionType) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6 py-6">
+      <div className="space-y-6">
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
@@ -676,7 +676,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 py-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Disclosures</h1>
         <p className="mt-2 text-muted-foreground">

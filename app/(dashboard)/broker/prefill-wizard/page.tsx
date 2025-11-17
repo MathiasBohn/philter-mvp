@@ -239,7 +239,7 @@ export default function BrokerPrefillWizardPage() {
   const progress = (currentStep / WIZARD_STEPS.length) * 100;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8 p-6">
+    <div className="mx-auto max-w-6xl space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Application Pre-fill Wizard</h1>

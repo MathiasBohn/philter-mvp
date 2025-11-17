@@ -182,7 +182,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
 
   if (isSubmitted) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6 py-6">
+      <div className="space-y-6">
         <div className="text-center">
           <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
             <CheckCircle2 className="h-12 w-12 text-green-600" />
@@ -269,7 +269,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 py-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Review & Submit</h1>
         <p className="mt-2 text-muted-foreground">

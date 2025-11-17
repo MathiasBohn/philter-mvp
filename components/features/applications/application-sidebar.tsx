@@ -52,11 +52,18 @@ const SECTIONS: ApplicationSection[] = [
     description: "Review building requirements",
   },
   {
-    id: "profile",
-    label: "Profile",
-    path: "/profile",
-    icon: UserCircle,
-    description: "Personal information",
+    id: "lease-terms",
+    label: "Lease Terms",
+    path: "/lease-terms",
+    icon: FileText,
+    description: "Proposed lease terms",
+  },
+  {
+    id: "parties",
+    label: "Deal Parties",
+    path: "/parties",
+    icon: Users,
+    description: "Unit owner, brokers, attorneys",
   },
   {
     id: "people",
@@ -64,6 +71,13 @@ const SECTIONS: ApplicationSection[] = [
     path: "/people",
     icon: Users,
     description: "Co-applicants & guarantors",
+  },
+  {
+    id: "profile",
+    label: "Profile",
+    path: "/profile",
+    icon: UserCircle,
+    description: "Personal information",
   },
   {
     id: "income",
@@ -154,6 +168,14 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       "building-policies": "complete", // Review only, always complete
     };
 
+    // Lease Terms - check localStorage
+    const leaseTermsData = localStorage.getItem(`lease-terms_${applicationId}`);
+    statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
+
+    // Parties - check localStorage
+    const partiesData = localStorage.getItem(`parties_${applicationId}`);
+    statuses.parties = partiesData ? "complete" : "not-started";
+
     // Profile - check if basic info exists
     if (application.people && application.people.length > 0) {
       const primaryApplicant = application.people[0];
@@ -200,28 +222,17 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Progress Summary */}
-      <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-sm">Application Progress</h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={() => setIsOpen(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              {completedCount} of {SECTIONS.length} complete
-            </span>
-            <span className="font-semibold">{Math.round(progressPercentage)}%</span>
-          </div>
-          <Progress value={progressPercentage} className="h-2" />
-        </div>
+      {/* Header */}
+      <div className="p-4 flex items-center justify-between">
+        <h2 className="font-semibold text-sm">Application Sections</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={() => setIsOpen(false)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       <Separator />
@@ -305,7 +316,7 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       {/* Sidebar - Mobile Drawer */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-screen w-80 bg-background border-r z-50 transition-transform lg:hidden",
+          "fixed top-0 left-0 h-screen w-64 bg-white dark:bg-gray-950 border-r dark:border-gray-800 z-50 transition-transform lg:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -313,7 +324,7 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       </aside>
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:block w-80 border-r bg-background sticky top-0 h-screen overflow-hidden">
+      <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white dark:bg-gray-950 dark:border-gray-800 overflow-hidden" aria-label="Application navigation">
         <SidebarContent />
       </aside>
     </>

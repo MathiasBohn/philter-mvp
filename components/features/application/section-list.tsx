@@ -35,6 +35,13 @@ const sectionDefinitions: SectionDefinition[] = [
     isRequired: true,
   },
   {
+    key: "people",
+    title: "People",
+    description: "Co-applicants and guarantors",
+    href: "/people",
+    isRequired: false,
+  },
+  {
     key: "profile",
     title: "Profile",
     description: "Personal information and address history",
