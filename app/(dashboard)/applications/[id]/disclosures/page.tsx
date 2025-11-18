@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle, Info } from "lucide-react"
-import { DisclosureCard, type Disclosure } from "@/components/features/application/disclosure-card"
+import { DisclosureCard, type Disclosure, type Pet } from "@/components/features/application/disclosure-card"
 import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { TransactionType, DisclosureType } from "@/lib/types"
@@ -432,7 +432,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
     )
   }
 
-  const handlePetDataChange = (disclosureId: string, hasPets: boolean, pets?: Array<{ type: string; breed: string; weight: string }>) => {
+  const handlePetDataChange = (disclosureId: string, hasPets: boolean, pets?: Pet[]) => {
     setDisclosures((prev) =>
       prev.map((d) =>
         d.id === disclosureId ? { ...d, hasPets, pets } : d
