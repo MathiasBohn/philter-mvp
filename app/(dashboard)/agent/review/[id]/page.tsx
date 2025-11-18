@@ -195,8 +195,8 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
       <div className="border-b p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Review Application</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-3xl font-bold tracking-tight">Review Application</h1>
+            <p className="mt-2 text-muted-foreground">
               {application.people[0]?.fullName || "Unknown Applicant"} •{" "}
               {application.building?.name}
             </p>

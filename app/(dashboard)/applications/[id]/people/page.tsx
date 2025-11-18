@@ -110,11 +110,11 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">People</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold tracking-tight">People</h1>
+        <p className="mt-2 text-muted-foreground">
           Manage co-applicants and guarantors for this application
         </p>
       </div>

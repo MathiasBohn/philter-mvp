@@ -244,9 +244,9 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Financial Summary</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Financial Summary</h1>
         <p className="mt-2 text-muted-foreground">
           Provide a comprehensive overview of your financial situation. This information
           follows the REBNY format.

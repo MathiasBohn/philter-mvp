@@ -25,11 +25,11 @@ export default function QAWorkspacePage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Application Workspace</h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-2 text-muted-foreground">
             Review and verify applications before submission to building
           </p>
         </div>

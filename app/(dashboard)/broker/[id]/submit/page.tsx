@@ -202,7 +202,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="space-y-6 px-4 sm:px-0">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-0">
       {/* Header - Responsive */}
       <div>
         <Button
@@ -213,7 +213,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Pipeline
         </Button>
-        <h1 className="text-2xl sm:text-3xl font-bold">Submit to Building</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Submit to Building</h1>
         <p className="mt-2 text-sm sm:text-base text-muted-foreground">
           Review deliverables and submit completed application
         </p>

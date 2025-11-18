@@ -258,9 +258,9 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Documents</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
         <p className="mt-2 text-muted-foreground">
           Upload all required and supporting documents. At least one government-issued
           ID is required.

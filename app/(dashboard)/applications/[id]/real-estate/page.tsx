@@ -154,11 +154,11 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Real Estate Holdings</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold tracking-tight">Real Estate Holdings</h1>
+        <p className="mt-2 text-muted-foreground">
           List all real estate properties you own or have an interest in
         </p>
       </div>

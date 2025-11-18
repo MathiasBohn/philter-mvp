@@ -147,11 +147,11 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Application Overview</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Application Overview</h1>
           {getStatusBadge()}
         </div>
         <p className="mt-2 text-muted-foreground">

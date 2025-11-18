@@ -161,11 +161,11 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Lease Terms</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold tracking-tight">Lease Terms</h1>
+        <p className="mt-2 text-muted-foreground">
           Enter the proposed lease terms for this application
         </p>
       </div>

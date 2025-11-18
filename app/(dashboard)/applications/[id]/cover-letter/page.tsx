@@ -59,11 +59,11 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
   const isOverLimit = charactersRemaining < 0;
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Cover Letter / Personal Introduction</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold tracking-tight">Cover Letter / Personal Introduction</h1>
+        <p className="mt-2 text-muted-foreground">
           Share your story and introduce yourself to the board
         </p>
       </div>

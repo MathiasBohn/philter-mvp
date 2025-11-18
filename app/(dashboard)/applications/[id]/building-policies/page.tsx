@@ -71,11 +71,11 @@ export default function BuildingPoliciesPage({ params }: { params: Promise<{ id:
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Building Policies</h1>
-        <p className="text-muted-foreground mt-2">
+        <h1 className="text-3xl font-bold tracking-tight">Building Policies</h1>
+        <p className="mt-2 text-muted-foreground">
           Please review the following building-specific policies before continuing with your application
         </p>
       </div>

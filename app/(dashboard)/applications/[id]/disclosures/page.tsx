@@ -676,9 +676,9 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Disclosures</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Disclosures</h1>
         <p className="mt-2 text-muted-foreground">
           Please review and acknowledge the following legally required disclosures for
           lease and sublet transactions in New York City.
