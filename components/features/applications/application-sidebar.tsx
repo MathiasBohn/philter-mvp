@@ -24,7 +24,7 @@ import {
   X,
   Send,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Application } from "@/lib/types";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
@@ -157,83 +157,16 @@ const getStatusColor = (status: SectionStatus) => {
   }
 };
 
-export function ApplicationSidebar({ applicationId }: { applicationId: string }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
-  const [sectionStatuses, setSectionStatuses] = useState<Record<string, SectionStatus>>({});
-  const [completedCount, setCompletedCount] = useState(0);
+interface SidebarContentProps {
+  applicationId: string;
+  pathname: string;
+  sectionStatuses: Record<string, SectionStatus>;
+  setIsOpen: (isOpen: boolean) => void;
+  handleNavigate: (path: string) => void;
+}
 
-  // Calculate section statuses based on application data
-  useEffect(() => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-    const application = applications.find((app) => app.id === applicationId);
-
-    if (!application) return;
-
-    const statuses: Record<string, SectionStatus> = {
-      overview: "complete", // Always complete
-      "building-policies": "complete", // Review only, always complete
-    };
-
-    // Lease Terms - check localStorage
-    const leaseTermsData = localStorage.getItem(`lease-terms_${applicationId}`);
-    statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
-
-    // Parties - check localStorage
-    const partiesData = localStorage.getItem(`parties_${applicationId}`);
-    statuses.parties = partiesData ? "complete" : "not-started";
-
-    // Profile - check if basic info exists
-    if (application.people && application.people.length > 0) {
-      const primaryApplicant = application.people[0];
-      statuses.profile = primaryApplicant.fullName ? "complete" : "not-started";
-    } else {
-      statuses.profile = "not-started";
-    }
-
-    // People - check for additional people
-    statuses.people = application.people.length > 1 ? "complete" : "not-started";
-
-    // Income & Employment
-    statuses.income = application.employmentRecords && application.employmentRecords.length > 0 ? "complete" : "not-started";
-
-    // Financials
-    statuses.financials = application.financialEntries && application.financialEntries.length > 0 ? "complete" : "not-started";
-
-    // Real Estate
-    statuses["real-estate"] = "not-started"; // Will be updated when data exists
-
-    // Documents
-    statuses.documents = application.documents && application.documents.length > 0 ? "complete" : "not-started";
-
-    // Cover Letter
-    statuses["cover-letter"] = application.coverLetter && application.coverLetter.length > 0 ? "complete" : "not-started";
-
-    // Disclosures
-    statuses.disclosures = application.disclosures && application.disclosures.length >= 8 ? "complete" :
-                           application.disclosures && application.disclosures.length > 0 ? "in-progress" : "not-started";
-
-    // Review & Submit - always available but completion depends on submission status
-    statuses.review = application.status === "SUBMITTED" || application.status === "IN_REVIEW" ||
-                      application.status === "RFI" || application.status === "APPROVED" ||
-                      application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
-
-    setSectionStatuses(statuses);
-
-    // Count completed sections
-    const completed = Object.values(statuses).filter(status => status === "complete").length;
-    setCompletedCount(completed);
-  }, [applicationId, pathname]);
-
-  const handleNavigate = (path: string) => {
-    router.push(`/applications/${applicationId}${path}`);
-    setIsOpen(false); // Close mobile menu
-  };
-
-  const progressPercentage = (completedCount / SECTIONS.length) * 100;
-
-  const SidebarContent = () => (
+function SidebarContent({ applicationId, pathname, sectionStatuses, setIsOpen, handleNavigate }: SidebarContentProps) {
+  return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="p-4 flex items-center justify-between">
@@ -305,6 +238,82 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       </div>
     </div>
   );
+}
+
+export function ApplicationSidebar({ applicationId }: { applicationId: string }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Calculate section statuses based on application data using useMemo
+  const sectionStatuses = useMemo(() => {
+    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
+    const application = applications.find((app) => app.id === applicationId);
+
+    if (!application) return {};
+
+    const statuses: Record<string, SectionStatus> = {
+      overview: "complete", // Always complete
+      "building-policies": "complete", // Review only, always complete
+    };
+
+    // Lease Terms - check localStorage
+    const leaseTermsData = localStorage.getItem(`lease-terms_${applicationId}`);
+    statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
+
+    // Parties - check localStorage
+    const partiesData = localStorage.getItem(`parties_${applicationId}`);
+    statuses.parties = partiesData ? "complete" : "not-started";
+
+    // Profile - check if basic info exists
+    if (application.people && application.people.length > 0) {
+      const primaryApplicant = application.people[0];
+      statuses.profile = primaryApplicant.fullName ? "complete" : "not-started";
+    } else {
+      statuses.profile = "not-started";
+    }
+
+    // People - check for additional people
+    statuses.people = application.people.length > 1 ? "complete" : "not-started";
+
+    // Income & Employment
+    statuses.income = application.employmentRecords && application.employmentRecords.length > 0 ? "complete" : "not-started";
+
+    // Financials
+    statuses.financials = application.financialEntries && application.financialEntries.length > 0 ? "complete" : "not-started";
+
+    // Real Estate
+    statuses["real-estate"] = "not-started"; // Will be updated when data exists
+
+    // Documents
+    statuses.documents = application.documents && application.documents.length > 0 ? "complete" : "not-started";
+
+    // Cover Letter
+    statuses["cover-letter"] = application.coverLetter && application.coverLetter.length > 0 ? "complete" : "not-started";
+
+    // Disclosures
+    statuses.disclosures = application.disclosures && application.disclosures.length >= 8 ? "complete" :
+                           application.disclosures && application.disclosures.length > 0 ? "in-progress" : "not-started";
+
+    // Review & Submit - always available but completion depends on submission status
+    statuses.review = application.status === "SUBMITTED" || application.status === "IN_REVIEW" ||
+                      application.status === "RFI" || application.status === "APPROVED" ||
+                      application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
+
+    return statuses;
+  }, [applicationId, pathname]);
+
+  // Count completed sections
+  const completedCount = useMemo(() => {
+    return Object.values(sectionStatuses).filter(status => status === "complete").length;
+  }, [sectionStatuses]);
+
+  const handleNavigate = (path: string) => {
+    router.push(`/applications/${applicationId}${path}`);
+    setIsOpen(false); // Close mobile menu
+  };
+
+  const progressPercentage = (completedCount / SECTIONS.length) * 100;
 
   return (
     <>
@@ -333,12 +342,24 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <SidebarContent />
+        <SidebarContent
+          applicationId={applicationId}
+          pathname={pathname}
+          sectionStatuses={sectionStatuses}
+          setIsOpen={setIsOpen}
+          handleNavigate={handleNavigate}
+        />
       </aside>
 
       {/* Sidebar - Desktop */}
       <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white dark:bg-gray-950 dark:border-gray-800 overflow-hidden" aria-label="Application navigation">
-        <SidebarContent />
+        <SidebarContent
+          applicationId={applicationId}
+          pathname={pathname}
+          sectionStatuses={sectionStatuses}
+          setIsOpen={setIsOpen}
+          handleNavigate={handleNavigate}
+        />
       </aside>
     </>
   );

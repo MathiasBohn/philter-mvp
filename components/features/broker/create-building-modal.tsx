@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ type CreateBuildingModalProps = {
 
 export function CreateBuildingModal({ open, onClose, onSave }: CreateBuildingModalProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const buildingIdRef = useRef(0)
   const [formData, setFormData] = useState({
     name: "",
     type: "" as BuildingType | "",
@@ -30,16 +31,20 @@ export function CreateBuildingModal({ open, onClose, onSave }: CreateBuildingMod
     contactPhone: "",
   })
 
-  const generateBuildingCode = (name: string): string => {
-    // Generate building code from name (e.g., "The Manhattan" -> "MAN001")
-    const prefix = name
+  const generateBuildingCodePrefix = (name: string): string => {
+    // Generate building code prefix from name (e.g., "The Manhattan" -> "MAN")
+    return name
       .split(" ")
       .filter(word => word.length > 0)
       .map(word => word.charAt(0).toUpperCase())
       .join("")
       .substring(0, 3)
       .padEnd(3, 'X')
+  }
 
+  const generateBuildingCode = (name: string): string => {
+    // Generate building code with incremental suffix
+    const prefix = generateBuildingCodePrefix(name)
     const suffix = String(Math.floor(Math.random() * 900) + 100)
     return `${prefix}${suffix}`
   }
@@ -58,8 +63,12 @@ export function CreateBuildingModal({ open, onClose, onSave }: CreateBuildingMod
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))
 
+    // Generate unique ID and code
+    buildingIdRef.current += 1
+    const uniqueId = `bldg-${Date.now()}-${buildingIdRef.current}`
+
     const newBuilding: Building = {
-      id: `bldg-${Date.now()}`,
+      id: uniqueId,
       name: formData.name,
       code: generateBuildingCode(formData.name),
       type: formData.type as BuildingType,
@@ -153,10 +162,11 @@ export function CreateBuildingModal({ open, onClose, onSave }: CreateBuildingMod
                   <Label htmlFor="code-preview">Building Code (Auto-generated)</Label>
                   <Input
                     id="code-preview"
-                    value={formData.name ? generateBuildingCode(formData.name) : "---"}
+                    value={formData.name ? `${generateBuildingCodePrefix(formData.name)}###` : "---"}
                     disabled
                     className="bg-muted"
                   />
+                  <p className="text-xs text-muted-foreground">Final code will be generated on save</p>
                 </div>
               </div>
             </div>

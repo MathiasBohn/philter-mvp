@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,7 +16,13 @@ import { Separator } from "@/components/ui/separator"
 
 export default function BrokerNewApplicationPage() {
   const router = useRouter()
-  const [buildings, setBuildings] = useState<Building[]>([])
+
+  // Load buildings from mock data and localStorage using lazy initialization
+  const [buildings, setBuildings] = useState<Building[]>(() => {
+    const customBuildings = JSON.parse(localStorage.getItem('custom_buildings') || '[]')
+    return [...mockBuildings, ...customBuildings]
+  })
+
   const [buildingId, setBuildingId] = useState("")
   const [unit, setUnit] = useState("")
   const [transactionType, setTransactionType] = useState<TransactionType | "">("")
@@ -26,12 +32,6 @@ export default function BrokerNewApplicationPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [showCreateBuildingModal, setShowCreateBuildingModal] = useState(false)
   const [createdApplicationId, setCreatedApplicationId] = useState("")
-
-  // Load buildings from mock data and localStorage on mount
-  useEffect(() => {
-    const customBuildings = JSON.parse(localStorage.getItem('custom_buildings') || '[]')
-    setBuildings([...mockBuildings, ...customBuildings])
-  }, [])
 
   const handleBuildingChange = (value: string) => {
     if (value === "create-new") {
@@ -171,7 +171,7 @@ export default function BrokerNewApplicationPage() {
           <CardHeader>
             <CardTitle>Primary Applicant Information</CardTitle>
             <CardDescription>
-              Enter the applicant's details. They will receive an invitation to complete the application.
+              Enter the applicant&apos;s details. They will receive an invitation to complete the application.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

@@ -8,7 +8,7 @@ import { UploadBehalfDialog } from "./upload-behalf-dialog";
 import { OverrideModal, SectionOverride } from "./override-modal";
 import { Application } from "@/lib/types";
 import { AlertCircle, MessageSquare, Upload } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/lib/hooks/use-toast";
 
 interface QAPanelProps {
@@ -23,25 +23,25 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
   const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
   const [overrideSectionKey, setOverrideSectionKey] = useState("");
   const [overrideSectionLabel, setOverrideSectionLabel] = useState("");
-  const [overrides, setOverrides] = useState<SectionOverride[]>([]);
 
-  // Load overrides from localStorage on mount
-  useEffect(() => {
+  // Load overrides from localStorage using lazy initialization
+  const [overrides, setOverrides] = useState<SectionOverride[]>(() => {
     const storedOverrides = localStorage.getItem(`application_overrides_${applicationId}`);
     if (storedOverrides) {
       try {
         const parsed = JSON.parse(storedOverrides);
         // Convert date strings back to Date objects
-        const overridesWithDates = parsed.map((o: SectionOverride) => ({
+        return parsed.map((o: SectionOverride) => ({
           ...o,
           overriddenAt: new Date(o.overriddenAt)
         }));
-        setOverrides(overridesWithDates);
       } catch (error) {
         console.error("Error loading overrides:", error);
+        return [];
       }
     }
-  }, [applicationId]);
+    return [];
+  });
 
   const handleOpenOverrideModal = (sectionKey: string, sectionLabel: string) => {
     setOverrideSectionKey(sectionKey);

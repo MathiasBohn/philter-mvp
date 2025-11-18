@@ -227,7 +227,7 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
             <div className="text-center py-8 text-muted-foreground">
               <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p className="text-sm">No co-applicants or guarantors added yet.</p>
-              <p className="text-xs mt-1">Click "Add Person" to get started.</p>
+              <p className="text-xs mt-1">Click &quot;Add Person&quot; to get started.</p>
             </div>
           ) : (
             <div className="space-y-3">

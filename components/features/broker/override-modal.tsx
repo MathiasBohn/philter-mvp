@@ -66,7 +66,7 @@ export function OverrideModal({ open, onClose, onConfirm, sectionKey, sectionLab
         <DialogHeader>
           <DialogTitle>Override Completion Check</DialogTitle>
           <DialogDescription>
-            Manually mark "{sectionLabel}" as complete
+            Manually mark &quot;{sectionLabel}&quot; as complete
           </DialogDescription>
         </DialogHeader>
 

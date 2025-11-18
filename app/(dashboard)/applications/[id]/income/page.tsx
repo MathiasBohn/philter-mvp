@@ -456,7 +456,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
                 <div className="rounded-md bg-green-50 border border-green-200 p-3">
                   <p className="text-sm text-green-800">
                     ✓ {documents.length} document{documents.length > 1 ? 's' : ''} uploaded.
-                    Make sure you've uploaded all documents required for your chosen option.
+                    Make sure you&apos;ve uploaded all documents required for your chosen option.
                   </p>
                 </div>
               </div>

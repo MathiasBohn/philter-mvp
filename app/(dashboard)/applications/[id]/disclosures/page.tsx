@@ -432,7 +432,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
     )
   }
 
-  const handlePetDataChange = (disclosureId: string, hasPets: boolean, pets?: any[]) => {
+  const handlePetDataChange = (disclosureId: string, hasPets: boolean, pets?: Array<{ type: string; breed: string; weight: string }>) => {
     setDisclosures((prev) =>
       prev.map((d) =>
         d.id === disclosureId ? { ...d, hasPets, pets } : d
@@ -525,7 +525,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
       if (petAcknowledgement.hasPets && petAcknowledgement.pets) {
         // Check if all pet fields are filled
         const incompletePets = petAcknowledgement.pets.filter(
-          (pet: any) => !pet.type || !pet.breed || !pet.weight
+          (pet) => !pet.type || !pet.breed || !pet.weight
         )
         if (incompletePets.length > 0) {
           newErrors.push(

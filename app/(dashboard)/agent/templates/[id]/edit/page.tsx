@@ -22,7 +22,7 @@ export default function EditTemplatePage() {
             Template Not Found
           </h1>
           <p className="text-muted-foreground mt-2">
-            The template you're trying to edit doesn't exist.
+            The template you&apos;re trying to edit doesn&apos;t exist.
           </p>
           <Link href="/agent/templates">
             <Button className="mt-4">Back to Templates</Button>

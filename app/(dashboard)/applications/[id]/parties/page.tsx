@@ -280,7 +280,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
             <CardContent className="pt-6">
               <Button type="button" variant="outline" onClick={addOwnerBroker} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Owner's Broker
+                Add Owner&apos;s Broker
               </Button>
             </CardContent>
           </Card>
@@ -294,7 +294,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
             <CardContent className="pt-6">
               <Button type="button" variant="outline" onClick={addOwnerAttorney} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Owner's Attorney
+                Add Owner&apos;s Attorney
               </Button>
             </CardContent>
           </Card>
@@ -313,7 +313,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
                 className="w-full"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Applicant's Attorney
+                Add Applicant&apos;s Attorney
               </Button>
             </CardContent>
           </Card>

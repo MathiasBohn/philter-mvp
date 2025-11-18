@@ -187,7 +187,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
               <h3 className="font-semibold mb-2">What happens next?</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li>• Building management will review the application</li>
-                <li>• You'll be notified if any additional information is needed</li>
+                <li>• You&apos;ll be notified if any additional information is needed</li>
                 <li>• Typical review time is 5-10 business days</li>
                 <li>• You can track the status in your pipeline</li>
               </ul>

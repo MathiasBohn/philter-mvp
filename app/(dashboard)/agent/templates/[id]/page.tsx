@@ -26,7 +26,7 @@ export default function ViewTemplatePage() {
             Template Not Found
           </h1>
           <p className="text-muted-foreground mt-2">
-            The template you're looking for doesn't exist.
+            The template you&apos;re looking for doesn&apos;t exist.
           </p>
           <Link href="/agent/templates">
             <Button className="mt-4">Back to Templates</Button>
@@ -114,7 +114,7 @@ export default function ViewTemplatePage() {
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed mt-3">
             When applicants start a new application for this building, they will be guided through
-            the sections and prompted for documents based on this template's configuration.
+            the sections and prompted for documents based on this template&apos;s configuration.
           </p>
         </Card>
       </div>

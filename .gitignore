@@ -41,5 +41,4 @@ yarn-error.log*
 next-env.d.ts
 
 # other folders
-competitors-user-flows/
-docs
+documents/

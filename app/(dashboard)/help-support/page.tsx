@@ -62,7 +62,7 @@ export default function HelpSupportPage() {
             <Mail className="h-8 w-8 mb-2 text-primary" />
             <CardTitle className="text-lg">Email Support</CardTitle>
             <CardDescription>
-              Send us an email and we'll get back to you
+              Send us an email and we&apos;ll get back to you
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -101,7 +101,7 @@ export default function HelpSupportPage() {
               <AccordionContent>
                 After completing all required sections of your application, navigate to the
                 Review & Submit page. Review all information for accuracy, then click the
-                "Submit Application" button. Your application will be sent to your broker
+                &quot;Submit Application&quot; button. Your application will be sent to your broker
                 for verification before being forwarded to the building management.
               </AccordionContent>
             </AccordionItem>

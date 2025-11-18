@@ -59,48 +59,59 @@ const STORAGE_KEY = "broker_prefill_wizard_draft";
 
 export default function BrokerPrefillWizardPage() {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdApplicationId, setCreatedApplicationId] = useState("");
 
-  const [wizardData, setWizardData] = useState<WizardData>({
-    buildingId: "",
-    unit: "",
-    transactionType: "",
-    leaseStartDate: "",
-    leaseEndDate: "",
-    monthlyRent: "",
-    requiredDocuments: [
-      DocumentCategory.GOVERNMENT_ID,
-      DocumentCategory.BANK_STATEMENT,
-      DocumentCategory.PAYSTUB,
-      DocumentCategory.TAX_RETURN,
-      DocumentCategory.W2,
-    ],
-    applicantName: "",
-    applicantEmail: "",
-    applicantPhone: "",
-    coApplicantName: "",
-    coApplicantEmail: "",
-    brokerName: "John Smith",
-    brokerEmail: "john.smith@realestate.com",
-    brokerPhone: "(212) 555-0100",
-  });
-
-  // Load draft from localStorage on mount
-  useEffect(() => {
+  // Load wizard data from localStorage using lazy initialization
+  const [wizardData, setWizardData] = useState<WizardData>(() => {
     const savedDraft = localStorage.getItem(STORAGE_KEY);
     if (savedDraft) {
       try {
         const parsed = JSON.parse(savedDraft);
-        setWizardData(parsed.data);
-        setCurrentStep(parsed.step);
+        return parsed.data;
       } catch (error) {
         console.error("Failed to load draft:", error);
       }
     }
-  }, []);
+    return {
+      buildingId: "",
+      unit: "",
+      transactionType: "",
+      leaseStartDate: "",
+      leaseEndDate: "",
+      monthlyRent: "",
+      requiredDocuments: [
+        DocumentCategory.GOVERNMENT_ID,
+        DocumentCategory.BANK_STATEMENT,
+        DocumentCategory.PAYSTUB,
+        DocumentCategory.TAX_RETURN,
+        DocumentCategory.W2,
+      ],
+      applicantName: "",
+      applicantEmail: "",
+      applicantPhone: "",
+      coApplicantName: "",
+      coApplicantEmail: "",
+      brokerName: "John Smith",
+      brokerEmail: "john.smith@realestate.com",
+      brokerPhone: "(212) 555-0100",
+    };
+  });
+
+  // Load current step from localStorage using lazy initialization
+  const [currentStep, setCurrentStep] = useState(() => {
+    const savedDraft = localStorage.getItem(STORAGE_KEY);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        return parsed.step || 1;
+      } catch (error) {
+        console.error("Failed to load draft step:", error);
+      }
+    }
+    return 1;
+  });
 
   // Auto-save draft whenever data changes
   useEffect(() => {

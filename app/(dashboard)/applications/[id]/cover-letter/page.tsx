@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -16,19 +16,17 @@ const MAX_CHARACTERS = 2000;
 export default function CoverLetterPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [coverLetter, setCoverLetter] = useState("");
+
+  // Load existing cover letter from localStorage using lazy initialization
+  const [coverLetter, setCoverLetter] = useState(() => {
+    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
+    const application = applications.find((app) => app.id === id);
+    return application?.coverLetter || "";
+  });
+
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
-  // Load existing cover letter from localStorage
-  useEffect(() => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-    const application = applications.find((app) => app.id === id);
-    if (application?.coverLetter) {
-      setCoverLetter(application.coverLetter);
-    }
-  }, [id]);
 
   const handleSave = () => {
     setIsSaving(true);
@@ -73,7 +71,7 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
         <Info className="h-4 w-4" />
         <AlertDescription>
           This is your opportunity to introduce yourself to the board and explain why you would be a great fit for the building.
-          You can share information about your background, lifestyle, interests, and why you're excited about this property.
+          You can share information about your background, lifestyle, interests, and why you&apos;re excited about this property.
         </AlertDescription>
       </Alert>
 
@@ -122,7 +120,7 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
                 </div>
               ) : (
                 <p className="text-muted-foreground italic">
-                  No cover letter written yet. Click "Edit" to begin writing.
+                  No cover letter written yet. Click &quot;Edit&quot; to begin writing.
                 </p>
               )}
             </div>
@@ -189,7 +187,7 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
             </li>
             <li className="flex gap-2">
               <span className="text-primary font-bold">•</span>
-              <span>Explain why you're interested in this specific building and community</span>
+              <span>Explain why you&apos;re interested in this specific building and community</span>
             </li>
             <li className="flex gap-2">
               <span className="text-primary font-bold">•</span>
