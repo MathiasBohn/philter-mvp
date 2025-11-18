@@ -35,11 +35,15 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   // Determine application ID based on the current route structure
   let applicationId = "app-1" // default
 
+  // Known broker route segments that are NOT application IDs
+  const brokerRouteSegments = ['qa', 'new', 'prefill-wizard']
+
   if (pathname.startsWith('/applications/') && pathParts[2]) {
     // Pattern: /applications/[id]/...
     applicationId = pathParts[2]
-  } else if (pathname.startsWith('/broker/') && pathParts[2]) {
+  } else if (pathname.startsWith('/broker/') && pathParts[2] && !brokerRouteSegments.includes(pathParts[2])) {
     // Pattern: /broker/[id]/...
+    // Exclude known route segments like 'qa', 'new', 'prefill-wizard'
     applicationId = pathParts[2]
   } else if (pathname.startsWith('/agent/review/') && pathParts[3]) {
     // Pattern: /agent/review/[id]
