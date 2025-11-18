@@ -288,7 +288,7 @@ export function TemplateWizard() {
                 <AlertDescription className="text-base">
                   <strong>Template published successfully!</strong>
                   <p className="mt-2">
-                    Version 1.0 of &quot;{templateName}&quot; is now active for{" "}
+                    Version 1.0 of "{templateName}" is now active for{" "}
                     {selectedBuilding?.name}.
                   </p>
                 </AlertDescription>
