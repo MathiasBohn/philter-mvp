@@ -1177,7 +1177,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
                   type="checkbox"
                   id="new-current"
                   checked={newAddress.isCurrent}
-                  onChange={(e) => setNewAddress({ ...newAddress, isCurrent: e.target.checked, toDate: "" })}
+                  onChange={(e) => setNewAddress({ ...newAddress, isCurrent: e.target.checked, toDate: undefined })}
                   className="h-4 w-4"
                 />
                 <Label htmlFor="new-current" className="cursor-pointer">

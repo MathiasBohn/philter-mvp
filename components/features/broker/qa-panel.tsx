@@ -9,7 +9,7 @@ import { OverrideModal, SectionOverride } from "./override-modal";
 import { Application } from "@/lib/types";
 import { AlertCircle, MessageSquare, Upload } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/lib/hooks/use-toast";
 
 interface QAPanelProps {
   application: Application;
