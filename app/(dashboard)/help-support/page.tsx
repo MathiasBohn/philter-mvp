@@ -111,7 +111,7 @@ export default function HelpSupportPage() {
               <AccordionContent>
                 The required documents vary by employment type, but typically include proof
                 of income (W-2, paystubs, or 1099 forms), bank statements, and personal
-                references. You'll find specific requirements listed in each section of the
+                references. You&apos;ll find specific requirements listed in each section of the
                 application.
               </AccordionContent>
             </AccordionItem>
@@ -132,7 +132,7 @@ export default function HelpSupportPage() {
                 The review timeline varies depending on the building and complexity of your
                 application. Typically, broker review takes 1-2 business days, building
                 management review takes 3-5 business days, and board review (if required)
-                takes 7-14 business days. You'll receive email notifications at each stage
+                takes 7-14 business days. You&apos;ll receive email notifications at each stage
                 of the process.
               </AccordionContent>
             </AccordionItem>
@@ -141,7 +141,7 @@ export default function HelpSupportPage() {
               <AccordionTrigger>How do I update my information after submitting?</AccordionTrigger>
               <AccordionContent>
                 If your application is still with your broker, you can make changes by
-                contacting them directly. Once submitted to the building, you'll need to
+                contacting them directly. Once submitted to the building, you&apos;ll need to
                 contact building management to request any updates. For significant changes,
                 you may need to resubmit certain sections of your application.
               </AccordionContent>
@@ -155,7 +155,7 @@ export default function HelpSupportPage() {
         <CardHeader>
           <CardTitle>Contact Support</CardTitle>
           <CardDescription>
-            Can't find what you're looking for? Send us a message
+            Can&apos;t find what you&apos;re looking for? Send us a message
           </CardDescription>
         </CardHeader>
         <CardContent>

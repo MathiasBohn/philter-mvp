@@ -29,7 +29,7 @@ export function useFormLoading(loadFn: () => void | Promise<void>, minLoadingTim
     }
 
     load()
-  }, [])
+  }, [loadFn, minLoadingTime])
 
   return isLoading
 }

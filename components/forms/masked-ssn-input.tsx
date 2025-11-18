@@ -30,12 +30,6 @@ export const MaskedSSNInput = forwardRef<HTMLInputElement, MaskedSSNInputProps>(
       onChange?.(formatted)
     }
 
-    const maskSSN = (ssn: string) => {
-      const digits = ssn.replace(/\D/g, "")
-      if (digits.length <= 5) return "•".repeat(digits.length)
-      return `•••-••-${digits.slice(5, 9)}`
-    }
-
     return (
       <div className="space-y-1">
         <div className="relative">

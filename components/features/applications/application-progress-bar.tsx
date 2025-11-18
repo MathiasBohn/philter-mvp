@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Application } from "@/lib/types";
 
@@ -9,14 +9,11 @@ type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
 const TOTAL_SECTIONS = 13; // Total number of application sections
 
 export function ApplicationProgressBar({ applicationId }: { applicationId: string }) {
-  const [completedCount, setCompletedCount] = useState(0);
-  const [totalCount, setTotalCount] = useState(TOTAL_SECTIONS);
-
-  useEffect(() => {
+  const completedCount = useMemo(() => {
     const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
     const application = applications.find((app) => app.id === applicationId);
 
-    if (!application) return;
+    if (!application) return 0;
 
     const statuses: Record<string, SectionStatus> = {
       overview: "complete", // Always complete
@@ -67,11 +64,10 @@ export function ApplicationProgressBar({ applicationId }: { applicationId: strin
                       application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
 
     // Count completed sections
-    const completed = Object.values(statuses).filter(status => status === "complete").length;
-    setCompletedCount(completed);
-    setTotalCount(TOTAL_SECTIONS);
+    return Object.values(statuses).filter(status => status === "complete").length;
   }, [applicationId]);
 
+  const totalCount = TOTAL_SECTIONS;
   const progressPercentage = (completedCount / totalCount) * 100;
 
   return (

@@ -12,7 +12,6 @@ import {
 import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
 import { mockApplications } from "@/lib/mock-data/applications"
-import type { Application } from "@/lib/types"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [

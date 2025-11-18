@@ -14,7 +14,7 @@ export default function MyApplicationsPage() {
   const { user } = useUser();
 
   // For demo purposes, filter applications by current user's role
-  const userApplications = mockApplications.filter((app) => {
+  const userApplications = mockApplications.filter(() => {
     if (!user) return false;
     // In a real app, we would filter by actual user ID
     // For now, show all applications for demonstration

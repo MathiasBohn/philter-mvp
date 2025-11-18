@@ -6,7 +6,7 @@ import { mockBuildings } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Edit, ArrowLeft, Copy } from "lucide-react";
+import { Edit, ArrowLeft } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 

@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import { mockApplications } from "@/lib/mock-data";
-import { notFound, useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QAPanel } from "@/components/features/broker/qa-panel";
@@ -14,7 +14,6 @@ import { Application, Role } from "@/lib/types";
 
 export default function BrokerQAPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const [application, setApplication] = useState<Application | undefined>(() =>
     mockApplications.find((app) => app.id === id)
   );

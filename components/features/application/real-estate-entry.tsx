@@ -28,7 +28,6 @@ export function RealEstateEntry({
   onUpdate,
   onRemove,
   showRemove = true,
-  errors = {},
 }: RealEstateEntryProps) {
   const handleChange = (field: keyof RealEstateProperty, value: unknown) => {
     // Ensure numeric fields are stored as numbers, not strings

@@ -140,7 +140,7 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
         await onSubmit(data);
         router.push(`/applications/${id}/parties`);
       },
-      (errors) => {
+      () => {
         // Form validation failed, scroll to top to show errors
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }

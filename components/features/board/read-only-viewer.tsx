@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { PrivateNotes } from "./private-notes";
 import { DownloadNotice } from "./download-notice";
 import { formatDate } from "@/lib/utils";
-import { createBoardWatermarkData, watermarkPDFBlob } from "@/lib/pdf-utils";
+import { createBoardWatermarkData } from "@/lib/pdf-utils";
 
 interface ReadOnlyViewerProps {
   application: Application;

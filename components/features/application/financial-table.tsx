@@ -66,7 +66,7 @@ export function FinancialTable({
             {filteredEntries.length === 0 ? (
               <tr>
                 <td colSpan={showInstitutionColumn ? 5 : 4} className="p-8 text-center text-muted-foreground">
-                  No entries yet. Click "Add Entry" to get started.
+                  No entries yet. Click &quot;Add Entry&quot; to get started.
                 </td>
               </tr>
             ) : (

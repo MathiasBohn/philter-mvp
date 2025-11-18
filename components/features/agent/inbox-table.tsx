@@ -63,7 +63,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
     setAssignModalOpen(true);
   };
 
-  const handleAssignReviewer = (applicationId: string, reviewerId: string) => {
+  const handleAssignReviewer = (applicationId: string) => {
     // In a real app, this would call an API
     // For now, we'll just update the status and show a toast
     if (onStatusChange) {

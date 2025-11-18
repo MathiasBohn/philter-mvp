@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search, Eye, TrendingUp, Clock, CheckCircle, Building2 } from "lucide-react";
 import Link from "next/link";
-import { Application, ApplicationStatus } from "@/lib/types";
+import { ApplicationStatus } from "@/lib/types";
 
 export default function BoardDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");

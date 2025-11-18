@@ -48,7 +48,6 @@ export function InviteApplicantModal({
       .toString(36)
       .substr(2, 9)}`.toUpperCase();
 
-    const building = mockBuildings.find((b) => b.id === buildingId);
     const link = `${window.location.origin}/applications/new?code=${uniqueCode}&building=${buildingId}&type=${transactionType}&email=${encodeURIComponent(email)}`;
 
     setInviteLink(link);

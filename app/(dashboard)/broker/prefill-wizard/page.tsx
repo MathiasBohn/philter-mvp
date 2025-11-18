@@ -125,7 +125,7 @@ export default function BrokerPrefillWizardPage() {
     return () => clearTimeout(timeoutId);
   }, [wizardData, currentStep]);
 
-  const updateWizardData = (field: keyof WizardData, value: any) => {
+  const updateWizardData = <K extends keyof WizardData>(field: K, value: WizardData[K]) => {
     setWizardData((prev) => ({ ...prev, [field]: value }));
   };
 

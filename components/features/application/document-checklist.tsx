@@ -159,7 +159,7 @@ export function DocumentChecklist({
                 htmlFor={`skip-${category.id}`}
                 className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                I don't have this document
+                I don&apos;t have this document
               </Label>
             </div>
 

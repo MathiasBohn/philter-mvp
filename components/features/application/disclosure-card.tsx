@@ -527,11 +527,11 @@ export function DisclosureCard({
 
         {disclosure.type === DisclosureType.INSURANCE_REQUIREMENTS && (
           <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-            <p className="text-sm font-medium">Renter's Insurance Requirements</p>
+            <p className="text-sm font-medium">Renter&apos;s Insurance Requirements</p>
             <div className="rounded-md bg-background p-4 text-xs leading-relaxed space-y-3">
               <p>
                 <strong>Important:</strong> The building requires all residents to obtain and maintain
-                renter's insurance throughout the lease term. This insurance protects both you and the
+                renter&apos;s insurance throughout the lease term. This insurance protects both you and the
                 building from potential losses due to fire, theft, water damage, and other covered events.
               </p>
 

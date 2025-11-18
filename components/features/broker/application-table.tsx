@@ -20,7 +20,6 @@ import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ApplicationTableProps {

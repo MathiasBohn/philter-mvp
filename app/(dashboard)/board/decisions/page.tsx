@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Eye, Building2, Calendar, Search, User, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Eye, Building2, Calendar, Search, User, CheckCircle, AlertCircle } from "lucide-react";
 import { ApplicationStatus } from "@/lib/types";
 
 export default function BoardDecisionsPage() {

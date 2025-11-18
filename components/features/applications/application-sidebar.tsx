@@ -3,8 +3,6 @@
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
   Home,
@@ -24,7 +22,7 @@ import {
   X,
   Send,
 } from "lucide-react";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Application } from "@/lib/types";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
@@ -141,19 +139,6 @@ const getStatusIcon = (status: SectionStatus) => {
       return <XCircle className="h-4 w-4 text-red-600" />;
     default:
       return <Circle className="h-4 w-4 text-gray-300" />;
-  }
-};
-
-const getStatusColor = (status: SectionStatus) => {
-  switch (status) {
-    case "complete":
-      return "bg-green-100 border-green-300";
-    case "in-progress":
-      return "bg-yellow-100 border-yellow-300";
-    case "error":
-      return "bg-red-100 border-red-300";
-    default:
-      return "bg-gray-50 border-gray-200";
   }
 };
 
@@ -301,19 +286,12 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
                       application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
 
     return statuses;
-  }, [applicationId, pathname]);
-
-  // Count completed sections
-  const completedCount = useMemo(() => {
-    return Object.values(sectionStatuses).filter(status => status === "complete").length;
-  }, [sectionStatuses]);
+  }, [applicationId]);
 
   const handleNavigate = (path: string) => {
     router.push(`/applications/${applicationId}${path}`);
     setIsOpen(false); // Close mobile menu
   };
-
-  const progressPercentage = (completedCount / SECTIONS.length) * 100;
 
   return (
     <>

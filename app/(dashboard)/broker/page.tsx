@@ -5,10 +5,10 @@ import { mockApplications } from "@/lib/mock-data";
 import { ApplicationTable } from "@/components/features/broker/application-table";
 import { FilterBar } from "@/components/features/broker/filter-bar";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Send, CheckSquare, FileSpreadsheet, Loader2, ChevronDown } from "lucide-react";
+import { Plus, Download, Send, CheckSquare, FileSpreadsheet, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useApplicationFilters } from "@/lib/hooks/use-application-filters";
-import { Application, ApplicationStatus } from "@/lib/types";
+import { ApplicationStatus } from "@/lib/types";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,7 +40,6 @@ export default function BrokerPipelinePage() {
   const [selectedApplicationIds, setSelectedApplicationIds] = useState<string[]>([]);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [bulkAction, setBulkAction] = useState<string>("");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
 

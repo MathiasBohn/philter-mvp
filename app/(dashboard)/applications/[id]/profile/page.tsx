@@ -295,7 +295,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     setReferences(references.filter((ref) => ref.id !== id));
   };
 
-  const handleUploadReferenceLetter = (referenceId: string, file: File) => {
+  const handleUploadReferenceLetter = (referenceId: string) => {
     // In a real app, this would upload the file and get a document ID
     // For now, we'll just mark it as uploaded with a mock ID
     const updatedReferences = references.map((ref) =>
@@ -308,7 +308,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   const handleContinue = async () => {
     // Validate the main form fields
-    const isFormValid = await handleSubmit(
+    await handleSubmit(
       async (data) => {
         // Form is valid, now check additional required fields
         const additionalErrors: string[] = [];
@@ -356,7 +356,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         await onSubmit(data);
         router.push(`/applications/${id}/income`);
       },
-      (errors) => {
+      () => {
         // Form validation failed, scroll to top to show errors
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
