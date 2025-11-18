@@ -306,30 +306,36 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
 
       <Separator />
 
-      <div className="flex items-center justify-between rounded-lg border bg-muted/20 p-6">
+      <div className="space-y-4 rounded-lg border bg-muted/20 p-6">
         <div>
-          <p className="font-semibold">Ready to submit?</p>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="font-semibold text-lg">Ready to submit your application?</p>
+          <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+            Your application will be submitted to your broker for verification and forwarding to the building management.
+            You can make changes until the broker submits it to the building.
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
             {canSubmit()
               ? "All requirements met. You can submit your application now."
               : "Complete all required sections before submitting."}
           </p>
         </div>
 
-        <Button
-          size="lg"
-          onClick={handleSubmit}
-          disabled={!canSubmit() || isSubmitting}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            "Submit Application"
-          )}
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            size="lg"
+            onClick={handleSubmit}
+            disabled={!canSubmit() || isSubmitting}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting to Broker...
+              </>
+            ) : (
+              "Submit Application to Broker"
+            )}
+          </Button>
+        </div>
       </div>
 
       <div className="flex justify-center">

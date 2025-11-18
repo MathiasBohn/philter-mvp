@@ -222,7 +222,7 @@ export function ReadOnlyViewer({ application }: ReadOnlyViewerProps) {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Mark this application as reviewed once you&apos;ve completed
+                  Mark this application as reviewed once you've completed
                   your assessment.
                 </p>
                 <Button

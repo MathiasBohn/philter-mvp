@@ -171,9 +171,9 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
               variant="ghost"
               size="sm"
               onClick={() => {
-                if (title.includes("Owner&apos;s Broker")) setOwnerBroker(null);
-                if (title.includes("Owner&apos;s Attorney")) setOwnerAttorney(null);
-                if (title.includes("Applicant&apos;s Attorney")) setApplicantAttorney(null);
+                if (title.includes("Owner's Broker")) setOwnerBroker(null);
+                if (title.includes("Owner's Attorney")) setOwnerAttorney(null);
+                if (title.includes("Applicant's Attorney")) setApplicantAttorney(null);
               }}
             >
               <Trash2 className="h-4 w-4" />
@@ -274,13 +274,13 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
 
         {/* Owner's Broker (Optional) */}
         {ownerBroker ? (
-          renderParticipantFields(ownerBroker, setOwnerBroker, "Owner&apos;s Broker")
+          renderParticipantFields(ownerBroker, setOwnerBroker, "Owner's Broker")
         ) : (
           <Card>
             <CardContent className="pt-6">
               <Button type="button" variant="outline" onClick={addOwnerBroker} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Owner&apos;s Broker
+                Add Owner's Broker
               </Button>
             </CardContent>
           </Card>
@@ -288,13 +288,13 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
 
         {/* Owner's Attorney (Optional) */}
         {ownerAttorney ? (
-          renderParticipantFields(ownerAttorney, setOwnerAttorney, "Owner&apos;s Attorney")
+          renderParticipantFields(ownerAttorney, setOwnerAttorney, "Owner's Attorney")
         ) : (
           <Card>
             <CardContent className="pt-6">
               <Button type="button" variant="outline" onClick={addOwnerAttorney} className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Owner&apos;s Attorney
+                Add Owner's Attorney
               </Button>
             </CardContent>
           </Card>
@@ -302,7 +302,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
 
         {/* Applicant's Attorney (Optional) */}
         {applicantAttorney ? (
-          renderParticipantFields(applicantAttorney, setApplicantAttorney, "Applicant&apos;s Attorney")
+          renderParticipantFields(applicantAttorney, setApplicantAttorney, "Applicant's Attorney")
         ) : (
           <Card>
             <CardContent className="pt-6">
@@ -313,7 +313,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
                 className="w-full"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Applicant&apos;s Attorney
+                Add Applicant's Attorney
               </Button>
             </CardContent>
           </Card>

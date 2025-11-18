@@ -187,6 +187,24 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Cursor pointer for all interactive elements */
+  button,
+  a,
+  [role="button"],
+  [role="link"],
+  label[for],
+  select {
+    cursor: pointer;
+  }
+
+  /* Ensure disabled elements don't show pointer cursor */
+  button:disabled,
+  a:disabled,
+  [role="button"]:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer components {

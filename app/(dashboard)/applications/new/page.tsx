@@ -112,7 +112,7 @@ export default function NewApplicationPage() {
         <CardHeader>
           <CardTitle>Building & Transaction Details</CardTitle>
           <CardDescription>
-            Enter your building code and select the type of transaction you&apos;re applying for.
+            Enter your building code and select the type of transaction you're applying for.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -137,7 +137,7 @@ export default function NewApplicationPage() {
 
               <div className="rounded-lg border bg-muted/50 p-4">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Don&apos;t have a building code?</strong> Contact your broker or building
+                  <strong>Don't have a building code?</strong> Contact your broker or building
                   management to obtain your unique application code.
                 </p>
               </div>

@@ -137,7 +137,7 @@ export default function BrokerNewApplicationPage() {
           <CardHeader>
             <CardTitle>Primary Applicant Information</CardTitle>
             <CardDescription>
-              Enter the applicant&apos;s details. They will receive an invitation to complete the application.
+              Enter the applicant's details. They will receive an invitation to complete the application.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

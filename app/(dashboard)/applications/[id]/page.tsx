@@ -7,10 +7,13 @@ import { InviteWidget } from "@/components/features/application/invite-widget";
 import { RFIBanner } from "@/components/features/application/rfi-banner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BuildingType } from "@/lib/types";
 import { notFound } from "next/navigation";
 import { storage } from "@/lib/persistence";
 import { mockRFIs } from "@/lib/mock-data/rfis";
+import { CheckCircle, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function ApplicationOverviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -157,12 +160,24 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
       </div>
 
       {/* Progress Bar */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">Overall Progress</span>
           <span className="text-muted-foreground">{application.completionPercentage}% complete</span>
         </div>
         <Progress value={application.completionPercentage} className="h-2" />
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-sm text-muted-foreground">
+            Complete all sections to submit your application
+          </p>
+          <Button asChild variant="default" size="sm">
+            <Link href={`/applications/${id}/review`} className="gap-2">
+              <CheckCircle className="h-4 w-4" />
+              Review Application
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* RFI Banner */}
