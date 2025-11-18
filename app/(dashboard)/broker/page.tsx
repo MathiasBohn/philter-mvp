@@ -70,7 +70,6 @@ export default function BrokerPipelinePage() {
 
   const executeBulkAction = async (action: string) => {
     setShowConfirmDialog(false);
-    setIsProcessing(true);
     setProcessingProgress(0);
     setShowProgressDialog(true);
 
@@ -100,7 +99,6 @@ export default function BrokerPipelinePage() {
         break;
     }
 
-    setIsProcessing(false);
     setShowProgressDialog(false);
     setSelectedApplicationIds([]);
   };
