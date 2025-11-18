@@ -20,7 +20,7 @@ import {
 import { DataTable, Column } from "@/components/ui/data-table";
 import { InboxMobileCard } from "./mobile-cards/inbox-mobile-card";
 import { AssignReviewerModal } from "./assign-reviewer-modal";
-import { MoreVertical, ExternalLink, Download } from "lucide-react";
+import { MoreVertical, ExternalLink, Download, UserPlus } from "lucide-react";
 import { Application, ApplicationStatus, TransactionType } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { getStatusColor, getTransactionTypeLabel } from "@/lib/constants/labels";
@@ -237,6 +237,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleAssignClick(app)}>
+          <UserPlus className="mr-2 h-4 w-4" />
           Assign to Reviewer
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleDownloadPackage(app)}>

@@ -131,14 +131,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       case Role.ADMIN:
         return [
           {
-            label: "Intake Inbox",
+            label: "Applications Inbox",
             href: `/agent/inbox`,
             icon: Inbox,
           },
           {
-            label: "Review Workspace",
-            href: `/agent/review/${applicationId}`,
-            icon: Eye,
+            label: "Submit to Board",
+            href: `/agent/submit`,
+            icon: Upload,
           },
           {
             label: "Templates",
@@ -150,19 +150,14 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       case Role.BOARD:
         return [
           {
-            label: "Dashboard",
+            label: "Applications Overview",
             href: `/board`,
             icon: Home,
           },
           {
-            label: "Application Summary",
-            href: `/board/summary/${applicationId}`,
-            icon: BarChart3,
-          },
-          {
-            label: "Review Application",
-            href: `/board/review/${applicationId}`,
-            icon: Eye,
+            label: "Pending Decisions",
+            href: `/board/decisions`,
+            icon: ClipboardList,
           },
         ]
 
@@ -184,7 +179,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       case Role.BROKER:
         return "Broker Tools"
       case Role.ADMIN:
-        return "Admin Tools"
+        return "Transaction Agent"
       case Role.BOARD:
         return "Board Review"
       default:
