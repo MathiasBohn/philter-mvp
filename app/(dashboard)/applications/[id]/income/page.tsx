@@ -370,13 +370,15 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
                 <div className="bg-background rounded-md p-4 border-l-4 border-green-500">
                   <p className="font-medium text-sm">✅ Option 2:</p>
                   <ul className="mt-2 space-y-1 text-sm list-disc list-inside pl-2">
-                    <li>Most recent <strong>1099 form</strong></li>
+                    <li>Most recent <strong>W-2</strong></li>
+                    <li><strong>AND</strong> most recent <strong>1099 form</strong></li>
                   </ul>
                 </div>
                 <div className="bg-background rounded-md p-4 border-l-4 border-green-500">
                   <p className="font-medium text-sm">✅ Option 3:</p>
                   <ul className="mt-2 space-y-1 text-sm list-disc list-inside pl-2">
-                    <li><strong>3 most recent paystubs</strong></li>
+                    <li>Most recent <strong>W-2</strong></li>
+                    <li><strong>AND 3</strong> most recent <strong>paystubs</strong></li>
                   </ul>
                 </div>
               </div>
