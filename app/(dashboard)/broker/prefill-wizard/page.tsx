@@ -675,7 +675,7 @@ export default function BrokerPrefillWizardPage() {
           </DialogHeader>
           <div className="space-y-2 pt-4">
             <Button onClick={() => router.push(`/broker/${createdApplicationId}/qa`)} className="w-full">
-              Go to QA Workspace
+              Go to Application Workspace
             </Button>
             <Button onClick={() => router.push("/broker")} variant="outline" className="w-full">
               Back to Pipeline

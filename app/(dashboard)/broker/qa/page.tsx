@@ -13,7 +13,7 @@ import { useState } from "react";
 export default function QAWorkspacePage() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter applications that are ready for QA (submitted by applicant, not yet sent to building)
+  // Filter applications that are ready for review (submitted by applicant, not yet sent to building)
   const qaReadyApplications = mockApplications.filter((app) => {
     const matchesSearch =
       searchQuery === "" ||
@@ -28,7 +28,7 @@ export default function QAWorkspacePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">QA Workspace</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Application Workspace</h1>
           <p className="text-muted-foreground mt-1">
             Review and verify applications before submission to building
           </p>
@@ -58,12 +58,12 @@ export default function QAWorkspacePage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileCheck className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">
-              {searchQuery ? "No matching applications" : "No applications ready for QA"}
+              {searchQuery ? "No matching applications" : "No applications ready for review"}
             </h3>
             <p className="text-muted-foreground text-center max-w-md">
               {searchQuery
                 ? "Try adjusting your search query."
-                : "Applications that need QA review will appear here."}
+                : "Applications that need review will appear here."}
             </p>
           </CardContent>
         </Card>
@@ -117,7 +117,7 @@ export default function QAWorkspacePage() {
                   </div>
                   <Button variant="default" size="sm" asChild>
                     <Link href={`/broker/${application.id}/qa`}>
-                      Open QA Workspace
+                      Open Application Workspace
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>

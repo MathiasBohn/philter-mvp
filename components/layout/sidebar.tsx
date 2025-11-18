@@ -117,7 +117,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             icon: ClipboardList,
           },
           {
-            label: "QA Workspace",
+            label: "Application Workspace",
             href: `/broker/qa`,
             icon: FileCheck,
           },

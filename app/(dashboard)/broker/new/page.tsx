@@ -233,7 +233,7 @@ export default function BrokerNewApplicationPage() {
           </DialogHeader>
           <div className="space-y-2 pt-4">
             <Button onClick={handleContinue} className="w-full">
-              Go to QA Workspace
+              Go to Application Workspace
             </Button>
             <Button onClick={handleViewPipeline} variant="outline" className="w-full">
               Back to Pipeline

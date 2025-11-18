@@ -54,7 +54,7 @@ export function ApplicationMobileCard({ application }: ApplicationMobileCardProp
               <DropdownMenuItem asChild>
                 <Link href={`/broker/${application.id}/qa`}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Open QA Workspace
+                  Open Application Workspace
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>

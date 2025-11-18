@@ -156,7 +156,7 @@ export function ApplicationTable({
         <DropdownMenuItem asChild>
           <Link href={`/broker/${application.id}/qa`}>
             <Eye className="mr-2 h-4 w-4" />
-            Open QA Workspace
+            Open Application Workspace
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setShowInviteModal(true)}>

@@ -126,7 +126,7 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
           </Button>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold">QA Workspace</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold">Application Workspace</h1>
               <p className="mt-2 text-sm sm:text-base text-muted-foreground">
                 {application.building?.name} - {application.people[0]?.fullName || "New Application"}
               </p>
@@ -335,7 +335,7 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
           </Card>
         </div>
 
-        {/* Right: QA Panel - Full width on mobile, stacks below on tablet */}
+        {/* Right: Review Panel - Full width on mobile, stacks below on tablet */}
         <div className="md:col-span-4 lg:col-span-3">
           <QAPanel application={application} applicationId={id} />
         </div>
