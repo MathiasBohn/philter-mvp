@@ -16,6 +16,8 @@ import { AddressHistoryList } from "@/components/features/application/address-hi
 import { ReferenceList } from "@/components/features/application/reference-list";
 import { MaskedSSNInput } from "@/components/forms/masked-ssn-input";
 import { DateInput } from "@/components/forms/date-input";
+import { MonthYearInput } from "@/components/forms/month-year-input";
+import { StateSelect } from "@/components/ui/state-select";
 import { profileSchema } from "@/lib/validators";
 import { AddressHistoryEntry, ReferenceLetterEntry, HousingHistory, LandlordInfo, EmergencyContact, KeyHolder, EducationInfo, EducationLevel } from "@/lib/types";
 import Link from "next/link";
@@ -36,14 +38,23 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   const [addresses, setAddresses] = useState<AddressHistoryEntry[]>([]);
   const [references, setReferences] = useState<ReferenceLetterEntry[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
-  const [newAddress, setNewAddress] = useState({
+  const [newAddress, setNewAddress] = useState<{
+    street: string;
+    unit: string;
+    city: string;
+    state: string;
+    zip: string;
+    fromDate: Date | undefined;
+    toDate: Date | undefined;
+    isCurrent: boolean;
+  }>({
     street: "",
     unit: "",
     city: "",
     state: "",
     zip: "",
-    fromDate: "",
-    toDate: "",
+    fromDate: undefined,
+    toDate: undefined,
     isCurrent: false,
   });
 
@@ -253,8 +264,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       city: newAddress.city,
       state: newAddress.state,
       zip: newAddress.zip,
-      fromDate: new Date(newAddress.fromDate),
-      toDate: newAddress.isCurrent ? undefined : (newAddress.toDate ? new Date(newAddress.toDate) : undefined),
+      fromDate: newAddress.fromDate,
+      toDate: newAddress.isCurrent ? undefined : newAddress.toDate,
       isCurrent: newAddress.isCurrent,
     };
 
@@ -265,8 +276,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       city: "",
       state: "",
       zip: "",
-      fromDate: "",
-      toDate: "",
+      fromDate: undefined,
+      toDate: undefined,
       isCurrent: false,
     });
     setShowAddressDialog(false);
@@ -532,39 +543,31 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
               <div className="space-y-2">
                 <Label htmlFor="education-from">From Date</Label>
-                <Input
+                <MonthYearInput
                   id="education-from"
-                  type="date"
-                  value={
-                    educationInfo.fromDate
-                      ? educationInfo.fromDate.toISOString().split("T")[0]
-                      : ""
-                  }
-                  onChange={(e) =>
+                  value={educationInfo.fromDate}
+                  onChange={(date) =>
                     setEducationInfo({
                       ...educationInfo,
-                      fromDate: e.target.value ? new Date(e.target.value) : undefined,
+                      fromDate: date,
                     })
                   }
+                  placeholder="MM/YYYY"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="education-to">To Date</Label>
-                <Input
+                <MonthYearInput
                   id="education-to"
-                  type="date"
-                  value={
-                    educationInfo.toDate
-                      ? educationInfo.toDate.toISOString().split("T")[0]
-                      : ""
-                  }
-                  onChange={(e) =>
+                  value={educationInfo.toDate}
+                  onChange={(date) =>
                     setEducationInfo({
                       ...educationInfo,
-                      toDate: e.target.value ? new Date(e.target.value) : undefined,
+                      toDate: date,
                     })
                   }
+                  placeholder="MM/YYYY"
                 />
               </div>
 
@@ -696,11 +699,12 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                   <div className="space-y-2">
                     <Label htmlFor="current-landlord-from">Occupied From <span className="text-red-500">*</span></Label>
-                    <Input
+                    <MonthYearInput
                       id="current-landlord-from"
-                      type="date"
-                      value={currentLandlord?.occupiedFrom ? currentLandlord.occupiedFrom.toISOString().split('T')[0] : ""}
-                      onChange={(e) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, occupiedFrom: new Date(e.target.value) } : undefined)}
+                      value={currentLandlord?.occupiedFrom}
+                      onChange={(date) => setCurrentLandlord(currentLandlord ? { ...currentLandlord, occupiedFrom: date || new Date() } : undefined)}
+                      placeholder="MM/YYYY"
+                      required
                     />
                   </div>
 
@@ -794,21 +798,21 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
                 <div className="space-y-2">
                   <Label htmlFor="previous-landlord-from">Occupied From</Label>
-                  <Input
+                  <MonthYearInput
                     id="previous-landlord-from"
-                    type="date"
-                    value={previousLandlord?.occupiedFrom ? previousLandlord.occupiedFrom.toISOString().split('T')[0] : ""}
-                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, occupiedFrom: new Date(e.target.value) } : undefined)}
+                    value={previousLandlord?.occupiedFrom}
+                    onChange={(date) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, occupiedFrom: date || new Date() } : undefined)}
+                    placeholder="MM/YYYY"
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="previous-landlord-to">Occupied To</Label>
-                  <Input
+                  <MonthYearInput
                     id="previous-landlord-to"
-                    type="date"
-                    value={previousLandlord?.occupiedTo ? previousLandlord.occupiedTo.toISOString().split('T')[0] : ""}
-                    onChange={(e) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, occupiedTo: new Date(e.target.value) } : undefined)}
+                    value={previousLandlord?.occupiedTo}
+                    onChange={(date) => setPreviousLandlord(previousLandlord ? { ...previousLandlord, occupiedTo: date } : undefined)}
+                    placeholder="MM/YYYY"
                   />
                 </div>
 
@@ -1133,12 +1137,11 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-state">State</Label>
-                <Input
+                <StateSelect
                   id="new-state"
                   value={newAddress.state}
-                  onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value.toUpperCase() })}
-                  placeholder="NY"
-                  maxLength={2}
+                  onChange={(value) => setNewAddress({ ...newAddress, state: value })}
+                  placeholder="Select State"
                 />
               </div>
               <div className="space-y-2">
@@ -1152,21 +1155,21 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-from">From Date</Label>
-                <Input
+                <MonthYearInput
                   id="new-from"
-                  type="date"
                   value={newAddress.fromDate}
-                  onChange={(e) => setNewAddress({ ...newAddress, fromDate: e.target.value })}
+                  onChange={(date) => setNewAddress({ ...newAddress, fromDate: date })}
+                  placeholder="MM/YYYY"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="new-to">To Date</Label>
-                <Input
+                <MonthYearInput
                   id="new-to"
-                  type="date"
                   value={newAddress.toDate}
-                  onChange={(e) => setNewAddress({ ...newAddress, toDate: e.target.value })}
+                  onChange={(date) => setNewAddress({ ...newAddress, toDate: date })}
                   disabled={newAddress.isCurrent}
+                  placeholder="MM/YYYY"
                 />
               </div>
               <div className="col-span-2 flex items-center space-x-2">

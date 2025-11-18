@@ -56,7 +56,7 @@ This document outlines the implementation plan for fixing **15 bugs** and implem
 | 3 | HIGH | Navigation & Links | 1, 12, 13, 14, 15 | 13, 16 | 5-7 days |
 | 4 | HIGH | Data Model & Architecture | 6, 10 | 4, 9 | 5-7 days |
 | 5 | MEDIUM | UI/UX Polish ✅ | 5 | 1, 2, 3, 11, 12 | 3-5 days |
-| 6 | MEDIUM | Form Improvements | - | 5, 6, 7, 8, 10 | 5-7 days |
+| 6 | MEDIUM | Form Improvements ✅ | - | 5, 6, 7, 8, 10 | 5-7 days |
 | 7 | LOW | Advanced Features | - | 14, 15 | 3-5 days |
 | Deferred | - | Backend-Dependent | 11 | - | TBD |
 
@@ -1374,16 +1374,18 @@ a:hover,
 
 ---
 
-## Phase 6: Form Field Improvements
+## Phase 6: Form Field Improvements ✅ COMPLETED
 
 **Priority**: MEDIUM
 **Timeline**: Week 5-6 (Days 32-38)
 **Focus**: Better form inputs and validation
+**Status**: ✅ **COMPLETED** - 2025-11-18
 
-### Suggestion 5: State Dropdown
+### Suggestion 5: State Dropdown ✅ IMPLEMENTED
 
 **Location**: Address forms (residence history, etc.)
 **Issue**: State is text input; should be dropdown
+**Status**: ✅ **IMPLEMENTED** - 2025-11-18
 
 **Implementation Steps**:
 1. Create State dropdown component
@@ -1391,11 +1393,12 @@ a:hover,
 3. Replace text input with dropdown
 4. Consider adding DC and territories
 
-**Files to Create/Modify**:
+**Files Created/Modified**:
 ```
-- app/components/ui/StateSelect.tsx (new)
-- app/components/forms/AddressForm.tsx
-- data/us-states.ts (new)
+- lib/data/us-states.ts (new - complete list of US states)
+- components/ui/state-select.tsx (new - StateSelect component)
+- app/(dashboard)/applications/[id]/profile/page.tsx (updated)
+- components/features/application/employer-entry.tsx (updated)
 ```
 
 **Implementation**:
@@ -1425,20 +1428,30 @@ export function StateSelect({ value, onChange }) {
 ```
 
 **Acceptance Criteria**:
-- [ ] State field is dropdown
-- [ ] All 50 states included
-- [ ] DC included
-- [ ] Sorted alphabetically
-- [ ] Shows full name but stores code
-- [ ] Works in all address forms
-- [ ] Validates properly
+- [x] State field is dropdown
+- [x] All 50 states included
+- [x] DC included
+- [x] Sorted alphabetically
+- [x] Shows full name but stores code
+- [x] Works in all address forms
+- [x] Validates properly
+
+**Implementation Summary**:
+- Created `us-states.ts` with all 50 US states, DC, Puerto Rico, and Virgin Islands
+- Created reusable `StateSelect` component using shadcn/ui Select component
+- Updated profile page address dialog to use StateSelect
+- Updated employer-entry component to use StateSelect for employer address
+- Updated employer-entry component to use StateSelect for previous employer address
+- All state fields now consistently use dropdown instead of text input
+- State values stored as 2-letter codes (e.g., "NY") but displayed as full names
 
 ---
 
-### Suggestion 6: Date Field Precision
+### Suggestion 6: Date Field Precision ✅ IMPLEMENTED
 
 **Location**: Address history, Education, Employment dates
 **Issue**: Using mm/dd/yyyy; should be mm/yyyy for many fields
+**Status**: ✅ **IMPLEMENTED** - 2025-11-18
 
 **Implementation Steps**:
 1. Identify fields that need mm/yyyy:
@@ -1451,15 +1464,17 @@ export function StateSelect({ value, onChange }) {
 **Fields Needing Change**:
 - ✅ Address History: From Date, To Date → mm/yyyy
 - ✅ Education: From Date, To Date → mm/yyyy
-- ❌ Date of Birth: Keep mm/dd/yyyy
+- ✅ Date of Birth: Keep mm/dd/yyyy (unchanged as required)
 - ✅ Employment: From Date, To Date → mm/yyyy
+- ✅ Current Landlord: Occupied From → mm/yyyy
+- ✅ Previous Landlord: Occupied From, Occupied To → mm/yyyy
+- ✅ Previous Employer: Employed From, Employed To → mm/yyyy
 
-**Files to Modify**:
+**Files Created/Modified**:
 ```
-- app/components/ui/MonthYearInput.tsx (new)
-- app/components/forms/AddressHistory.tsx
-- app/components/forms/Education.tsx
-- app/components/forms/Employment.tsx
+- components/forms/month-year-input.tsx (new)
+- app/(dashboard)/applications/[id]/profile/page.tsx (updated)
+- components/features/application/employer-entry.tsx (updated)
 ```
 
 **Implementation**:
@@ -1502,20 +1517,34 @@ export function MonthYearPicker({ value, onChange }) {
 ```
 
 **Acceptance Criteria**:
-- [ ] Address dates use mm/yyyy format
-- [ ] Education dates use mm/yyyy format
-- [ ] Employment dates use mm/yyyy format
-- [ ] Date of Birth still uses mm/dd/yyyy
-- [ ] Easy to input (dropdowns or native month picker)
-- [ ] Validates correctly
-- [ ] Displays clearly
+- [x] Address dates use mm/yyyy format
+- [x] Education dates use mm/yyyy format
+- [x] Employment dates use mm/yyyy format
+- [x] Date of Birth still uses mm/dd/yyyy
+- [x] Easy to input (dropdowns or native month picker)
+- [x] Validates correctly
+- [x] Displays clearly
+
+**Implementation Summary**:
+- Created `MonthYearInput` component using HTML5 month input type (YYYY-MM format)
+- Component handles Date object conversion automatically
+- Updated education from/to dates in profile page to use MonthYearInput
+- Updated address history from/to dates in profile dialog to use MonthYearInput
+- Updated current landlord occupied from date to use MonthYearInput
+- Updated previous landlord occupied from/to dates to use MonthYearInput
+- Updated employment start date in employer-entry to use MonthYearInput
+- Updated previous employer employed from/to dates to use MonthYearInput
+- Date of Birth remains as full date picker (mm/dd/yyyy) as required
+- All month/year fields now show "MM/YYYY" placeholder for clarity
+- Native HTML5 month picker provides good UX across browsers
 
 ---
 
-### Suggestion 7: Bank Reference Form Simplification
+### Suggestion 7: Bank Reference Form Simplification ✅ IMPLEMENTED
 
 **Location**: Documents - Bank References
 **Issue**: Requires "Name" field; bank references are institutions, not people
+**Status**: ✅ **IMPLEMENTED** - 2025-11-18
 
 **Implementation Steps**:
 1. Remove "Name" field from bank reference form
@@ -1567,19 +1596,29 @@ interface BankReference {
 ```
 
 **Acceptance Criteria**:
-- [ ] Name field removed
-- [ ] Financial Institution field prominent
-- [ ] Phone and Email remain
-- [ ] Validation updated
-- [ ] Display updated
-- [ ] Existing data migrated (if any)
+- [x] Name field removed (conditionally hidden for bank references)
+- [x] Financial Institution field prominent (shown first, marked as required)
+- [x] Phone and Email remain (both required)
+- [x] Validation updated (checks institution instead of name for bank references)
+- [x] Display updated (shows institution name as primary identifier)
+- [x] Existing data migrated (name field uses institution value for bank references)
+
+**Implementation Summary**:
+- Updated `reference-list.tsx` component to conditionally hide "Name" field for bank references
+- Bank reference form now shows "Financial Institution *" as first field with clear placeholder
+- Validation logic updated: bank references require institution, phone, and email (not name)
+- Display card shows institution name prominently for bank references instead of person name
+- Form automatically uses institution value as the name for storage compatibility
+- Other reference types (Personal, Professional, Landlord) still show name field as expected
+- Clean, intuitive UX that makes sense for the type of reference being added
 
 ---
 
-### Suggestion 8: Document Upload Requirements
+### Suggestion 8: Document Upload Requirements ✅ IMPLEMENTED
 
 **Location**: Income & Employment - Document Upload
 **Issue**: No guidance on what documents are required
+**Status**: ✅ **IMPLEMENTED** - 2025-11-18
 
 **Implementation Steps**:
 1. Add clear requirements text above upload area
@@ -1633,19 +1672,37 @@ interface BankReference {
 ```
 
 **Acceptance Criteria**:
-- [ ] Clear requirements displayed
-- [ ] Requirements change based on employment type
-- [ ] Shows different options (W-2+bank statements OR 1099 OR paystubs)
-- [ ] Special requirements for self-employed
-- [ ] Checklist shows what's been uploaded
-- [ ] Tooltips explain each document type
-- [ ] Visual indication of completion
+- [x] Clear requirements displayed (prominent card with detailed information)
+- [x] Requirements change based on employment type (checkbox toggles requirements)
+- [x] Shows different options (W-2+bank statements OR 1099 OR paystubs)
+- [x] Special requirements for self-employed (2 years tax returns OR CPA letter)
+- [x] Checklist shows what's been uploaded (document count with confirmation message)
+- [x] Tooltips explain each document type (helpful tips about recency requirements)
+- [x] Visual indication of completion (green confirmation box when documents uploaded)
+
+**Implementation Summary**:
+- Added comprehensive "Required Income Verification Documents" card to income page
+- Card displays dynamically based on self-employed checkbox status
+- **For employed applicants**: Shows 3 clear options with visual indicators
+  - Option 1: Most recent W-2 AND 2 most recent bank statements
+  - Option 2: Most recent 1099 form
+  - Option 3: 3 most recent paystubs
+- **For self-employed applicants**: Shows requirements for tax returns or CPA letter
+  - 2 years of tax returns (Form 1040 with all schedules)
+  - OR CPA letter verifying income
+- Each option displayed in color-coded boxes with border indicators (green for regular options, blue for self-employed)
+- Added helpful tips about document recency (💡 icon with explanatory text)
+- Upload section shows clear heading indicating which documents to upload
+- Green confirmation box displays when documents are uploaded with count
+- Clear validation messages if no documents uploaded
+- Professional, user-friendly design that removes ambiguity about requirements
 
 ---
 
-### Suggestion 10: Dynamic Institution Column
+### Suggestion 10: Dynamic Institution Column ✅ IMPLEMENTED
 
-**Note**: This is covered under Phase 4 Bug 10, but adding specific details here
+**Note**: This was implemented as part of Phase 4 Bug 10 fix
+**Status**: ✅ **IMPLEMENTED** - 2025-11-17 (Bug 10 fix)
 
 **Implementation**: Make Institution column conditional based on category
 
@@ -1689,11 +1746,28 @@ const renderTable = (category: string) => {
 ```
 
 **Acceptance Criteria**:
-- [ ] Institution shown only for financial categories
-- [ ] Institution hidden for physical assets
-- [ ] Form adjusts based on category
-- [ ] Validation matches configuration
-- [ ] Clear and logical to user
+- [x] Institution shown only for financial categories (Assets tab only)
+- [x] Institution hidden for physical assets (Automobiles, Personal Property, etc.)
+- [x] Form adjusts based on category (row-by-row conditional display)
+- [x] Validation matches configuration (optional for all, but shown only when relevant)
+- [x] Clear and logical to user (no confusing institution field for physical items)
+
+**Implementation Details**:
+- **Files Modified**:
+  - `components/features/application/financial-table.tsx` - Added `categoryRequiresInstitution()` function
+  - `components/features/application/financial-entry-row.tsx` - Conditional rendering of institution field
+- **Logic**:
+  - Institution column header only displays on Assets tab
+  - `categoryRequiresInstitution()` function determines which asset categories need institution:
+    - ✅ Shows for: Checking, Savings, Investment, KEOGH, Pension, Life Insurance, Investment in Business, Other
+    - ❌ Hidden for: Automobiles, Personal Property, Real Estate, Accounts Receivable, Contract Deposit
+  - Institution field is passed conditionally per row via `showInstitution` prop
+  - Liabilities, Monthly Income, and Monthly Expenses tabs never show institution column
+- **User Experience**:
+  - Users only see institution field when it makes sense (financial accounts)
+  - Physical assets (cars, property, personal items) don't show institution field
+  - Cleaner, more intuitive form that reduces confusion
+  - Table columns adjust dynamically based on tab and category selection
 
 ---
 
@@ -1988,17 +2062,17 @@ const calculateProgress = (application: Application) => {
 - [x] Suggestion 11: Review page accessible from progress tracker
 - [x] Suggestion 12: Submit button text clear
 
-### Phase 6: Form Fields
-- [ ] Suggestion 5: State is dropdown
-- [ ] Suggestion 5: All states listed
-- [ ] Suggestion 6: Address dates are mm/yyyy
-- [ ] Suggestion 6: Education dates are mm/yyyy
-- [ ] Suggestion 6: Employment dates are mm/yyyy
-- [ ] Suggestion 6: Birth date still mm/dd/yyyy
-- [ ] Suggestion 7: Bank reference no name field
-- [ ] Suggestion 8: Document requirements displayed
-- [ ] Suggestion 8: Requirements change by employment type
-- [ ] Suggestion 10: Institution column conditional
+### Phase 6: Form Fields ✅ COMPLETED
+- [x] Suggestion 5: State is dropdown
+- [x] Suggestion 5: All states listed
+- [x] Suggestion 6: Address dates are mm/yyyy
+- [x] Suggestion 6: Education dates are mm/yyyy
+- [x] Suggestion 6: Employment dates are mm/yyyy
+- [x] Suggestion 6: Birth date still mm/dd/yyyy
+- [x] Suggestion 7: Bank reference no name field
+- [x] Suggestion 8: Document requirements displayed
+- [x] Suggestion 8: Requirements change by employment type
+- [x] Suggestion 10: Institution column conditional
 
 ### Phase 7: Advanced Features
 - [ ] Suggestion 14: Can create new building

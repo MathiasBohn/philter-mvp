@@ -13,7 +13,8 @@ import {
 } from "@/components/ui/select"
 import { Card } from "@/components/ui/card"
 import { MoneyInput } from "@/components/forms/money-input"
-import { DateInput } from "@/components/forms/date-input"
+import { MonthYearInput } from "@/components/forms/month-year-input"
+import { StateSelect } from "@/components/ui/state-select"
 import { PayCadence, EmploymentStatus, type EmploymentRecord } from "@/lib/types"
 
 interface EmployerEntryProps {
@@ -108,10 +109,12 @@ export function EmployerEntry({
             <Label htmlFor={`start-date-${employer.id}`}>
               Start Date <span className="text-destructive">*</span>
             </Label>
-            <DateInput
+            <MonthYearInput
               id={`start-date-${employer.id}`}
               value={employer.startDate}
-              onChange={(date) => handleChange("startDate", date)}
+              onChange={(date) => handleChange("startDate", date || new Date())}
+              placeholder="MM/YYYY"
+              required
               aria-required="true"
               aria-invalid={errors.startDate ? "true" : "false"}
               aria-describedby={errors.startDate ? `start-date-error-${employer.id}` : undefined}
@@ -273,15 +276,14 @@ export function EmployerEntry({
             </div>
             <div className="space-y-2">
               <Label htmlFor={`employer-state-${employer.id}`}>State</Label>
-              <Input
+              <StateSelect
                 id={`employer-state-${employer.id}`}
                 value={employer.employerAddress?.state || ""}
-                onChange={(e) => handleChange("employerAddress", {
+                onChange={(value) => handleChange("employerAddress", {
                   ...(employer.employerAddress || { street: "", city: "", zip: "" }),
-                  state: e.target.value
+                  state: value
                 })}
-                placeholder="NY"
-                maxLength={2}
+                placeholder="Select State"
               />
             </div>
             <div className="space-y-2">
@@ -468,10 +470,10 @@ export function EmployerEntry({
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`prev-employer-state-${employer.id}`}>State</Label>
-                <Input
+                <StateSelect
                   id={`prev-employer-state-${employer.id}`}
                   value={employer.previousEmployer?.address?.state || ""}
-                  onChange={(e) => handleChange("previousEmployer", {
+                  onChange={(value) => handleChange("previousEmployer", {
                     ...(employer.previousEmployer || {
                       name: "",
                       address: { street: "", city: "", zip: "" },
@@ -483,11 +485,10 @@ export function EmployerEntry({
                     }),
                     address: {
                       ...(employer.previousEmployer?.address || { street: "", city: "", zip: "" }),
-                      state: e.target.value
+                      state: value
                     }
                   })}
-                  placeholder="NY"
-                  maxLength={2}
+                  placeholder="Select State"
                 />
               </div>
               <div className="space-y-2">
@@ -518,7 +519,7 @@ export function EmployerEntry({
               {/* Employment Dates */}
               <div className="space-y-2">
                 <Label htmlFor={`prev-employed-from-${employer.id}`}>Employed From</Label>
-                <DateInput
+                <MonthYearInput
                   id={`prev-employed-from-${employer.id}`}
                   value={employer.previousEmployer?.employedFrom || new Date()}
                   onChange={(date) => handleChange("previousEmployer", {
@@ -530,13 +531,14 @@ export function EmployerEntry({
                       supervisorName: "",
                       supervisorPhone: ""
                     }),
-                    employedFrom: date
+                    employedFrom: date || new Date()
                   })}
+                  placeholder="MM/YYYY"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor={`prev-employed-to-${employer.id}`}>Employed To</Label>
-                <DateInput
+                <MonthYearInput
                   id={`prev-employed-to-${employer.id}`}
                   value={employer.previousEmployer?.employedTo || new Date()}
                   onChange={(date) => handleChange("previousEmployer", {
@@ -548,8 +550,9 @@ export function EmployerEntry({
                       supervisorName: "",
                       supervisorPhone: ""
                     }),
-                    employedTo: date
+                    employedTo: date || new Date()
                   })}
+                  placeholder="MM/YYYY"
                 />
               </div>
 

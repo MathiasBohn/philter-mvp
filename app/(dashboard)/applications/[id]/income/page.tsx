@@ -321,7 +321,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
             Income Verification Documents <span className="text-red-500">*</span>
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Upload documents that verify your income (pay stubs, W-2, 1099, tax returns, etc.)
+            Upload documents that verify your income
           </p>
         </div>
 
@@ -339,15 +339,63 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           </label>
         </div>
 
+        {/* Document Requirements Card */}
+        <div className="rounded-lg border bg-muted/20 p-6 space-y-4">
+          <h3 className="font-semibold text-lg">📋 Required Income Verification Documents</h3>
+          {isSelfEmployed ? (
+            <div className="space-y-3">
+              <p className="text-sm">For self-employed applicants, please provide:</p>
+              <div className="bg-background rounded-md p-4 border-l-4 border-blue-500">
+                <p className="font-medium text-sm">Required Documents:</p>
+                <ul className="mt-2 space-y-2 text-sm list-disc list-inside pl-2">
+                  <li><strong>2 years of tax returns</strong> (Form 1040 with all schedules)</li>
+                  <li className="text-muted-foreground">OR a <strong>CPA letter</strong> verifying your income</li>
+                </ul>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 Tax returns should include all schedules (Schedule C, Schedule E, etc.) and be signed
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm">Please provide <strong>ONE</strong> of the following options:</p>
+              <div className="space-y-3">
+                <div className="bg-background rounded-md p-4 border-l-4 border-green-500">
+                  <p className="font-medium text-sm">✅ Option 1:</p>
+                  <ul className="mt-2 space-y-1 text-sm list-disc list-inside pl-2">
+                    <li>Most recent <strong>W-2</strong></li>
+                    <li><strong>AND</strong> 2 most recent <strong>bank statements</strong></li>
+                  </ul>
+                </div>
+                <div className="bg-background rounded-md p-4 border-l-4 border-green-500">
+                  <p className="font-medium text-sm">✅ Option 2:</p>
+                  <ul className="mt-2 space-y-1 text-sm list-disc list-inside pl-2">
+                    <li>Most recent <strong>1099 form</strong></li>
+                  </ul>
+                </div>
+                <div className="bg-background rounded-md p-4 border-l-4 border-green-500">
+                  <p className="font-medium text-sm">✅ Option 3:</p>
+                  <ul className="mt-2 space-y-1 text-sm list-disc list-inside pl-2">
+                    <li><strong>3 most recent paystubs</strong></li>
+                  </ul>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                💡 All documents must be recent (within the last 3 months for paystubs and bank statements, current year for W-2 or 1099)
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Show CPA Letter upload for self-employed, otherwise show regular employment verification */}
         {isSelfEmployed ? (
           <>
             <div>
               <h3 className="text-lg font-medium">
-                CPA Letter <span className="text-red-500">*</span>
+                Upload Tax Returns or CPA Letter <span className="text-red-500">*</span>
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Upload a letter from your CPA verifying your income
+                Upload your 2 years of tax returns OR a CPA letter verifying your income
               </p>
             </div>
 
@@ -382,6 +430,15 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           </>
         ) : (
           <>
+            <div>
+              <h3 className="text-lg font-medium">
+                Upload Employment Verification Documents <span className="text-red-500">*</span>
+              </h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Upload documents according to one of the options above
+              </p>
+            </div>
+
             <UploadDropzone onFilesAdded={handleFilesAdded} />
 
             {documents.length > 0 && (
@@ -394,6 +451,12 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
                     onDelete={() => removeDocument(doc.id)}
                   />
                 ))}
+                <div className="rounded-md bg-green-50 border border-green-200 p-3">
+                  <p className="text-sm text-green-800">
+                    ✓ {documents.length} document{documents.length > 1 ? 's' : ''} uploaded.
+                    Make sure you've uploaded all documents required for your chosen option.
+                  </p>
+                </div>
               </div>
             )}
 

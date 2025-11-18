@@ -43,14 +43,21 @@ export function ReferenceList({ references, onAdd, onRemove, onUpload }: Referen
   const bankReferences = references.filter((r) => r.type === ReferenceType.BANK);
 
   const handleAddReference = () => {
-    if (!formData.name || !formData.phone || !formData.email) {
-      return;
+    // For bank references, name is optional but institution is required
+    if (referenceType === ReferenceType.BANK) {
+      if (!formData.institution || !formData.phone || !formData.email) {
+        return;
+      }
+    } else {
+      if (!formData.name || !formData.phone || !formData.email) {
+        return;
+      }
     }
 
     const newReference: ReferenceLetterEntry = {
       id: `ref-${Date.now()}`,
       type: referenceType,
-      name: formData.name,
+      name: referenceType === ReferenceType.BANK ? formData.institution : formData.name,
       phone: formData.phone,
       email: formData.email,
       relationship: referenceType === ReferenceType.PERSONAL ? formData.relationship : undefined,
@@ -91,7 +98,11 @@ export function ReferenceList({ references, onAdd, onRemove, onUpload }: Referen
         <div className="flex items-start justify-between">
           <div className="flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <p className="font-medium">{reference.name}</p>
+              <p className="font-medium">
+                {reference.type === ReferenceType.BANK && reference.institution
+                  ? reference.institution
+                  : reference.name}
+              </p>
               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                 {reference.type}
               </span>
@@ -103,9 +114,6 @@ export function ReferenceList({ references, onAdd, onRemove, onUpload }: Referen
             )}
             {reference.company && (
               <p className="text-sm text-muted-foreground">Company: {reference.company}</p>
-            )}
-            {reference.institution && (
-              <p className="text-sm text-muted-foreground">Institution: {reference.institution}</p>
             )}
             {reference.occupiedFrom && (
               <p className="text-sm text-muted-foreground">
@@ -301,15 +309,32 @@ export function ReferenceList({ references, onAdd, onRemove, onUpload }: Referen
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2 space-y-2">
-                <Label htmlFor="ref-name">Name *</Label>
-                <Input
-                  id="ref-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Full name"
-                />
-              </div>
+              {/* Name field - not shown for bank references */}
+              {referenceType !== ReferenceType.BANK && (
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="ref-name">Name *</Label>
+                  <Input
+                    id="ref-name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="Full name"
+                  />
+                </div>
+              )}
+
+              {/* Bank reference shows institution first */}
+              {referenceType === ReferenceType.BANK && (
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="ref-institution">Financial Institution *</Label>
+                  <Input
+                    id="ref-institution"
+                    value={formData.institution}
+                    onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+                    placeholder="Bank name (e.g., Chase, Bank of America)"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="ref-phone">Phone *</Label>
                 <Input
@@ -351,18 +376,6 @@ export function ReferenceList({ references, onAdd, onRemove, onUpload }: Referen
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     placeholder="Company name"
-                  />
-                </div>
-              )}
-
-              {referenceType === ReferenceType.BANK && (
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="ref-institution">Financial Institution</Label>
-                  <Input
-                    id="ref-institution"
-                    value={formData.institution}
-                    onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                    placeholder="Bank name"
                   />
                 </div>
               )}
