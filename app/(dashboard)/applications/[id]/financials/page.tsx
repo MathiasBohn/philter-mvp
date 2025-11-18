@@ -2,14 +2,11 @@
 
 import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Plus } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
-import { Button } from "@/components/ui/button"
 import { FinancialTable } from "@/components/features/application/financial-table"
 import { TotalsBar } from "@/components/features/application/totals-bar"
 import { FormActions } from "@/components/forms/form-actions"
-import { RealEstateEntry } from "@/components/features/application/real-estate-entry"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import {
   FinancialEntryType,
@@ -17,9 +14,7 @@ import {
   LiabilityCategory,
   IncomeCategory,
   ExpenseCategory,
-  PropertyType,
   type FinancialEntry,
-  type RealEstateProperty,
 } from "@/lib/types"
 
 const ASSET_CATEGORIES = [
@@ -86,41 +81,6 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
     }
     return []
   })
-  const [realEstateProperties, setRealEstateProperties] = useState<RealEstateProperty[]>(() => {
-    // Lazy initialization from localStorage
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`financials-data-${id}`)
-      if (saved) {
-        const data = JSON.parse(saved)
-        if (data.realEstateProperties) {
-          // Ensure all numeric values are numbers, not strings
-          return data.realEstateProperties.map((property: RealEstateProperty) => ({
-            ...property,
-            marketValue: typeof property.marketValue === 'number' ? property.marketValue : parseFloat(String(property.marketValue)) || 0,
-            mortgageBalance: typeof property.mortgageBalance === 'number' ? property.mortgageBalance : parseFloat(String(property.mortgageBalance)) || 0,
-            monthlyMortgagePayment: typeof property.monthlyMortgagePayment === 'number' ? property.monthlyMortgagePayment : parseFloat(String(property.monthlyMortgagePayment)) || 0,
-            monthlyMaintenanceHOA: typeof property.monthlyMaintenanceHOA === 'number' ? property.monthlyMaintenanceHOA : parseFloat(String(property.monthlyMaintenanceHOA)) || 0,
-            monthlyRealEstateTaxes: typeof property.monthlyRealEstateTaxes === 'number' ? property.monthlyRealEstateTaxes : parseFloat(String(property.monthlyRealEstateTaxes)) || 0,
-            monthlyInsurance: typeof property.monthlyInsurance === 'number' ? property.monthlyInsurance : parseFloat(String(property.monthlyInsurance)) || 0,
-          }))
-        }
-      }
-    }
-    return []
-  })
-  const [ownsRealEstate, setOwnsRealEstate] = useState<boolean>(() => {
-    // Lazy initialization from localStorage
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`financials-data-${id}`)
-      if (saved) {
-        const data = JSON.parse(saved)
-        if (data.ownsRealEstate !== undefined) {
-          return data.ownsRealEstate
-        }
-      }
-    }
-    return false
-  })
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<FinancialEntryType>(
     FinancialEntryType.ASSET
@@ -171,37 +131,12 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
     setEntries(entries.filter((e) => e.id !== id))
   }
 
-  const addRealEstateProperty = () => {
-    const newProperty: RealEstateProperty = {
-      id: Math.random().toString(36).substring(7),
-      address: { street: "", city: "", state: "", zip: "" },
-      propertyType: PropertyType.SINGLE_FAMILY,
-      marketValue: 0,
-      mortgageBalance: 0,
-      monthlyMortgagePayment: 0,
-      monthlyMaintenanceHOA: 0,
-      monthlyRealEstateTaxes: 0,
-      monthlyInsurance: 0,
-    }
-    setRealEstateProperties([...realEstateProperties, newProperty])
-  }
-
-  const updateRealEstateProperty = (id: string, updated: RealEstateProperty) => {
-    setRealEstateProperties(realEstateProperties.map((p) => (p.id === id ? updated : p)))
-  }
-
-  const removeRealEstateProperty = (id: string) => {
-    setRealEstateProperties(realEstateProperties.filter((p) => p.id !== id))
-  }
-
   const handleSave = async () => {
     setIsSaving(true)
 
     // Save to localStorage
     const data = {
       entries,
-      realEstateProperties,
-      ownsRealEstate,
       updatedAt: new Date().toISOString(),
     }
     localStorage.setItem(`financials-data-${id}`, JSON.stringify(data))
@@ -214,18 +149,13 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
 
   const handleContinue = async () => {
     await handleSave()
-    router.push(`/applications/${id}/documents`)
+    router.push(`/applications/${id}/real-estate`)
   }
 
   // Calculate totals - ensure all values are numbers to prevent string concatenation
-  const realEstateTotalValue = realEstateProperties.reduce(
-    (sum, p) => sum + (typeof p.marketValue === 'number' ? p.marketValue : parseFloat(String(p.marketValue)) || 0),
-    0
-  )
-
   const assets = entries
     .filter((e) => e.entryType === FinancialEntryType.ASSET)
-    .reduce((sum, e) => sum + (typeof e.amount === 'number' ? e.amount : parseFloat(String(e.amount)) || 0), 0) + realEstateTotalValue
+    .reduce((sum, e) => sum + (typeof e.amount === 'number' ? e.amount : parseFloat(String(e.amount)) || 0), 0)
 
   const liabilities = entries
     .filter((e) => e.entryType === FinancialEntryType.LIABILITY)
@@ -320,80 +250,6 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
           />
         </TabsContent>
       </Tabs>
-
-      <Separator />
-
-      {/* Real Estate Holdings Section */}
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-semibold">Real Estate Holdings</h2>
-          <p className="mt-2 text-muted-foreground">
-            Do you own any real estate properties? If yes, please provide details for each property.
-          </p>
-        </div>
-
-        {/* Do you own real estate toggle */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="owns-real-estate"
-            checked={ownsRealEstate}
-            onChange={(e) => {
-              setOwnsRealEstate(e.target.checked)
-              // If unchecking, clear all properties
-              if (!e.target.checked) {
-                setRealEstateProperties([])
-              }
-            }}
-            className="h-4 w-4 rounded border-gray-300"
-          />
-          <label htmlFor="owns-real-estate" className="text-sm font-medium cursor-pointer">
-            I own real estate
-          </label>
-        </div>
-
-        {/* Show property entries if owns real estate */}
-        {ownsRealEstate && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold">Properties</h3>
-              <Button type="button" onClick={addRealEstateProperty} variant="outline" size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Property
-              </Button>
-            </div>
-
-            {realEstateProperties.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No properties added yet. Click "Add Property" to get started.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {realEstateProperties.map((property) => (
-                  <RealEstateEntry
-                    key={property.id}
-                    property={property}
-                    onUpdate={(updated) => updateRealEstateProperty(property.id, updated)}
-                    onRemove={() => removeRealEstateProperty(property.id)}
-                    showRemove={realEstateProperties.length > 0}
-                  />
-                ))}
-              </div>
-            )}
-
-            {realEstateProperties.length > 0 && (
-              <div className="bg-muted p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total Real Estate Value:</span>
-                  <span className="text-xl font-bold">
-                    ${realEstateTotalValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 
       <Separator />
 

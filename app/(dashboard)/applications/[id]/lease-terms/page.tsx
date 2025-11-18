@@ -138,7 +138,7 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
       async (data) => {
         // Form is valid, save and continue
         await onSubmit(data);
-        router.push(`/applications/${id}/profile`);
+        router.push(`/applications/${id}/parties`);
       },
       (errors) => {
         // Form validation failed, scroll to top to show errors

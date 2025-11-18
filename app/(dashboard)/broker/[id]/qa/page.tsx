@@ -9,7 +9,7 @@ import { QAPanel } from "@/components/features/broker/qa-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { ArrowRight, ArrowLeft, Eye, Loader2 } from "lucide-react";
+import { ArrowRight, Eye, Loader2 } from "lucide-react";
 import { Application, Role } from "@/lib/types";
 
 export default function BrokerQAPage({ params }: { params: Promise<{ id: string }> }) {
@@ -116,17 +116,9 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
       {/* Header - Responsive */}
       <div>
         <div className="flex flex-col gap-4">
-          <Button
-            variant="ghost"
-            className="self-start -ml-2"
-            onClick={() => router.push('/broker')}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Pipeline
-          </Button>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Application Workspace</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Review Application</h1>
               <p className="mt-2 text-sm sm:text-base text-muted-foreground">
                 {application.building?.name} - {application.people[0]?.fullName || "New Application"}
               </p>

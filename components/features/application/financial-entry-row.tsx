@@ -18,7 +18,8 @@ interface FinancialEntryRowProps {
   onUpdate: (entry: FinancialEntry) => void
   onDelete: () => void
   categories: Array<{ value: string; label: string }>
-  showInstitution?: boolean
+  showInstitutionColumn?: boolean
+  institutionRequired?: boolean
 }
 
 export function FinancialEntryRow({
@@ -26,7 +27,8 @@ export function FinancialEntryRow({
   onUpdate,
   onDelete,
   categories,
-  showInstitution = true,
+  showInstitutionColumn = false,
+  institutionRequired = true,
 }: FinancialEntryRowProps) {
   const handleChange = (field: keyof FinancialEntry, value: unknown) => {
     // Ensure amount values are stored as numbers, not strings
@@ -59,13 +61,17 @@ export function FinancialEntryRow({
           </SelectContent>
         </Select>
       </td>
-      {showInstitution && (
+      {showInstitutionColumn && (
         <td className="p-3">
-          <Input
-            value={entry.institution || ""}
-            onChange={(e) => handleChange("institution", e.target.value)}
-            placeholder="Institution (optional)"
-          />
+          {institutionRequired ? (
+            <Input
+              value={entry.institution || ""}
+              onChange={(e) => handleChange("institution", e.target.value)}
+              placeholder="Institution (optional)"
+            />
+          ) : (
+            <div className="h-10" />
+          )}
         </td>
       )}
       <td className="p-3">

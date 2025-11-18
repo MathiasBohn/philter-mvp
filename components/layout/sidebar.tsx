@@ -117,13 +117,13 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             icon: ClipboardList,
           },
           {
-            label: "Application Workspace",
+            label: "Review Applications",
             href: `/broker/qa`,
             icon: FileCheck,
           },
           {
-            label: "Submit",
-            href: `/broker/${applicationId}/submit`,
+            label: "Submit Applications",
+            href: `/broker/submit`,
             icon: Upload,
           },
         ]

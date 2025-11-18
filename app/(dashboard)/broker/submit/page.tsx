@@ -6,42 +6,41 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { FileCheck, Building2, Calendar, ChevronRight, Search, User } from "lucide-react";
+import { Send, Building2, Calendar, ChevronRight, Search, User, CheckCircle } from "lucide-react";
 import { getStatusLabel } from "@/lib/constants/labels";
 import { useState } from "react";
 
-export default function QAWorkspacePage() {
+export default function SubmitApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter applications that are ready for review (>= 70% complete)
-  // TODO: In production, this will be connected to the same data source as Submit Applications
-  const qaReadyApplications = mockApplications.filter((app) => {
+  // Filter applications that are ready for submission (100% complete)
+  // TODO: In production, this will be connected to the same data source as Review Applications
+  const readyToSubmitApplications = mockApplications.filter((app) => {
     const matchesSearch =
       searchQuery === "" ||
       app.people[0]?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.building?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    // Show applications that are at least 70% complete for broker review
-    const isReadyForReview = app.completionPercentage >= 70;
+    const isReadyToSubmit = app.completionPercentage === 100;
 
-    return matchesSearch && isReadyForReview;
+    return matchesSearch && isReadyToSubmit;
   });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Review Applications</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Submit Applications</h1>
           <p className="mt-2 text-muted-foreground">
-            Review and verify completed applications before submission
+            Review and submit completed applications to building management
           </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <FileCheck className="h-4 w-4" />
+          <CheckCircle className="h-4 w-4" />
           <span>
-            {qaReadyApplications.length}{" "}
-            {qaReadyApplications.length === 1 ? "application" : "applications"} ready
+            {readyToSubmitApplications.length}{" "}
+            {readyToSubmitApplications.length === 1 ? "application" : "applications"} ready
           </span>
         </div>
       </div>
@@ -57,23 +56,23 @@ export default function QAWorkspacePage() {
         />
       </div>
 
-      {qaReadyApplications.length === 0 ? (
+      {readyToSubmitApplications.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileCheck className="h-12 w-12 text-muted-foreground mb-4" />
+            <Send className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">
-              {searchQuery ? "No matching applications" : "No applications ready for review"}
+              {searchQuery ? "No matching applications" : "No applications ready to submit"}
             </h3>
             <p className="text-muted-foreground text-center max-w-md">
               {searchQuery
                 ? "Try adjusting your search query."
-                : "Applications that need review will appear here."}
+                : "Applications that are 100% complete will appear here."}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {qaReadyApplications.map((application) => (
+          {readyToSubmitApplications.map((application) => (
             <Card key={application.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -82,6 +81,10 @@ export default function QAWorkspacePage() {
                       <CardTitle className="text-lg">
                         {application.people[0]?.fullName || "Unknown Applicant"}
                       </CardTitle>
+                      <Badge variant="default" className="bg-green-600">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Ready
+                      </Badge>
                       <Badge variant={
                         application.status === "APPROVED" ? "default" :
                         application.status === "DENIED" ? "destructive" :
@@ -115,13 +118,15 @@ export default function QAWorkspacePage() {
                     <span className="text-muted-foreground">
                       ID: <span className="font-mono">{application.id}</span>
                     </span>
-                    <span className="text-muted-foreground">
-                      Completion: <span className="font-semibold">{application.completionPercentage}%</span>
+                    <span className="text-green-600 font-semibold flex items-center gap-1">
+                      <CheckCircle className="h-4 w-4" />
+                      {application.completionPercentage}% Complete
                     </span>
                   </div>
                   <Button variant="default" size="sm" asChild>
-                    <Link href={`/broker/${application.id}/qa`}>
-                      Review Application
+                    <Link href={`/broker/${application.id}/submit`}>
+                      <Send className="mr-2 h-4 w-4" />
+                      Submit Application
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Link>
                   </Button>

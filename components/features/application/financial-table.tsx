@@ -77,7 +77,8 @@ export function FinancialTable({
                   onUpdate={(updated) => onUpdate(entry.id, updated)}
                   onDelete={() => onDelete(entry.id)}
                   categories={categories}
-                  showInstitution={showInstitutionColumn && categoryRequiresInstitution(entry.category)}
+                  showInstitutionColumn={showInstitutionColumn}
+                  institutionRequired={categoryRequiresInstitution(entry.category)}
                 />
               ))
             )}

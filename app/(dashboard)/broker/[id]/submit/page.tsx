@@ -5,7 +5,7 @@ import { mockApplications } from "@/lib/mock-data";
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, AlertCircle, FileText, Clock, Loader2, ArrowLeft } from "lucide-react";
+import { Check, AlertCircle, FileText, Clock, Loader2 } from "lucide-react";
 import { Application, Role } from "@/lib/types";
 
 export default function BrokerSubmitPage({ params }: { params: Promise<{ id: string }> }) {
@@ -205,15 +205,7 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
     <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-0">
       {/* Header - Responsive */}
       <div>
-        <Button
-          variant="ghost"
-          className="mb-4 -ml-2"
-          onClick={() => router.push('/broker')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Pipeline
-        </Button>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Submit to Building</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Submit Application</h1>
         <p className="mt-2 text-sm sm:text-base text-muted-foreground">
           Review deliverables and submit completed application
         </p>
