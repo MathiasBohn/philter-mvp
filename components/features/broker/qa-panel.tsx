@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { CompletenessChecklist } from "./completeness-checklist";
 import { RequestInfoDialog } from "./request-info-dialog";
 import { UploadBehalfDialog } from "./upload-behalf-dialog";
+import { OverrideModal, SectionOverride } from "./override-modal";
 import { Application } from "@/lib/types";
 import { AlertCircle, MessageSquare, Upload } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface QAPanelProps {
   application: Application;
@@ -15,10 +17,73 @@ interface QAPanelProps {
 }
 
 export function QAPanel({ application, applicationId }: QAPanelProps) {
+  const { toast } = useToast();
   const [isRequestDialogOpen, setIsRequestDialogOpen] = useState(false);
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [overrideSectionKey, setOverrideSectionKey] = useState("");
+  const [overrideSectionLabel, setOverrideSectionLabel] = useState("");
+  const [overrides, setOverrides] = useState<SectionOverride[]>([]);
 
-  const incompleteSections = application.sections.filter((s) => !s.isComplete);
+  // Load overrides from localStorage on mount
+  useEffect(() => {
+    const storedOverrides = localStorage.getItem(`application_overrides_${applicationId}`);
+    if (storedOverrides) {
+      try {
+        const parsed = JSON.parse(storedOverrides);
+        // Convert date strings back to Date objects
+        const overridesWithDates = parsed.map((o: SectionOverride) => ({
+          ...o,
+          overriddenAt: new Date(o.overriddenAt)
+        }));
+        setOverrides(overridesWithDates);
+      } catch (error) {
+        console.error("Error loading overrides:", error);
+      }
+    }
+  }, [applicationId]);
+
+  const handleOpenOverrideModal = (sectionKey: string, sectionLabel: string) => {
+    setOverrideSectionKey(sectionKey);
+    setOverrideSectionLabel(sectionLabel);
+    setIsOverrideModalOpen(true);
+  };
+
+  const handleConfirmOverride = (override: SectionOverride) => {
+    // Add override to state
+    const updatedOverrides = [...overrides, override];
+    setOverrides(updatedOverrides);
+
+    // Save to localStorage
+    localStorage.setItem(`application_overrides_${applicationId}`, JSON.stringify(updatedOverrides));
+
+    // Log audit entry
+    const auditEntry = {
+      action: 'MANUAL_OVERRIDE',
+      section: override.sectionKey,
+      applicationId,
+      performedBy: override.overriddenBy,
+      timestamp: override.overriddenAt.toISOString(),
+      reason: override.reason,
+      previousStatus: 'incomplete',
+      newStatus: 'complete_override'
+    };
+
+    // Store audit log
+    const auditLog = JSON.parse(localStorage.getItem('audit_log') || '[]');
+    auditLog.push(auditEntry);
+    localStorage.setItem('audit_log', JSON.stringify(auditLog));
+
+    toast({
+      title: "Override Applied",
+      description: `"${override.sectionLabel}" has been marked as complete. This action has been logged.`,
+    });
+  };
+
+  // Filter out overridden sections from incomplete list
+  const incompleteSections = application.sections.filter((s) =>
+    !s.isComplete && !overrides.find(o => o.sectionKey === s.key)
+  );
 
   return (
     <div className="space-y-4">
@@ -29,7 +94,11 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
           <CardDescription>Review application requirements</CardDescription>
         </CardHeader>
         <CardContent>
-          <CompletenessChecklist application={application} />
+          <CompletenessChecklist
+            application={application}
+            overrides={overrides}
+            onOverride={handleOpenOverrideModal}
+          />
         </CardContent>
       </Card>
 
@@ -93,6 +162,15 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
         open={isUploadDialogOpen}
         onOpenChange={setIsUploadDialogOpen}
         applicationId={applicationId}
+      />
+
+      {/* Override Modal */}
+      <OverrideModal
+        open={isOverrideModalOpen}
+        onClose={() => setIsOverrideModalOpen(false)}
+        onConfirm={handleConfirmOverride}
+        sectionKey={overrideSectionKey}
+        sectionLabel={overrideSectionLabel}
       />
     </div>
   );

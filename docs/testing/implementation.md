@@ -57,7 +57,7 @@ This document outlines the implementation plan for fixing **15 bugs** and implem
 | 4 | HIGH | Data Model & Architecture | 6, 10 | 4, 9 | 5-7 days |
 | 5 | MEDIUM | UI/UX Polish ✅ | 5 | 1, 2, 3, 11, 12 | 3-5 days |
 | 6 | MEDIUM | Form Improvements ✅ | - | 5, 6, 7, 8, 10 | 5-7 days |
-| 7 | LOW | Advanced Features | - | 14, 15 | 3-5 days |
+| 7 | LOW | Advanced Features ✅ | - | 14, 15 | 3-5 days |
 | Deferred | - | Backend-Dependent | 11 | - | TBD |
 
 ---
@@ -1777,10 +1777,11 @@ const renderTable = (category: string) => {
 **Timeline**: Week 6+ (Days 39+)
 **Focus**: Power user features and enhancements
 
-### Suggestion 14: Add New Building
+### Suggestion 14: Add New Building ✅ IMPLEMENTED
 
 **Location**: Broker - Create New Application
 **Issue**: Can only select existing buildings; no way to add new building
+**Status**: ✅ **IMPLEMENTED** - 2025-11-18
 
 **Implementation Steps**:
 1. Add "Create New Building" option in building dropdown
@@ -1836,21 +1837,39 @@ const renderTable = (category: string) => {
 - Building Policies (optional)
 
 **Acceptance Criteria**:
-- [ ] "Create New Building" option in dropdown
-- [ ] Modal opens with building form
-- [ ] Can enter all building details
-- [ ] Building code auto-generated
-- [ ] New building saved
-- [ ] New building selected automatically
-- [ ] New building appears in list
-- [ ] Validation for required fields
+- [x] "Create New Building" option in dropdown
+- [x] Modal opens with building form
+- [x] Can enter all building details
+- [x] Building code auto-generated
+- [x] New building saved
+- [x] New building selected automatically
+- [x] New building appears in list
+- [x] Validation for required fields
+
+**Implementation Summary**:
+- Created `CreateBuildingModal` component at `components/features/broker/create-building-modal.tsx`
+- Modal collects comprehensive building information:
+  - Building name, type (Condo/Co-op/Rental)
+  - Full address (street, unit, city, state, ZIP)
+  - Management company, contact email, and phone (optional)
+- Building code automatically generated from building name (e.g., "The Manhattan" → "MAN" + random 3-digit number)
+- Updated broker new application page to integrate the modal:
+  - Loads buildings from mock data and localStorage on mount
+  - Added "+ Create New Building" option in building select dropdown with separator
+  - Clicking "Create New Building" opens the modal
+  - New building automatically selected after creation
+  - New building saved to localStorage and added to dropdown list
+- Form validation ensures all required fields are filled
+- Clean, responsive UI with grouped sections for building info, address, and management details
+- Auto-generated building code preview updates as user types building name
 
 ---
 
-### Suggestion 15: Manual Override for QA Checks
+### Suggestion 15: Manual Override for QA Checks ✅ IMPLEMENTED
 
 **Location**: Broker - QA Workspace
 **Issue**: Cannot mark sections complete if system flags as incomplete
+**Status**: ✅ **IMPLEMENTED** - 2025-11-18
 
 **Implementation Steps**:
 1. Add "Override" button next to each incomplete item
@@ -1937,15 +1956,47 @@ interface CompletionStatus {
 ```
 
 **Acceptance Criteria**:
-- [ ] Override button visible for incomplete items
-- [ ] Modal requires reason for override
-- [ ] Cannot override without reason
-- [ ] Override saves with user and timestamp
-- [ ] Visual indicator shows overridden status
-- [ ] Hover shows override reason and user
-- [ ] Audit log records all overrides
-- [ ] Admin can view override history
-- [ ] Can undo override if needed
+- [x] Override button visible for incomplete items
+- [x] Modal requires reason for override
+- [x] Cannot override without reason
+- [x] Override saves with user and timestamp
+- [x] Visual indicator shows overridden status
+- [x] Hover shows override reason and user
+- [x] Audit log records all overrides
+- [ ] Admin can view override history (Future enhancement)
+- [ ] Can undo override if needed (Future enhancement)
+
+**Implementation Summary**:
+- Created `OverrideModal` component at `components/features/broker/override-modal.tsx`
+- Modal features:
+  - Warning alert explaining the importance of override and compliance logging
+  - Required textarea for detailed reason explanation
+  - Disabled submit button until reason is provided
+  - Loading state during save operation
+  - Stores override with: sectionKey, sectionLabel, overriddenBy, overriddenAt, reason
+- Updated `CompletenessChecklist` component:
+  - Added support for overrides prop and onOverride callback
+  - Shows "Override" button next to incomplete items (small, outline variant)
+  - Displays yellow shield icon for overridden items (instead of green check)
+  - Shows "Manually Overridden" badge below overridden items
+  - Displays override reason with hover tooltip showing user and timestamp
+  - Counts overridden items as complete in percentage calculation
+- Updated `QAPanel` component:
+  - Integrated OverrideModal with state management
+  - Loads overrides from localStorage on mount (per application)
+  - Saves overrides to localStorage with application-specific key
+  - Creates audit log entries with full override details
+  - Filters overridden sections from "Blockers" list
+  - Toast notification confirms successful override
+- Audit logging:
+  - Each override creates audit entry with: action, section, applicationId, performedBy, timestamp, reason, previousStatus, newStatus
+  - Stored in centralized audit_log in localStorage
+  - Includes full compliance information for review
+- Visual indicators:
+  - Yellow icon for overridden items (vs green for naturally complete)
+  - Badge clearly labeled "Manually Overridden"
+  - Reason text visible below item with full context on hover
+  - Override button only shown when section incomplete and not already overridden
 
 ---
 
@@ -2074,14 +2125,14 @@ const calculateProgress = (application: Application) => {
 - [x] Suggestion 8: Requirements change by employment type
 - [x] Suggestion 10: Institution column conditional
 
-### Phase 7: Advanced Features
-- [ ] Suggestion 14: Can create new building
-- [ ] Suggestion 14: New building appears in list
-- [ ] Suggestion 14: New building auto-selected
-- [ ] Suggestion 15: Can override completion checks
-- [ ] Suggestion 15: Override requires reason
-- [ ] Suggestion 15: Override logged in audit trail
-- [ ] Suggestion 15: Override indicator visible
+### Phase 7: Advanced Features ✅ COMPLETED
+- [x] Suggestion 14: Can create new building
+- [x] Suggestion 14: New building appears in list
+- [x] Suggestion 14: New building auto-selected
+- [x] Suggestion 15: Can override completion checks
+- [x] Suggestion 15: Override requires reason
+- [x] Suggestion 15: Override logged in audit trail
+- [x] Suggestion 15: Override indicator visible
 
 ### Cross-Browser Testing
 - [ ] Chrome

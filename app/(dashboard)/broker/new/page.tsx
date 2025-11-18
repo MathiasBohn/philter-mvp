@@ -1,19 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TransactionType } from "@/lib/types"
+import { TransactionType, Building } from "@/lib/types"
 import { mockBuildings } from "@/lib/mock-data"
-import { Loader2, CheckCircle2 } from "lucide-react"
+import { Loader2, CheckCircle2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { CreateBuildingModal } from "@/components/features/broker/create-building-modal"
+import { Separator } from "@/components/ui/separator"
 
 export default function BrokerNewApplicationPage() {
   const router = useRouter()
+  const [buildings, setBuildings] = useState<Building[]>([])
   const [buildingId, setBuildingId] = useState("")
   const [unit, setUnit] = useState("")
   const [transactionType, setTransactionType] = useState<TransactionType | "">("")
@@ -21,7 +24,31 @@ export default function BrokerNewApplicationPage() {
   const [applicantName, setApplicantName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [showCreateBuildingModal, setShowCreateBuildingModal] = useState(false)
   const [createdApplicationId, setCreatedApplicationId] = useState("")
+
+  // Load buildings from mock data and localStorage on mount
+  useEffect(() => {
+    const customBuildings = JSON.parse(localStorage.getItem('custom_buildings') || '[]')
+    setBuildings([...mockBuildings, ...customBuildings])
+  }, [])
+
+  const handleBuildingChange = (value: string) => {
+    if (value === "create-new") {
+      setShowCreateBuildingModal(true)
+    } else {
+      setBuildingId(value)
+    }
+  }
+
+  const handleSaveBuilding = (newBuilding: Building) => {
+    // Add new building to list
+    setBuildings(prev => [...prev, newBuilding])
+    // Select the new building
+    setBuildingId(newBuilding.id)
+    // Close modal
+    setShowCreateBuildingModal(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,7 +62,7 @@ export default function BrokerNewApplicationPage() {
     const newApplicationId = `app_${Date.now()}`
 
     // Store application data in localStorage (mock persistence)
-    const selectedBuilding = mockBuildings.find(b => b.id === buildingId)
+    const selectedBuilding = buildings.find(b => b.id === buildingId)
     const applicationData = {
       id: newApplicationId,
       buildingCode: selectedBuilding?.code || buildingId,
@@ -91,16 +118,23 @@ export default function BrokerNewApplicationPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="building">Building</Label>
-              <Select value={buildingId} onValueChange={setBuildingId} required>
+              <Select value={buildingId} onValueChange={handleBuildingChange} required>
                 <SelectTrigger id="building">
                   <SelectValue placeholder="Select a building" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockBuildings.map((building) => (
+                  {buildings.map((building) => (
                     <SelectItem key={building.id} value={building.id}>
                       {building.name} - {building.code}
                     </SelectItem>
                   ))}
+                  <Separator className="my-2" />
+                  <SelectItem value="create-new" className="font-semibold text-primary">
+                    <div className="flex items-center gap-2">
+                      <Plus className="h-4 w-4" />
+                      Create New Building
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -207,6 +241,13 @@ export default function BrokerNewApplicationPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Building Modal */}
+      <CreateBuildingModal
+        open={showCreateBuildingModal}
+        onClose={() => setShowCreateBuildingModal(false)}
+        onSave={handleSaveBuilding}
+      />
     </div>
   )
 }
