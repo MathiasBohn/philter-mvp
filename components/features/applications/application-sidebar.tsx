@@ -22,6 +22,7 @@ import {
   XCircle,
   Menu,
   X,
+  Send,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Application } from "@/lib/types";
@@ -121,6 +122,13 @@ const SECTIONS: ApplicationSection[] = [
     icon: ClipboardCheck,
     description: "Sign acknowledgements",
   },
+  {
+    id: "review",
+    label: "Review & Submit",
+    path: "/review",
+    icon: Send,
+    description: "Final review and submission",
+  },
 ];
 
 const getStatusIcon = (status: SectionStatus) => {
@@ -205,6 +213,11 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
     // Disclosures
     statuses.disclosures = application.disclosures && application.disclosures.length >= 8 ? "complete" :
                            application.disclosures && application.disclosures.length > 0 ? "in-progress" : "not-started";
+
+    // Review & Submit - always available but completion depends on submission status
+    statuses.review = application.status === "SUBMITTED" || application.status === "IN_REVIEW" ||
+                      application.status === "RFI" || application.status === "APPROVED" ||
+                      application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
 
     setSectionStatuses(statuses);
 

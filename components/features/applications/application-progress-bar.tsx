@@ -6,7 +6,7 @@ import { Application } from "@/lib/types";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
 
-const TOTAL_SECTIONS = 12; // Total number of application sections
+const TOTAL_SECTIONS = 13; // Total number of application sections
 
 export function ApplicationProgressBar({ applicationId }: { applicationId: string }) {
   const [completedCount, setCompletedCount] = useState(0);
@@ -61,6 +61,11 @@ export function ApplicationProgressBar({ applicationId }: { applicationId: strin
     statuses.disclosures = application.disclosures && application.disclosures.length >= 8 ? "complete" :
                            application.disclosures && application.disclosures.length > 0 ? "in-progress" : "not-started";
 
+    // Review & Submit - always available but completion depends on submission status
+    statuses.review = application.status === "SUBMITTED" || application.status === "IN_REVIEW" ||
+                      application.status === "RFI" || application.status === "APPROVED" ||
+                      application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
+
     // Count completed sections
     const completed = Object.values(statuses).filter(status => status === "complete").length;
     setCompletedCount(completed);
@@ -70,7 +75,7 @@ export function ApplicationProgressBar({ applicationId }: { applicationId: strin
   const progressPercentage = (completedCount / totalCount) * 100;
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-6">
+    <div className="w-full max-w-6xl mx-auto mb-6">
       <div className="bg-white dark:bg-gray-900 border rounded-lg p-4 shadow-sm">
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
