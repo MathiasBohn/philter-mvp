@@ -8,7 +8,7 @@ import { RFIBanner } from "@/components/features/application/rfi-banner";
 import { Badge } from "@/components/ui/badge";
 import { BuildingType } from "@/lib/types";
 import { notFound } from "next/navigation";
-import { storage } from "@/lib/persistence";
+import { storage, storageService, STORAGE_KEYS } from "@/lib/persistence";
 import { mockRFIs } from "@/lib/mock-data/rfis";
 
 export default function ApplicationOverviewPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,9 +32,9 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
     // If not found in mock data, try localStorage
     if (!application && isLoadingFromStorage) {
       try {
-        const storedApp = localStorage.getItem(`application_${id}`);
+        const storedApp = storageService.get(STORAGE_KEYS.application(id), null);
         if (storedApp) {
-          const parsedApp = JSON.parse(storedApp);
+          const parsedApp = typeof storedApp === 'string' ? JSON.parse(storedApp) : storedApp;
           // Transform localStorage format to match Application type
           const transformedApp = {
             id: parsedApp.id,

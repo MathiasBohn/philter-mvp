@@ -21,6 +21,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2 } from "lucide-react";
 import { mockBuildings } from "@/lib/mock-data";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 const STEPS: Step[] = [
   { id: "basics", label: "Basics", description: "Building & template info" },
@@ -160,7 +161,7 @@ export function TemplateWizard() {
   };
 
   const handlePublish = () => {
-    // Save to localStorage
+    // Save to storage
     const template = {
       id: `template-${Date.now()}`,
       buildingId,
@@ -174,12 +175,13 @@ export function TemplateWizard() {
       createdAt: new Date().toISOString(),
     };
 
-    const existingTemplates = JSON.parse(
-      localStorage.getItem("templates") || "[]"
-    );
-    localStorage.setItem(
-      "templates",
-      JSON.stringify([...existingTemplates, template])
+    const existingTemplatesData = storageService.get(STORAGE_KEYS.TEMPLATES, "[]");
+    const existingTemplates = typeof existingTemplatesData === 'string'
+      ? JSON.parse(existingTemplatesData)
+      : existingTemplatesData;
+    storageService.set(
+      STORAGE_KEYS.TEMPLATES,
+      [...existingTemplates, template]
     );
 
     setIsPublished(true);

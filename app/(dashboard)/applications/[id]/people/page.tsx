@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 type PersonForm = Omit<Person, "id" | "dob" | "addressHistory"> & { id?: string };
 
@@ -34,16 +35,16 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
     role: Role.CO_APPLICANT,
   });
 
-  // Load saved data from localStorage on mount
+  // Load saved data from centralized storage on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        const savedData = localStorage.getItem(`people_${id}`);
+        const savedData = storageService.get<string | null>(STORAGE_KEYS.people(id), null);
         if (savedData) {
-          const parsed = JSON.parse(savedData);
+          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
           setPeople(parsed.people || []);
         }
       } catch (error) {
@@ -62,8 +63,8 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Save to localStorage
-    localStorage.setItem(`people_${id}`, JSON.stringify({ people }));
+    // Save to centralized storage
+    storageService.set(STORAGE_KEYS.people(id), { people });
 
     setIsSaving(false);
     setShowSuccess(true);

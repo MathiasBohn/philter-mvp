@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,15 +13,18 @@ import { Loader2, CheckCircle2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CreateBuildingModal } from "@/components/features/broker/create-building-modal"
 import { Separator } from "@/components/ui/separator"
+import { useStorage, storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 export default function BrokerNewApplicationPage() {
   const router = useRouter()
 
-  // Load buildings from mock data and localStorage using lazy initialization
-  const [buildings, setBuildings] = useState<Building[]>(() => {
-    const customBuildings = JSON.parse(localStorage.getItem('custom_buildings') || '[]')
+  // Load custom buildings from centralized storage
+  const [customBuildings, setCustomBuildings] = useStorage<Building[]>(STORAGE_KEYS.CUSTOM_BUILDINGS, [])
+
+  // Merge mock buildings with custom buildings using useMemo
+  const buildings = useMemo(() => {
     return [...mockBuildings, ...customBuildings]
-  })
+  }, [customBuildings])
 
   const [buildingId, setBuildingId] = useState("")
   const [unit, setUnit] = useState("")
@@ -42,8 +45,8 @@ export default function BrokerNewApplicationPage() {
   }
 
   const handleSaveBuilding = (newBuilding: Building) => {
-    // Add new building to list
-    setBuildings(prev => [...prev, newBuilding])
+    // Add new building to custom buildings list
+    setCustomBuildings([...customBuildings, newBuilding])
     // Select the new building
     setBuildingId(newBuilding.id)
     // Close modal
@@ -83,7 +86,7 @@ export default function BrokerNewApplicationPage() {
       },
     }
 
-    localStorage.setItem(`application_${newApplicationId}`, JSON.stringify(applicationData))
+    storageService.set(STORAGE_KEYS.application(newApplicationId), applicationData)
 
     setCreatedApplicationId(newApplicationId)
     setIsLoading(false)

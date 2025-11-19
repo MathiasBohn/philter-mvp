@@ -10,6 +10,7 @@ import { Application } from "@/lib/types";
 import { AlertCircle, MessageSquare, Upload } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/lib/hooks/use-toast";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 interface QAPanelProps {
   application: Application;
@@ -24,12 +25,12 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
   const [overrideSectionKey, setOverrideSectionKey] = useState("");
   const [overrideSectionLabel, setOverrideSectionLabel] = useState("");
 
-  // Load overrides from localStorage using lazy initialization
+  // Load overrides from storage using lazy initialization
   const [overrides, setOverrides] = useState<SectionOverride[]>(() => {
-    const storedOverrides = localStorage.getItem(`application_overrides_${applicationId}`);
+    const storedOverrides = storageService.get(`application_overrides_${applicationId}`, null);
     if (storedOverrides) {
       try {
-        const parsed = JSON.parse(storedOverrides);
+        const parsed = typeof storedOverrides === 'string' ? JSON.parse(storedOverrides) : storedOverrides;
         // Convert date strings back to Date objects
         return parsed.map((o: SectionOverride) => ({
           ...o,
@@ -54,8 +55,8 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
     const updatedOverrides = [...overrides, override];
     setOverrides(updatedOverrides);
 
-    // Save to localStorage
-    localStorage.setItem(`application_overrides_${applicationId}`, JSON.stringify(updatedOverrides));
+    // Save to storage
+    storageService.set(`application_overrides_${applicationId}`, updatedOverrides);
 
     // Log audit entry
     const auditEntry = {
@@ -70,9 +71,10 @@ export function QAPanel({ application, applicationId }: QAPanelProps) {
     };
 
     // Store audit log
-    const auditLog = JSON.parse(localStorage.getItem('audit_log') || '[]');
+    const auditLogData = storageService.get(STORAGE_KEYS.AUDIT_LOG, '[]');
+    const auditLog = typeof auditLogData === 'string' ? JSON.parse(auditLogData) : auditLogData;
     auditLog.push(auditEntry);
-    localStorage.setItem('audit_log', JSON.stringify(auditLog));
+    storageService.set(STORAGE_KEYS.AUDIT_LOG, auditLog);
 
     toast({
       title: "Override Applied",

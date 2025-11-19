@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { Application } from "@/lib/types";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
 
@@ -232,7 +233,8 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
 
   // Calculate section statuses based on application data using useMemo
   const sectionStatuses = useMemo(() => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
+    const applicationsData = storageService.get(STORAGE_KEYS.APPLICATIONS, "[]");
+    const applications = (typeof applicationsData === 'string' ? JSON.parse(applicationsData) : applicationsData) as Application[];
     const application = applications.find((app) => app.id === applicationId);
 
     if (!application) return {};
@@ -242,12 +244,12 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       "building-policies": "complete", // Review only, always complete
     };
 
-    // Lease Terms - check localStorage
-    const leaseTermsData = localStorage.getItem(`lease-terms_${applicationId}`);
+    // Lease Terms - check storage
+    const leaseTermsData = storageService.get(`lease-terms_${applicationId}`, null);
     statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
 
-    // Parties - check localStorage
-    const partiesData = localStorage.getItem(`parties_${applicationId}`);
+    // Parties - check storage
+    const partiesData = storageService.get(`parties_${applicationId}`, null);
     statuses.parties = partiesData ? "complete" : "not-started";
 
     // Profile - check if basic info exists

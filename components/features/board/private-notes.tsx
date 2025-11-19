@@ -5,6 +5,7 @@ import { Lock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { storageService } from "@/lib/persistence";
 
 interface PrivateNotesProps {
   applicationId: string;
@@ -15,19 +16,20 @@ export function PrivateNotes({ applicationId, userId }: PrivateNotesProps) {
   const [notes, setNotes] = useState("");
   const storageKey = `board-notes-${userId}-${applicationId}`;
 
-  // Load notes from localStorage on mount
+  // Load notes from storage on mount
   useEffect(() => {
-    const savedNotes = localStorage.getItem(storageKey);
+    const savedNotes = storageService.get(storageKey, null);
     if (savedNotes) {
+      const notes = typeof savedNotes === 'string' ? savedNotes : JSON.stringify(savedNotes);
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNotes(savedNotes);
+      setNotes(notes);
     }
   }, [storageKey]);
 
-  // Save notes to localStorage when they change
+  // Save notes to storage when they change
   const handleNotesChange = (value: string) => {
     setNotes(value);
-    localStorage.setItem(storageKey, value);
+    storageService.set(storageKey, value);
   };
 
   return (

@@ -9,6 +9,7 @@ import { TransactionTypeTiles } from "@/components/features/application/transact
 import { ErrorSummary } from "@/components/forms/error-summary"
 import type { TransactionType } from "@/lib/types"
 import { Loader2 } from "lucide-react"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 export default function NewApplicationPage() {
   const router = useRouter()
@@ -76,7 +77,7 @@ export default function NewApplicationPage() {
         },
       }
 
-      localStorage.setItem(`application_${newApplicationId}`, JSON.stringify(applicationData))
+      storageService.set(STORAGE_KEYS.application(newApplicationId), applicationData)
 
       // Navigate to the application overview (A1)
       router.push(`/applications/${newApplicationId}`)

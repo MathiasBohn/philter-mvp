@@ -12,6 +12,7 @@ import { Save, CheckCircle, Trash2, Plus } from "lucide-react";
 import Link from "next/link";
 import { Participant, Role } from "@/lib/types";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 type ParticipantForm = Omit<Participant, "id"> & { id?: string };
 
@@ -41,16 +42,16 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
   // Applicant's Attorney (optional)
   const [applicantAttorney, setApplicantAttorney] = useState<ParticipantForm | null>(null);
 
-  // Load saved data from localStorage on mount
+  // Load saved data from centralized storage on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        const savedData = localStorage.getItem(`parties_${id}`);
+        const savedData = storageService.get<string | null>(STORAGE_KEYS.parties(id), null);
         if (savedData) {
-          const parsed = JSON.parse(savedData);
+          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
           if (parsed.unitOwner) setUnitOwner(parsed.unitOwner);
           if (parsed.ownerBroker) setOwnerBroker(parsed.ownerBroker);
           if (parsed.ownerAttorney) setOwnerAttorney(parsed.ownerAttorney);
@@ -72,7 +73,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Save to localStorage
+    // Save to centralized storage
     const participants = {
       unitOwner,
       ownerBroker,
@@ -80,7 +81,7 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
       applicantAttorney,
     };
 
-    localStorage.setItem(`parties_${id}`, JSON.stringify(participants));
+    storageService.set(STORAGE_KEYS.parties(id), participants);
 
     setIsSaving(false);
     setShowSuccess(true);

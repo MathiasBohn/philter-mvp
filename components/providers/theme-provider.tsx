@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { useStorage, STORAGE_KEYS } from "@/lib/persistence";
 
 type Theme = "light" | "dark" | "system";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
-  storageKey?: string;
 };
 
 type ThemeProviderState = {
@@ -23,17 +23,10 @@ const ThemeProviderContext = createContext<ThemeProviderState | undefined>(
 export function ThemeProvider({
   children,
   defaultTheme = "system",
-  storageKey = "philter-theme",
   ...props
 }: ThemeProviderProps) {
-  // Initialize theme from localStorage or use default
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const storedTheme = localStorage.getItem(storageKey) as Theme | null;
-      return storedTheme || defaultTheme;
-    }
-    return defaultTheme;
-  });
+  // Initialize theme from centralized storage using useStorage hook
+  const [theme, setThemeStorage] = useStorage<Theme>(STORAGE_KEYS.THEME, defaultTheme);
 
   // Initialize resolved theme
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
@@ -95,8 +88,7 @@ export function ThemeProvider({
   const value = {
     theme,
     setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme);
-      setTheme(newTheme);
+      setThemeStorage(newTheme);
     },
     resolvedTheme,
   };

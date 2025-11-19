@@ -12,6 +12,7 @@ import {
   type ValidationItem,
 } from "@/components/features/application/validation-summary"
 import { TransactionType } from "@/lib/types"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,7 +27,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     const items: ValidationItem[] = []
 
     // Check profile
-    const profileData = localStorage.getItem(`profile-data-${id}`)
+    const profileData = storageService.get(STORAGE_KEYS.profileData(id), null)
     items.push({
       section: "Profile",
       requirement: "Complete personal information",
@@ -38,9 +39,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     })
 
     // Check employment
-    const incomeData = localStorage.getItem(`income-data-${id}`)
+    const incomeData = storageService.get(STORAGE_KEYS.incomeData(id), null)
     const hasIncome = incomeData
-      ? JSON.parse(incomeData).employers?.length > 0
+      ? (typeof incomeData === 'string' ? JSON.parse(incomeData) : incomeData).employers?.length > 0
       : false
     items.push({
       section: "Employment & Income",
@@ -53,9 +54,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     })
 
     // Check financials
-    const financialsData = localStorage.getItem(`financials-data-${id}`)
+    const financialsData = storageService.get(STORAGE_KEYS.financialsData(id), null)
     const hasFinancials = financialsData
-      ? JSON.parse(financialsData).entries?.length > 0
+      ? (typeof financialsData === 'string' ? JSON.parse(financialsData) : financialsData).entries?.length > 0
       : false
     items.push({
       section: "Financial Summary",
@@ -68,9 +69,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     })
 
     // Check documents
-    const documentsData = localStorage.getItem(`documents-data-${id}`)
+    const documentsData = storageService.get(STORAGE_KEYS.documentsData(id), null)
     const hasGovtId = documentsData
-      ? JSON.parse(documentsData).categories?.find(
+      ? (typeof documentsData === 'string' ? JSON.parse(documentsData) : documentsData).categories?.find(
           (c: { id: string; documents?: unknown[] }) => c.id === "govt-id" && c.documents?.length && c.documents.length > 0
         )
       : false
@@ -90,9 +91,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       transactionType === TransactionType.COOP_SUBLET
 
     if (isLeaseOrSublet) {
-      const disclosuresData = localStorage.getItem(`disclosures-data-${id}`)
+      const disclosuresData = storageService.get(STORAGE_KEYS.disclosuresData(id), null)
       const allAcknowledged = disclosuresData
-        ? JSON.parse(disclosuresData).disclosures?.every((d: { acknowledged: boolean }) => d.acknowledged)
+        ? (typeof disclosuresData === 'string' ? JSON.parse(disclosuresData) : disclosuresData).disclosures?.every((d: { acknowledged: boolean }) => d.acknowledged)
         : false
       items.push({
         section: "Disclosures",
@@ -116,16 +117,16 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         let loadedSubmittedAt: Date | null = null
 
         // Load transaction type
-        const appData = localStorage.getItem(`application-${id}`)
+        const appData = storageService.get(STORAGE_KEYS.application(id), null)
         if (appData) {
-          const data = JSON.parse(appData)
+          const data = typeof appData === 'string' ? JSON.parse(appData) : appData
           loadedTxType = data.transactionType
         }
 
         // Check submission status
-        const submissionData = localStorage.getItem(`submission-${id}`)
+        const submissionData = storageService.get(STORAGE_KEYS.submission(id), null)
         if (submissionData) {
-          const data = JSON.parse(submissionData)
+          const data = typeof submissionData === 'string' ? JSON.parse(submissionData) : submissionData
           loadedSubmitted = data.submitted
           loadedSubmittedAt = data.submittedAt ? new Date(data.submittedAt) : null
         }
@@ -173,7 +174,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       submittedAt: new Date().toISOString(),
       applicationId: id,
     }
-    localStorage.setItem(`submission-${id}`, JSON.stringify(submissionData))
+    storageService.set(STORAGE_KEYS.submission(id), submissionData)
 
     setIsSubmitted(true)
     setSubmittedAt(new Date())

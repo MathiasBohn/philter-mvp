@@ -23,6 +23,7 @@ import { AlertCircle, Save, CheckCircle, DollarSign, Calendar } from "lucide-rea
 import { DateInput } from "@/components/forms/date-input";
 import Link from "next/link";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 const leaseTermsSchema = z.object({
   monthlyRent: z.number().min(1, "Monthly rent is required"),
@@ -91,9 +92,9 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        const savedData = localStorage.getItem(`lease-terms_${id}`);
+        const savedData = storageService.get<string | null>(STORAGE_KEYS.leaseterms(id), null);
         if (savedData) {
-          const parsed = JSON.parse(savedData);
+          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
           if (parsed.monthlyRent) setValue("monthlyRent", parsed.monthlyRent);
           if (parsed.securityDeposit) setValue("securityDeposit", parsed.securityDeposit);
           if (parsed.leaseLengthYears) setValue("leaseLengthYears", parsed.leaseLengthYears);
@@ -118,14 +119,14 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Save to localStorage
-    localStorage.setItem(`lease-terms_${id}`, JSON.stringify({
+    // Save to centralized storage
+    storageService.set(STORAGE_KEYS.leaseterms(id), {
       ...data,
       annualRent,
       leaseStartDate: data.leaseStartDate.toISOString(),
       leaseEndDate: data.leaseEndDate.toISOString(),
       moveInDate: data.moveInDate.toISOString(),
-    }));
+    });
 
     setIsSaving(false);
     setShowSuccess(true);

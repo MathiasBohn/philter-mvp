@@ -26,6 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
@@ -110,9 +111,9 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        const savedData = localStorage.getItem(`profile_${id}`);
+        const savedData = storageService.get<string | null>(STORAGE_KEYS.profile(id), null);
         if (savedData) {
-          const parsed = JSON.parse(savedData);
+          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
       if (parsed.fullName) setValue("fullName", parsed.fullName);
       if (parsed.email) setValue("email", parsed.email);
       if (parsed.phone) setValue("phone", parsed.phone);
@@ -209,8 +210,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
       reasonForMoving,
     } : undefined;
 
-    // Save to localStorage
-    localStorage.setItem(`profile_${id}`, JSON.stringify({
+    // Save to centralized storage
+    storageService.set(STORAGE_KEYS.profile(id), {
       ...data,
       dob: data.dob.toISOString(),
       addressHistory: data.addressHistory.map(addr => ({
@@ -245,7 +246,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         fromDate: educationInfo.fromDate ? educationInfo.fromDate.toISOString() : undefined,
         toDate: educationInfo.toDate ? educationInfo.toDate.toISOString() : undefined,
       } : undefined,
-    }));
+    });
 
     setIsSaving(false);
     setShowSuccess(true);

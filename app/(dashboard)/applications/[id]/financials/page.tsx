@@ -8,6 +8,7 @@ import { FinancialTable } from "@/components/features/application/financial-tabl
 import { TotalsBar } from "@/components/features/application/totals-bar"
 import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 import {
   FinancialEntryType,
   AssetCategory,
@@ -65,11 +66,11 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true);
   const [entries, setEntries] = useState<FinancialEntry[]>(() => {
-    // Lazy initialization from localStorage
+    // Lazy initialization from centralized storage
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`financials-data-${id}`)
+      const saved = storageService.get<string | null>(STORAGE_KEYS.financials(id), null)
       if (saved) {
-        const data = JSON.parse(saved)
+        const data = typeof saved === 'string' ? JSON.parse(saved) : saved
         if (data.entries) {
           // Ensure all amounts are numbers, not strings
           return data.entries.map((entry: FinancialEntry) => ({
@@ -134,12 +135,12 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   const handleSave = async () => {
     setIsSaving(true)
 
-    // Save to localStorage
+    // Save to centralized storage
     const data = {
       entries,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`financials-data-${id}`, JSON.stringify(data))
+    storageService.set(STORAGE_KEYS.financials(id), data)
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))

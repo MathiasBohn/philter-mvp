@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Application } from "@/lib/types";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
 
@@ -10,7 +11,8 @@ const TOTAL_SECTIONS = 13; // Total number of application sections
 
 export function ApplicationProgressBar({ applicationId }: { applicationId: string }) {
   const completedCount = useMemo(() => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
+    const applicationsData = storageService.get(STORAGE_KEYS.APPLICATIONS, "[]");
+    const applications = (typeof applicationsData === 'string' ? JSON.parse(applicationsData) : applicationsData) as Application[];
     const application = applications.find((app) => app.id === applicationId);
 
     if (!application) return 0;
@@ -20,12 +22,12 @@ export function ApplicationProgressBar({ applicationId }: { applicationId: strin
       "building-policies": "complete", // Review only, always complete
     };
 
-    // Lease Terms - check localStorage
-    const leaseTermsData = localStorage.getItem(`lease-terms_${applicationId}`);
+    // Lease Terms - check storage
+    const leaseTermsData = storageService.get(`lease-terms_${applicationId}`, null);
     statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
 
-    // Parties - check localStorage
-    const partiesData = localStorage.getItem(`parties_${applicationId}`);
+    // Parties - check storage
+    const partiesData = storageService.get(`parties_${applicationId}`, null);
     statuses.parties = partiesData ? "complete" : "not-started";
 
     // Profile - check if basic info exists

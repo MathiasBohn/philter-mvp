@@ -13,6 +13,7 @@ import { FormActions } from "@/components/forms/form-actions"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { PayCadence, type EmploymentRecord } from "@/lib/types"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 export default function IncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -38,16 +39,16 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     setEmployers((prev) => [...prev, newEmployer])
   }
 
-  // Load data from localStorage on mount
+  // Load data from centralized storage on mount
   useEffect(() => {
     const loadData = async () => {
       try {
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300))
 
-        const saved = localStorage.getItem(`income-data-${id}`)
+        const saved = storageService.get<string | null>(STORAGE_KEYS.income(id), null)
         if (saved) {
-          const data = JSON.parse(saved)
+          const data = typeof saved === 'string' ? JSON.parse(saved) : saved
           if (data.employers) {
             const loadedEmployers = data.employers.map(
               (e: { startDate: string; endDate?: string }) => ({
@@ -230,7 +231,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     setIsSaving(true)
 
-    // Save to localStorage
+    // Save to centralized storage
     const data = {
       employers,
       documents,
@@ -238,7 +239,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       cpaLetterDocuments,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`income-data-${id}`, JSON.stringify(data))
+    storageService.set(STORAGE_KEYS.income(id), data)
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))

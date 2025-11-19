@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { TransactionType, DocumentCategory } from "@/lib/types";
 import { mockBuildings } from "@/lib/mock-data";
 import { Loader2, CheckCircle2, ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useStorage, storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 const WIZARD_STEPS = [
   { id: 1, name: "Building", description: "Select property" },
@@ -55,7 +56,29 @@ interface WizardData {
   brokerPhone: string;
 }
 
-const STORAGE_KEY = "broker_prefill_wizard_draft";
+const defaultWizardData: WizardData = {
+  buildingId: "",
+  unit: "",
+  transactionType: "",
+  leaseStartDate: "",
+  leaseEndDate: "",
+  monthlyRent: "",
+  requiredDocuments: [
+    DocumentCategory.GOVERNMENT_ID,
+    DocumentCategory.BANK_STATEMENT,
+    DocumentCategory.PAYSTUB,
+    DocumentCategory.TAX_RETURN,
+    DocumentCategory.W2,
+  ],
+  applicantName: "",
+  applicantEmail: "",
+  applicantPhone: "",
+  coApplicantName: "",
+  coApplicantEmail: "",
+  brokerName: "John Smith",
+  brokerEmail: "john.smith@realestate.com",
+  brokerPhone: "(212) 555-0100",
+};
 
 export default function BrokerPrefillWizardPage() {
   const router = useRouter();
@@ -63,70 +86,17 @@ export default function BrokerPrefillWizardPage() {
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdApplicationId, setCreatedApplicationId] = useState("");
 
-  // Load wizard data from localStorage using lazy initialization
-  const [wizardData, setWizardData] = useState<WizardData>(() => {
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
-        return parsed.data;
-      } catch (error) {
-        console.error("Failed to load draft:", error);
-      }
-    }
-    return {
-      buildingId: "",
-      unit: "",
-      transactionType: "",
-      leaseStartDate: "",
-      leaseEndDate: "",
-      monthlyRent: "",
-      requiredDocuments: [
-        DocumentCategory.GOVERNMENT_ID,
-        DocumentCategory.BANK_STATEMENT,
-        DocumentCategory.PAYSTUB,
-        DocumentCategory.TAX_RETURN,
-        DocumentCategory.W2,
-      ],
-      applicantName: "",
-      applicantEmail: "",
-      applicantPhone: "",
-      coApplicantName: "",
-      coApplicantEmail: "",
-      brokerName: "John Smith",
-      brokerEmail: "john.smith@realestate.com",
-      brokerPhone: "(212) 555-0100",
-    };
-  });
+  // Use centralized storage for wizard draft (auto-saves)
+  const [wizardData, setWizardData] = useStorage<WizardData>(
+    STORAGE_KEYS.BROKER_DRAFT,
+    defaultWizardData
+  );
 
-  // Load current step from localStorage using lazy initialization
-  const [currentStep, setCurrentStep] = useState(() => {
-    const savedDraft = localStorage.getItem(STORAGE_KEY);
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
-        return parsed.step || 1;
-      } catch (error) {
-        console.error("Failed to load draft step:", error);
-      }
-    }
-    return 1;
-  });
-
-  // Auto-save draft whenever data changes
-  useEffect(() => {
-    const saveDraft = () => {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ data: wizardData, step: currentStep })
-      );
-    };
-    const timeoutId = setTimeout(saveDraft, 500);
-    return () => clearTimeout(timeoutId);
-  }, [wizardData, currentStep]);
+  // Track current step in local state (doesn't need persistence)
+  const [currentStep, setCurrentStep] = useState(1);
 
   const updateWizardData = <K extends keyof WizardData>(field: K, value: WizardData[K]) => {
-    setWizardData((prev) => ({ ...prev, [field]: value }));
+    setWizardData({ ...wizardData, [field]: value });
   };
 
   const handleBuildingChange = (buildingId: string) => {
@@ -235,10 +205,10 @@ export default function BrokerPrefillWizardPage() {
       },
     };
 
-    localStorage.setItem(`application_${newApplicationId}`, JSON.stringify(applicationData));
+    storageService.set(STORAGE_KEYS.application(newApplicationId), applicationData);
 
     // Clear draft
-    localStorage.removeItem(STORAGE_KEY);
+    storageService.remove(STORAGE_KEYS.BROKER_DRAFT);
 
     setCreatedApplicationId(newApplicationId);
     setIsLoading(false);

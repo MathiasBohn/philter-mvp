@@ -9,6 +9,7 @@ import { DisclosureCard, type Disclosure, type Pet } from "@/components/features
 import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { TransactionType, DisclosureType } from "@/lib/types"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 const DISCLOSURE_TEMPLATES = {
   LEAD_PAINT_CERTIFICATION: {
@@ -267,27 +268,27 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
-  // Load transaction type and disclosures from localStorage
+  // Load transaction type and disclosures from centralized storage
   useEffect(() => {
     const loadData = async () => {
       try {
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300))
         // Try to get transaction type from application data
-        const appData = localStorage.getItem(`application-${id}`)
+        const appData = storageService.get(STORAGE_KEYS.application(id), null)
         let loadedTxType: TransactionType | null = null
 
         if (appData) {
-          const data = JSON.parse(appData)
+          const data = typeof appData === 'string' ? JSON.parse(appData) : appData
           loadedTxType = data.transactionType
         }
 
         // Load saved disclosures
-        const saved = localStorage.getItem(`disclosures-data-${id}`)
+        const saved = storageService.get(STORAGE_KEYS.disclosures(id), null)
         let loadedDisclosures: typeof disclosures | null = null
 
         if (saved) {
-          const data = JSON.parse(saved)
+          const data = typeof saved === 'string' ? JSON.parse(saved) : saved
           if (data.disclosures) {
             loadedDisclosures = data.disclosures
           }
@@ -298,7 +299,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
             loadedTxType === TransactionType.COOP_SUBLET
           ) {
             // Load profile data to pre-populate consumer report authorization
-            const profileData = localStorage.getItem(`profile-data-${id}`)
+            const profileData = storageService.get(STORAGE_KEYS.profile(id), null)
             const consumerReportTemplate: Disclosure = {
               ...DISCLOSURE_TEMPLATES.CONSUMER_REPORT_AUTH,
               consumerReportData: {
@@ -318,7 +319,7 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
 
             if (profileData) {
               try {
-                const profile = JSON.parse(profileData)
+                const profile = typeof profileData === 'string' ? JSON.parse(profileData) : profileData
                 consumerReportTemplate.consumerReportData = {
                   firstName: profile.firstName || "",
                   middleName: profile.middleName || "",
@@ -623,12 +624,12 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
   const handleSave = async () => {
     setIsSaving(true)
 
-    // Save to localStorage
+    // Save to centralized storage
     const data = {
       disclosures,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`disclosures-data-${id}`, JSON.stringify(data))
+    storageService.set(STORAGE_KEYS.disclosures(id), data)
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))

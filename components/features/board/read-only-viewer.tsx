@@ -11,6 +11,7 @@ import { PrivateNotes } from "./private-notes";
 import { DownloadNotice } from "./download-notice";
 import { formatDate } from "@/lib/utils";
 import { createBoardWatermarkData } from "@/lib/pdf-utils";
+import { storageService } from "@/lib/persistence";
 
 interface ReadOnlyViewerProps {
   application: Application;
@@ -24,11 +25,11 @@ export function ReadOnlyViewer({ application }: ReadOnlyViewerProps) {
   const [reviewedAt, setReviewedAt] = useState<Date | null>(null);
   const storageKey = `board-reviewed-${BOARD_USER_ID}-${application.id}`;
 
-  // Load reviewed status from localStorage
+  // Load reviewed status from storage
   useEffect(() => {
-    const savedReview = localStorage.getItem(storageKey);
+    const savedReview = storageService.get(storageKey, null);
     if (savedReview) {
-      const data = JSON.parse(savedReview);
+      const data = typeof savedReview === 'string' ? JSON.parse(savedReview) : savedReview;
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsReviewed(data.reviewed);
       setReviewedAt(data.reviewedAt ? new Date(data.reviewedAt) : null);
@@ -41,7 +42,7 @@ export function ReadOnlyViewer({ application }: ReadOnlyViewerProps) {
       reviewed: true,
       reviewedAt: now.toISOString(),
     };
-    localStorage.setItem(storageKey, JSON.stringify(reviewData));
+    storageService.set(storageKey, reviewData);
     setIsReviewed(true);
     setReviewedAt(now);
   };

@@ -181,6 +181,29 @@ export const STORAGE_KEYS = {
   RFIS: "philter_rfis",
   DECISIONS: "philter_decisions",
   CURRENT_USER: "philter_current_user_id",
+  CUSTOM_BUILDINGS: "custom_buildings",
+  TEMPLATES: "templates",
+  AUDIT_LOG: "audit_log",
+  THEME: "theme",
+  BROKER_DRAFT: "broker_application_draft",
+
+  // Dynamic keys (functions)
+  application: (id: string) => `application_${id}`,
+  profile: (id: string) => `profile_${id}`,
+  profileData: (id: string) => `profile-data-${id}`,
+  leaseterms: (id: string) => `lease-terms_${id}`,
+  financials: (id: string) => `financials-data-${id}`,
+  financialsData: (id: string) => `financials-data-${id}`,
+  income: (id: string) => `income-data-${id}`,
+  incomeData: (id: string) => `income-data-${id}`,
+  people: (id: string) => `people_${id}`,
+  parties: (id: string) => `parties_${id}`,
+  disclosures: (id: string) => `disclosures-data-${id}`,
+  disclosuresData: (id: string) => `disclosures-data-${id}`,
+  documentsData: (id: string) => `documents-data-${id}`,
+  submission: (id: string) => `submission-${id}`,
+  review: (id: string) => `review_${id}`,
+  applicationOverrides: (id: string) => `application_overrides_${id}`,
 
   // Form data keys (dynamic)
   formData: (section: string, applicationId: string) =>

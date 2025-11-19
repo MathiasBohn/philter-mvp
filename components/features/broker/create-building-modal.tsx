@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Building, BuildingType } from "@/lib/types"
 import { Loader2 } from "lucide-react"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 type CreateBuildingModalProps = {
   open: boolean
@@ -81,10 +82,11 @@ export function CreateBuildingModal({ open, onClose, onSave }: CreateBuildingMod
       },
     }
 
-    // Store in localStorage
-    const existingBuildings = JSON.parse(localStorage.getItem('custom_buildings') || '[]')
+    // Store in storage
+    const existingBuildingsData = storageService.get(STORAGE_KEYS.CUSTOM_BUILDINGS, '[]');
+    const existingBuildings = typeof existingBuildingsData === 'string' ? JSON.parse(existingBuildingsData) : existingBuildingsData;
     const updatedBuildings = [...existingBuildings, newBuilding]
-    localStorage.setItem('custom_buildings', JSON.stringify(updatedBuildings))
+    storageService.set(STORAGE_KEYS.CUSTOM_BUILDINGS, updatedBuildings)
 
     setIsLoading(false)
     onSave(newBuilding)

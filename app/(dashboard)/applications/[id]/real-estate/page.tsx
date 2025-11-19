@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Application, RealEstateProperty, PropertyType, Address } from "@/lib/types";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   [PropertyType.SINGLE_FAMILY]: "Single Family",
@@ -46,15 +47,16 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
     },
   });
 
-  // Load existing properties from localStorage
+  // Load existing properties from centralized storage
   useEffect(() => {
     const loadData = async () => {
       try {
         // Simulate brief loading for better UX
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-        const application = applications.find((app) => app.id === id);
+        const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
+        const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
+        const application = parsedApplications.find((app) => app.id === id);
         if (application?.realEstateProperties) {
           setProperties(application.realEstateProperties);
         }
@@ -69,16 +71,17 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
   }, [id]);
 
   const handleSave = () => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-    const applicationIndex = applications.findIndex((app) => app.id === id);
+    const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
+    const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
+    const applicationIndex = parsedApplications.findIndex((app) => app.id === id);
 
     if (applicationIndex !== -1) {
-      applications[applicationIndex] = {
-        ...applications[applicationIndex],
+      parsedApplications[applicationIndex] = {
+        ...parsedApplications[applicationIndex],
         realEstateProperties: properties,
         lastActivityAt: new Date(),
       };
-      localStorage.setItem("applications", JSON.stringify(applications));
+      storageService.set(STORAGE_KEYS.APPLICATIONS, parsedApplications);
     }
   };
 

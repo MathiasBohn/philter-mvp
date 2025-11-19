@@ -10,6 +10,7 @@ import { FileText, Eye, Edit3, Info, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { Application } from "@/lib/types";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 const MAX_CHARACTERS = 2000;
 
@@ -17,10 +18,11 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const router = useRouter();
 
-  // Load existing cover letter from localStorage using lazy initialization
+  // Load existing cover letter from centralized storage
   const [coverLetter, setCoverLetter] = useState(() => {
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-    const application = applications.find((app) => app.id === id);
+    const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
+    const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
+    const application = parsedApplications.find((app) => app.id === id);
     return application?.coverLetter || "";
   });
 
@@ -31,17 +33,18 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
   const handleSave = () => {
     setIsSaving(true);
 
-    // Save to localStorage
-    const applications = JSON.parse(localStorage.getItem("applications") || "[]") as Application[];
-    const applicationIndex = applications.findIndex((app) => app.id === id);
+    // Save to centralized storage
+    const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
+    const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
+    const applicationIndex = parsedApplications.findIndex((app) => app.id === id);
 
     if (applicationIndex !== -1) {
-      applications[applicationIndex] = {
-        ...applications[applicationIndex],
+      parsedApplications[applicationIndex] = {
+        ...parsedApplications[applicationIndex],
         coverLetter,
         lastActivityAt: new Date(),
       };
-      localStorage.setItem("applications", JSON.stringify(applications));
+      storageService.set(STORAGE_KEYS.APPLICATIONS, parsedApplications);
     }
 
     setLastSaved(new Date());

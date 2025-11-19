@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { ArrowRight, Eye, Loader2 } from "lucide-react";
-import { Application, Role } from "@/lib/types";
+import { Application, Role, BuildingType, TransactionType, ApplicationStatus } from "@/lib/types";
+import { storageService, STORAGE_KEYS } from "@/lib/persistence";
 
 export default function BrokerQAPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,21 +22,20 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
   const [selectedSection, setSelectedSection] = useState("profile");
 
   useEffect(() => {
-    // If not found in mock data, try localStorage
+    // If not found in mock data, try centralized storage
     if (!application && isLoading) {
       try {
-        const storedApp = localStorage.getItem(`application_${id}`);
-        if (storedApp) {
-          const parsedApp = JSON.parse(storedApp);
+        const parsedApp = storageService.get<Record<string, unknown> | null>(STORAGE_KEYS.application(id), null);
+        if (parsedApp) {
           // Transform localStorage format to match Application type
           const transformedApp: Application = {
-            id: parsedApp.id,
-            buildingId: parsedApp.buildingId || parsedApp.buildingCode,
+            id: parsedApp.id as string,
+            buildingId: (parsedApp.buildingId || parsedApp.buildingCode) as string,
             building: {
-              id: parsedApp.buildingId || parsedApp.buildingCode,
-              code: parsedApp.buildingCode || parsedApp.buildingId,
-              name: parsedApp.buildingName || "Demo Building",
-              type: parsedApp.buildingType || "CONDO",
+              id: (parsedApp.buildingId || parsedApp.buildingCode) as string,
+              code: (parsedApp.buildingCode || parsedApp.buildingId) as string,
+              name: (parsedApp.buildingName || "Demo Building") as string,
+              type: (parsedApp.buildingType || "CONDO") as BuildingType,
               address: {
                 street: "123 Main St",
                 city: "New York",
@@ -43,17 +43,17 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
                 zip: "10001"
               }
             },
-            unit: parsedApp.unit,
-            transactionType: parsedApp.transactionType,
-            status: parsedApp.status,
-            createdBy: parsedApp.createdBy || "broker-user",
-            createdAt: new Date(parsedApp.createdAt),
-            submittedAt: parsedApp.submittedAt ? new Date(parsedApp.submittedAt) : undefined,
-            lastActivityAt: new Date(parsedApp.createdAt),
+            unit: parsedApp.unit as string,
+            transactionType: parsedApp.transactionType as TransactionType,
+            status: parsedApp.status as ApplicationStatus,
+            createdBy: (parsedApp.createdBy || "broker-user") as string,
+            createdAt: new Date(parsedApp.createdAt as string),
+            submittedAt: parsedApp.submittedAt ? new Date(parsedApp.submittedAt as string) : undefined,
+            lastActivityAt: new Date(parsedApp.createdAt as string),
             people: parsedApp.applicantName ? [{
               id: "person-1",
-              fullName: parsedApp.applicantName,
-              email: parsedApp.applicantEmail || "",
+              fullName: parsedApp.applicantName as string,
+              email: (parsedApp.applicantEmail || "") as string,
               phone: "",
               dob: new Date(),
               ssnLast4: "",

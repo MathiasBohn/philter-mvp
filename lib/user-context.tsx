@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { User } from "@/lib/types"
 import { mockUsers } from "@/lib/mock-data/users"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 
 interface UserContextType {
   user: User | null
@@ -16,10 +17,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Load user from localStorage on mount
+  // Load user from centralized storage on mount
   useEffect(() => {
     try {
-      const storedUserId = localStorage.getItem("philter_current_user_id")
+      const storedUserId = storageService.get<string>(STORAGE_KEYS.CURRENT_USER, "")
       if (storedUserId) {
         const foundUser = mockUsers.find((u) => u.id === storedUserId)
         if (foundUser) {
@@ -27,23 +28,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
         }
       }
     } catch (error) {
-      console.error("Error loading user from localStorage:", error)
+      console.error("Error loading user from storage:", error)
     } finally {
       setIsLoading(false)
     }
   }, [])
 
-  // Save user to localStorage whenever it changes
+  // Save user to centralized storage whenever it changes
   const setUser = (newUser: User | null) => {
     try {
       if (newUser) {
-        localStorage.setItem("philter_current_user_id", newUser.id)
+        storageService.set(STORAGE_KEYS.CURRENT_USER, newUser.id)
       } else {
-        localStorage.removeItem("philter_current_user_id")
+        storageService.remove(STORAGE_KEYS.CURRENT_USER)
       }
       setUserState(newUser)
     } catch (error) {
-      console.error("Error saving user to localStorage:", error)
+      console.error("Error saving user to storage:", error)
     }
   }
 
