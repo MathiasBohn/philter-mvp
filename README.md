@@ -19,10 +19,15 @@ This is an MVP (Minimum Viable Product) currently in **beta testing**. The appli
 **Current Capabilities:**
 - Complete workflows for all user roles (Applicant, Broker, Transaction Agent, Board Member)
 - Client-side form validation with Zod schemas
-- Browser-based file upload interface with PDF preview
+- **IndexedDB-based file storage** with 50MB-1GB+ capacity (browser-dependent)
+- **Optimized file persistence** using Blob storage instead of base64 encoding
+- **Automatic migration system** from legacy localStorage to IndexedDB
+- **Storage quota monitoring** with real-time capacity alerts
+- **Data integrity validation** with automated cleanup utilities
+- Browser-based file upload interface with PDF preview and progress tracking
 - PDF viewing and generation capabilities
 - Mock authentication system for testing user flows
-- localStorage-based data persistence
+- Hybrid storage architecture (IndexedDB for files, localStorage for metadata)
 - Responsive design (mobile, tablet, desktop)
 - WCAG 2.2 AA accessibility compliance
 - Dark mode support
@@ -38,10 +43,10 @@ This is an MVP (Minimum Viable Product) currently in **beta testing**. The appli
 
 **Known Limitations:**
 - No back-end server or API integration
-- Data stored in localStorage only (browser storage, not persistent across devices)
+- Data stored in browser only (not persistent across devices or browsers)
 - Mock authentication (no real user accounts or security)
-- Simulated file uploads (files stored as Base64 in localStorage, not on a server)
-- No database persistence
+- File storage limited by browser IndexedDB quota (typically 50MB-1GB+)
+- No database persistence or server-side storage
 - No email notifications or real-time updates
 - No production deployment configuration
 
@@ -59,8 +64,10 @@ This is an MVP (Minimum Viable Product) currently in **beta testing**. The appli
 - **Date Handling:** date-fns + react-day-picker
 - **Theming:** next-themes (dark mode support)
 - **Notifications:** Sonner (toast notifications)
-- **State Management:** React hooks + localStorage
-- **Data Compression:** lz-string (for localStorage optimization)
+- **State Management:** React hooks + IndexedDB + localStorage
+- **File Storage:** IndexedDB with Blob objects (binary storage)
+- **Metadata Storage:** localStorage with lz-string compression and chunking
+- **Storage Management:** Centralized StorageService with caching and observability
 
 ## Getting Started
 
@@ -178,7 +185,10 @@ philter-mvp/
 │   │   ├── applications/         # Application list components
 │   │   ├── broker/               # Broker flow components
 │   │   ├── agent/                # Transaction Agent components
-│   │   └── board/                # Board Member components
+│   │   ├── board/                # Board Member components
+│   │   └── storage/              # Storage management components
+│   │       ├── migration-checker.tsx  # Auto-migration from localStorage
+│   │       └── storage-monitor.tsx    # Quota monitoring and alerts
 │   ├── shared/                   # Shared utility components
 │   └── providers/                # React context providers
 ├── lib/                          # Utilities and helpers
@@ -189,7 +199,11 @@ philter-mvp/
 │   ├── types.ts                  # TypeScript type definitions
 │   ├── utils.ts                  # Utility functions
 │   ├── validators.ts             # Zod validation schemas
-│   ├── persistence.ts            # localStorage utilities
+│   ├── indexed-db.ts             # IndexedDB file storage (primary)
+│   ├── storage.ts                # Centralized localStorage service
+│   ├── persistence.ts            # localStorage compression/chunking
+│   ├── upload-manager.ts         # File upload with progress tracking
+│   ├── data-integrity.ts         # Data validation and cleanup
 │   ├── pdf-utils.ts              # PDF handling utilities
 │   └── user-context.tsx          # User authentication context
 ├── public/                       # Static assets
@@ -294,6 +308,111 @@ Each section includes:
 - Conditional fields based on transaction type
 - Helpful tooltips and guidance
 
+## Storage System
+
+philter uses an optimized hybrid storage architecture combining IndexedDB for files and localStorage for metadata.
+
+### IndexedDB File Storage
+
+**Architecture:**
+- Database: `philter_file_storage` (version 1)
+- Object store: `files` (keyPath: "id")
+- Indexes: `category`, `uploadedAt`
+- Storage capacity: 50MB-1GB+ (browser-dependent)
+
+**Key Benefits:**
+- **33% space savings** - Files stored as Blobs instead of base64
+- **Higher capacity** - 10-100x more storage than localStorage
+- **Better performance** - Binary storage optimized for large files
+- **Structured queries** - Index-based file retrieval
+
+**File Record Schema:**
+```typescript
+{
+  id: string           // Unique file identifier
+  filename: string     // Original filename
+  size: number         // File size in bytes
+  type: string         // MIME type
+  blob: Blob          // Binary file data
+  uploadedAt: Date    // Upload timestamp
+  category: string    // File category (e.g., "documents", "income")
+}
+```
+
+### Automatic Migration
+
+The application automatically detects and migrates legacy base64 files from localStorage to IndexedDB:
+
+- **Detection:** Runs on dashboard load, checks for `philter_uploaded_files` key
+- **Migration:** Converts base64 strings to Blobs, saves to IndexedDB
+- **Cleanup:** Removes legacy data after successful migration
+- **User feedback:** Shows progress indicator and success/error messages
+- **Error handling:** Graceful fallback if migration fails
+
+### Storage Monitoring
+
+Real-time storage quota monitoring with user alerts:
+
+- **Automatic checks** every 5 minutes
+- **Warning alert** at 80% capacity
+- **Critical alert** at 90% capacity
+- **Quota information** displayed in alerts
+- **Browser compatibility** checks
+
+### Data Integrity
+
+Built-in validation and cleanup utilities:
+
+- **Orphaned file detection** - Find files not referenced by any application
+- **Reference validation** - Verify all file references exist in storage
+- **Auto-repair** - Automatically fix inconsistencies
+- **Cleanup tools** - Remove orphaned files (dry-run and actual deletion)
+
+**Integrity Check Functions:**
+- `checkDataIntegrity(applicationId)` - Validate application file references
+- `findOrphanedFiles()` - Identify unreferenced files
+- `cleanupOrphanedFiles(dryRun)` - Remove orphaned files
+- `repairDataIntegrity(applicationId, autoFix)` - Auto-repair issues
+
+### Upload Manager
+
+Centralized file upload management with progress tracking:
+
+- **Upload simulation** with realistic progress updates
+- **Progress callbacks** for UI feedback
+- **Automatic persistence** to IndexedDB after upload
+- **File restoration** on page load
+- **Memory management** with blob URL cleanup
+
+**Key Functions:**
+```typescript
+// Start upload with progress tracking
+uploadManager.startUpload(fileId, onProgress, onComplete, onError)
+
+// Save file to IndexedDB
+await saveFileToStorage(file, fileId, category)
+
+// Retrieve stored files
+const files = await getStoredFiles()
+const file = await getStoredFile(fileId)
+
+// Delete from storage
+await deleteStoredFile(fileId)
+
+// Convert stored file back to File object
+const fileObject = getFileObject(storedFile)
+```
+
+### localStorage Metadata
+
+Application metadata and form data stored in localStorage with optimization:
+
+- **Compression:** lz-string for large data sets
+- **Chunking:** Automatic splitting for data over size limits
+- **Caching:** In-memory cache to reduce localStorage reads
+- **Observability:** Event-based reactivity for storage updates
+- **Centralized service:** Single StorageService interface
+
 ## Key Features
 
 ### Applicant Workflow
@@ -344,10 +463,13 @@ Each section includes:
 - Building-specific rules compliance
 
 **Documents:**
-- Document upload with category assignment
+- Document upload with category assignment and drag-and-drop
+- IndexedDB-based file storage with Blob objects
 - PDF preview and management
 - File organization by type
-- Upload progress tracking
+- Real-time upload progress tracking
+- Automatic file persistence and restoration
+- Memory-efficient blob URL management
 
 **Legal Disclosures:**
 - NYC-specific requirements (Lead Paint, Flood Zone)
@@ -461,10 +583,62 @@ Each section includes:
 - Dark mode support via `prefers-color-scheme`
 - Responsive breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
 
-### State Management
+### Storage Architecture
+- **IndexedDB** for file storage (50MB-1GB+ capacity)
+  - Files stored as Blobs (binary) instead of base64
+  - Saves ~33% space compared to base64 encoding
+  - Database: `philter_file_storage`
+  - Object store: `files` with category and uploadedAt indexes
+- **localStorage** for application metadata and form data
+  - Compression with lz-string
+  - Automatic chunking for large data
+  - Centralized StorageService with caching
+- **Automatic migration** from legacy base64 localStorage to IndexedDB
+- **Storage monitoring** with quota usage alerts
+- **Data integrity** validation and cleanup utilities
 - React hooks for component state
-- localStorage for demo data persistence
 - Mock data fixtures in `lib/mock-data/`
+
+### Storage Best Practices
+
+**File Storage:**
+- Always persist files to IndexedDB after upload completes
+- Use `saveFileToStorage(file, id, category)` from `@/lib/upload-manager`
+- Restore files on page load using `getStoredFiles()`
+- Clean up blob URLs with `URL.revokeObjectURL()` to prevent memory leaks
+- Handle storage quota errors gracefully
+
+**Example Pattern:**
+```typescript
+// After upload completes
+if (document.status === 'complete') {
+  await saveFileToStorage(document.file, document.id, 'documents')
+}
+
+// Restore on mount
+useEffect(() => {
+  const loadFiles = async () => {
+    const storedFiles = await getStoredFiles()
+    // Merge with metadata and restore to state
+  }
+  loadFiles()
+}, [])
+
+// Cleanup on unmount
+useEffect(() => {
+  return () => {
+    documents.forEach(doc => {
+      if (doc.preview) URL.revokeObjectURL(doc.preview)
+    })
+  }
+}, [documents])
+```
+
+**Metadata Storage:**
+- Use centralized `storageService` from `@/lib/storage`
+- Define storage keys in `STORAGE_KEYS` constant
+- Leverage caching to reduce localStorage reads
+- Use observers for reactive updates
 
 ### Accessibility
 - WCAG 2.2 AA compliant
@@ -486,17 +660,23 @@ Navigate through complete workflows to verify end-to-end functionality:
 - **Transaction Agent:** Create template → Review applications → Make decisions
 - **Board Member:** Review packages → Add notes → Download
 
-**Data Persistence Testing:**
-- Verify localStorage saves data correctly
+**Storage and Persistence Testing:**
+- Verify IndexedDB file storage and retrieval
+- Test automatic migration from localStorage to IndexedDB
+- Validate Blob storage and File object conversion
 - Test data persistence across page refreshes
-- Validate data compression with lz-string
-- Check data migration and schema changes
+- Verify storage quota monitoring and alerts
+- Validate data integrity checks and cleanup
+- Test localStorage compression with lz-string
+- Check metadata storage and caching
 
 **Cross-Browser Testing:**
 Test on multiple browsers to ensure compatibility:
 - Chrome/Edge (Chromium-based)
 - Safari (WebKit)
 - Firefox (Gecko)
+- Verify IndexedDB support and quota limits per browser
+- Test file upload and storage across different browsers
 
 **Responsive Testing:**
 Verify layouts at different breakpoints:
@@ -520,19 +700,23 @@ Verify layouts at different breakpoints:
 
 ### Testing Documentation
 Detailed testing procedures available in:
-- `docs/development/integration-testing-checklist.md`
-- `docs/development/testing-execution-guide.md`
+- `docs/development/integration-testing-checklist.md` - Comprehensive testing checklist
+- `docs/development/testing-execution-guide.md` - Step-by-step testing procedures
+- `docs/development/indexeddb-integration-tests.md` - IndexedDB storage testing checklist
 
 ## Documentation
 
 Additional documentation is available in the `docs/` directory:
 
 ### General Documentation
-- `docs/development/implementation-plan.md` - Detailed implementation roadmap
 - `docs/development/requirements.md` - Project requirements and specifications
 - `docs/development/design-system.md` - Design tokens and component patterns
 - `docs/development/component-guide.md` - Component usage guide
 - `docs/development/user-guide.md` - User walkthrough guide
+
+### Storage & Persistence Documentation
+- `docs/development/indexeddb-integration-plan.md` - IndexedDB architecture and implementation
+- `docs/development/indexeddb-integration-tests.md` - Storage testing procedures
 
 ### Testing Documentation
 - `docs/development/integration-testing-checklist.md` - Comprehensive testing checklist
