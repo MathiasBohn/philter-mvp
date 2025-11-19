@@ -6,6 +6,56 @@
  * - IndexedDB: ~50MB-1GB+ (browser dependent)
  *
  * Stores files as Blobs (binary) instead of base64, saving ~33% space.
+ *
+ * @module indexed-db
+ * @description Core IndexedDB implementation for file storage in philter MVP
+ *
+ * ## Database Schema
+ *
+ * Database: `philter_file_storage` (version 1)
+ * Object Store: `files` (keyPath: "id")
+ * Indexes:
+ *   - `category` (non-unique) - Group files by category (e.g., "documents", "income")
+ *   - `uploadedAt` (non-unique) - Query files by upload date
+ *
+ * ## Upgrade Strategy
+ *
+ * Version 1: Initial schema with files object store and indexes
+ * Future versions: Add new indexes or stores, but never remove existing ones for backward compatibility
+ *
+ * ## Usage Example
+ *
+ * ```typescript
+ * import {
+ *   saveFileToIndexedDB,
+ *   getFileFromIndexedDB,
+ *   getAllFilesFromIndexedDB,
+ *   deleteFileFromIndexedDB,
+ *   storedFileToFile
+ * } from '@/lib/indexed-db'
+ *
+ * // Save a file
+ * const file = new File(['content'], 'document.pdf', { type: 'application/pdf' })
+ * await saveFileToIndexedDB(file, 'file-123', 'documents')
+ *
+ * // Retrieve a file
+ * const storedFile = await getFileFromIndexedDB('file-123')
+ * if (storedFile) {
+ *   const file = storedFileToFile(storedFile)
+ *   console.log('Retrieved:', file.name, file.size)
+ * }
+ *
+ * // Get all files
+ * const allFiles = await getAllFilesFromIndexedDB()
+ * Object.values(allFiles).forEach(file => {
+ *   console.log(file.filename, file.category)
+ * })
+ *
+ * // Delete a file
+ * await deleteFileFromIndexedDB('file-123')
+ * ```
+ *
+ * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API}
  */
 
 const DB_NAME = "philter_file_storage";
@@ -24,6 +74,20 @@ export interface StoredFile {
 
 /**
  * Initialize IndexedDB database
+ *
+ * Opens the IndexedDB database and creates the object store with indexes if needed.
+ * This function handles database versioning and upgrades automatically.
+ *
+ * @returns Promise that resolves to the opened IDBDatabase instance
+ * @throws Error if IndexedDB is not supported or fails to open
+ *
+ * @internal This function is not exported - use the public API functions instead
+ *
+ * @example
+ * const db = await openDatabase()
+ * const transaction = db.transaction(['files'], 'readonly')
+ * // ... use the database
+ * db.close() // Always close when done
  */
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -58,6 +122,33 @@ function openDatabase(): Promise<IDBDatabase> {
 
 /**
  * Save a file to IndexedDB
+ *
+ * Stores a File object in IndexedDB as a Blob with associated metadata.
+ * If a file with the same ID already exists, it will be replaced.
+ *
+ * @param file - The File object to store
+ * @param id - Unique identifier for the file (used as the key)
+ * @param category - Optional category for grouping (e.g., "documents", "income", "profile-photo")
+ * @returns Promise that resolves when the file is saved
+ * @throws IndexedDBError with specific error codes:
+ *   - QUOTA_EXCEEDED: Storage limit reached
+ *   - NOT_SUPPORTED: IndexedDB not available
+ *   - UNKNOWN: Other errors
+ *
+ * @example
+ * // Save a user-uploaded file
+ * const file = event.target.files[0]
+ * await saveFileToIndexedDB(file, 'doc-123', 'documents')
+ *
+ * @example
+ * // Handle quota exceeded error
+ * try {
+ *   await saveFileToIndexedDB(file, id, category)
+ * } catch (error) {
+ *   if (error instanceof IndexedDBError && error.code === 'QUOTA_EXCEEDED') {
+ *     alert('Storage full! Please delete some files.')
+ *   }
+ * }
  */
 export async function saveFileToIndexedDB(
   file: File,
@@ -89,22 +180,37 @@ export async function saveFileToIndexedDB(
 
       request.onerror = () => {
         db.close();
-        reject(new Error("Failed to save file to IndexedDB"));
+        reject(handleIndexedDBError(request.error));
       };
 
       transaction.onerror = () => {
         db.close();
-        reject(new Error("Transaction failed"));
+        reject(handleIndexedDBError(transaction.error));
       };
     });
   } catch (error) {
     console.error("Error saving file to IndexedDB:", error);
-    throw new Error("Failed to save file to IndexedDB");
+    throw handleIndexedDBError(error);
   }
 }
 
 /**
  * Get a file from IndexedDB
+ *
+ * Retrieves a stored file by its ID. Returns null if the file doesn't exist.
+ *
+ * @param id - The unique identifier of the file to retrieve
+ * @returns Promise that resolves to the StoredFile or null if not found
+ *
+ * @example
+ * const storedFile = await getFileFromIndexedDB('doc-123')
+ * if (storedFile) {
+ *   console.log('Found file:', storedFile.filename)
+ *   const file = storedFileToFile(storedFile)
+ *   // Use the File object
+ * } else {
+ *   console.log('File not found')
+ * }
  */
 export async function getFileFromIndexedDB(id: string): Promise<StoredFile | null> {
   try {
@@ -133,6 +239,28 @@ export async function getFileFromIndexedDB(id: string): Promise<StoredFile | nul
 
 /**
  * Get all files from IndexedDB
+ *
+ * Retrieves all stored files as a dictionary keyed by file ID.
+ * Useful for bulk operations, file restoration, and integrity checks.
+ *
+ * @returns Promise that resolves to an object mapping file IDs to StoredFile objects
+ *
+ * @example
+ * // Restore all files on page load
+ * const allFiles = await getAllFilesFromIndexedDB()
+ * Object.entries(allFiles).forEach(([id, storedFile]) => {
+ *   const file = storedFileToFile(storedFile)
+ *   console.log(`${id}: ${file.name} (${file.size} bytes)`)
+ * })
+ *
+ * @example
+ * // Check if specific files exist
+ * const allFiles = await getAllFilesFromIndexedDB()
+ * const fileIds = ['doc-1', 'doc-2', 'doc-3']
+ * const missingIds = fileIds.filter(id => !allFiles[id])
+ * if (missingIds.length > 0) {
+ *   console.warn('Missing files:', missingIds)
+ * }
  */
 export async function getAllFilesFromIndexedDB(): Promise<Record<string, StoredFile>> {
   try {
@@ -266,4 +394,71 @@ export function storedFileToFile(storedFile: StoredFile): File {
  */
 export function isIndexedDBAvailable(): boolean {
   return typeof window !== "undefined" && !!window.indexedDB;
+}
+
+/**
+ * Check browser storage quota
+ * Returns information about how much storage is being used and available
+ */
+export async function checkStorageQuota(): Promise<{
+  usage: number
+  quota: number
+  percentUsed: number
+  available: number
+}> {
+  if ('storage' in navigator && 'estimate' in navigator.storage) {
+    const estimate = await navigator.storage.estimate()
+    const usage = estimate.usage || 0
+    const quota = estimate.quota || 0
+    return {
+      usage,
+      quota,
+      available: quota - usage,
+      percentUsed: quota ? (usage / quota) * 100 : 0
+    }
+  }
+  return { usage: 0, quota: 0, available: 0, percentUsed: 0 }
+}
+
+/**
+ * IndexedDB Error Types
+ */
+export class IndexedDBError extends Error {
+  constructor(
+    message: string,
+    public code: 'QUOTA_EXCEEDED' | 'NOT_SUPPORTED' | 'UNKNOWN',
+    public originalError?: Error
+  ) {
+    super(message)
+    this.name = 'IndexedDBError'
+  }
+}
+
+/**
+ * Handle IndexedDB errors and convert them to user-friendly messages
+ */
+export function handleIndexedDBError(error: unknown): IndexedDBError {
+  if (error instanceof DOMException) {
+    if (error.name === 'QuotaExceededError') {
+      return new IndexedDBError(
+        'Storage quota exceeded. Please delete some files to free up space.',
+        'QUOTA_EXCEEDED',
+        error
+      )
+    }
+  }
+
+  if (error instanceof Error && error.message.includes('not supported')) {
+    return new IndexedDBError(
+      'Your browser does not support file storage. Please use a modern browser.',
+      'NOT_SUPPORTED',
+      error
+    )
+  }
+
+  return new IndexedDBError(
+    'An error occurred while saving files. Please try again.',
+    'UNKNOWN',
+    error as Error
+  )
 }

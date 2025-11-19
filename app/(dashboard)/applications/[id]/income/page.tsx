@@ -15,11 +15,13 @@ import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { PayCadence, type EmploymentRecord } from "@/lib/types"
 import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 import {
+  uploadManager,
   saveFileToStorage,
   getStoredFiles,
   deleteStoredFile,
   getFileObject
 } from "@/lib/upload-manager"
+import { useFilePreview } from "@/lib/hooks/use-file-preview"
 
 export default function IncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -121,13 +123,16 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     loadData()
   }, [id])
 
-  // Cleanup previews on unmount
+  // Cleanup previews automatically using custom hook
+  useFilePreview(documents)
+  useFilePreview(cpaLetterDocuments)
+
+  // Cleanup upload manager on unmount
   useEffect(() => {
     return () => {
-      documents.forEach(doc => doc.preview && URL.revokeObjectURL(doc.preview))
-      cpaLetterDocuments.forEach(doc => doc.preview && URL.revokeObjectURL(doc.preview))
+      uploadManager.cleanup()
     }
-  }, [documents, cpaLetterDocuments])
+  }, [])
 
   const updateEmployer = (id: string, updated: EmploymentRecord) => {
     setEmployers(employers.map((e) => (e.id === id ? updated : e)))
@@ -168,17 +173,14 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       )
     )
 
-    let progress = 0
-    const interval = setInterval(() => {
-      progress += 10
-      setDocuments((prev) =>
-        prev.map((doc) =>
-          doc.id === fileId ? { ...doc, progress } : doc
+    uploadManager.startUpload(
+      fileId,
+      (progress) => {
+        setDocuments((prev) =>
+          prev.map((doc) => (doc.id === fileId ? { ...doc, progress } : doc))
         )
-      )
-
-      if (progress >= 100) {
-        clearInterval(interval)
+      },
+      async () => {
         setDocuments((prev) =>
           prev.map((doc) =>
             doc.id === fileId
@@ -187,15 +189,19 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           )
         )
 
-        // Save to IndexedDB after completion
         const document = documents.find(d => d.id === fileId)
         if (document) {
-          saveFileToStorage(document.file, fileId, 'employment-verification').catch(error => {
-            console.error('Error saving file to IndexedDB:', error)
-          })
+          await saveFileToStorage(document.file, fileId, 'employment-verification')
         }
+      },
+      (error) => {
+        setDocuments((prev) =>
+          prev.map((doc) =>
+            doc.id === fileId ? { ...doc, status: "error" as const, error } : doc
+          )
+        )
       }
-    }, 300)
+    )
   }
 
   const simulateCpaUpload = (fileId: string) => {
@@ -205,17 +211,14 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       )
     )
 
-    let progress = 0
-    const interval = setInterval(() => {
-      progress += 10
-      setCpaLetterDocuments((prev) =>
-        prev.map((doc) =>
-          doc.id === fileId ? { ...doc, progress } : doc
+    uploadManager.startUpload(
+      fileId,
+      (progress) => {
+        setCpaLetterDocuments((prev) =>
+          prev.map((doc) => (doc.id === fileId ? { ...doc, progress } : doc))
         )
-      )
-
-      if (progress >= 100) {
-        clearInterval(interval)
+      },
+      async () => {
         setCpaLetterDocuments((prev) =>
           prev.map((doc) =>
             doc.id === fileId
@@ -224,15 +227,19 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           )
         )
 
-        // Save to IndexedDB after completion
         const document = cpaLetterDocuments.find(d => d.id === fileId)
         if (document) {
-          saveFileToStorage(document.file, fileId, 'cpa-letter').catch(error => {
-            console.error('Error saving file to IndexedDB:', error)
-          })
+          await saveFileToStorage(document.file, fileId, 'cpa-letter')
         }
+      },
+      (error) => {
+        setCpaLetterDocuments((prev) =>
+          prev.map((doc) =>
+            doc.id === fileId ? { ...doc, status: "error" as const, error } : doc
+          )
+        )
       }
-    }, 300)
+    )
   }
 
   const removeDocument = async (id: string) => {

@@ -15,11 +15,13 @@ import { mockApplications } from "@/lib/mock-data/applications"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { storageService, STORAGE_KEYS } from "@/lib/persistence"
 import {
+  uploadManager,
   saveFileToStorage,
   getStoredFiles,
   deleteStoredFile,
   getFileObject
 } from "@/lib/upload-manager"
+import { useFilePreview } from "@/lib/hooks/use-file-preview"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
   {
@@ -135,18 +137,10 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
     loadData()
   }, [id])
 
-  // Cleanup previews on unmount
-  useEffect(() => {
-    return () => {
-      categories.forEach(cat => {
-        cat.documents.forEach(doc => {
-          if (doc.preview) {
-            URL.revokeObjectURL(doc.preview)
-          }
-        })
-      })
-    }
-  }, [categories])
+  // Cleanup previews automatically using custom hook
+  useFilePreview(
+    categories.flatMap(cat => cat.documents)
+  )
 
   const handleFilesAdded = (categoryId: string, newFiles: UploadedFile[]) => {
     setCategories((prev) =>
@@ -166,39 +160,40 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   }
 
   const simulateUpload = (categoryId: string, fileId: string) => {
+    // Update status to uploading
     setCategories((prev) =>
       prev.map((cat) =>
         cat.id === categoryId
           ? {
               ...cat,
               documents: cat.documents.map((doc) =>
-                doc.id === fileId
-                  ? { ...doc, status: "uploading" as const }
-                  : doc
+                doc.id === fileId ? { ...doc, status: "uploading" as const } : doc
               ),
             }
           : cat
       )
     )
 
-    let progress = 0
-    const interval = setInterval(() => {
-      progress += 10
-      setCategories((prev) =>
-        prev.map((cat) =>
-          cat.id === categoryId
-            ? {
-                ...cat,
-                documents: cat.documents.map((doc) =>
-                  doc.id === fileId ? { ...doc, progress } : doc
-                ),
-              }
-            : cat
+    uploadManager.startUpload(
+      fileId,
+      // Progress callback
+      (progress) => {
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === categoryId
+              ? {
+                  ...cat,
+                  documents: cat.documents.map((doc) =>
+                    doc.id === fileId ? { ...doc, progress } : doc
+                  ),
+                }
+              : cat
+          )
         )
-      )
-
-      if (progress >= 100) {
-        clearInterval(interval)
+      },
+      // Complete callback
+      async () => {
+        // Mark as complete
         setCategories((prev) =>
           prev.map((cat) =>
             cat.id === categoryId
@@ -214,16 +209,35 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
           )
         )
 
-        // Save to IndexedDB after marking as complete
+        // Save to IndexedDB
         const category = categories.find(c => c.id === categoryId)
         const document = category?.documents.find(d => d.id === fileId)
         if (document) {
-          saveFileToStorage(document.file, fileId, categoryId).catch(error => {
+          try {
+            await saveFileToStorage(document.file, fileId, categoryId)
+          } catch (error) {
             console.error('Error saving file to IndexedDB:', error)
-          })
+          }
         }
+      },
+      // Error callback
+      (error) => {
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === categoryId
+              ? {
+                  ...cat,
+                  documents: cat.documents.map((doc) =>
+                    doc.id === fileId
+                      ? { ...doc, status: "error" as const, error }
+                      : doc
+                  ),
+                }
+              : cat
+          )
+        )
       }
-    }, 300)
+    )
   }
 
   const handleFileRemoved = async (categoryId: string, fileId: string) => {
@@ -264,6 +278,35 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
       )
     )
   }
+
+  const handlePauseUpload = (fileId: string) => {
+    uploadManager.pauseUpload(fileId)
+    // Update state to show paused
+    setCategories(prev => prev.map(cat => ({
+      ...cat,
+      documents: cat.documents.map(doc =>
+        doc.id === fileId ? { ...doc, status: 'paused' as const } : doc
+      )
+    })))
+  }
+
+  const handleResumeUpload = (fileId: string) => {
+    uploadManager.resumeUpload(fileId)
+    // Update state to show uploading
+    setCategories(prev => prev.map(cat => ({
+      ...cat,
+      documents: cat.documents.map(doc =>
+        doc.id === fileId ? { ...doc, status: 'uploading' as const } : doc
+      )
+    })))
+  }
+
+  // Cleanup upload manager on unmount
+  useEffect(() => {
+    return () => {
+      uploadManager.cleanup()
+    }
+  }, [])
 
   const validate = () => {
     const newErrors: string[] = []
@@ -379,6 +422,8 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
             application={application}
             onFilesAdded={(files) => handleFilesAdded(category.id, files)}
             onFileRemoved={(fileId) => handleFileRemoved(category.id, fileId)}
+            onPauseUpload={handlePauseUpload}
+            onResumeUpload={handleResumeUpload}
             onSkipReasonChange={(reason) =>
               handleSkipReasonChange(category.id, reason)
             }

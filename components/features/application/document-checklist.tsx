@@ -29,6 +29,8 @@ interface DocumentChecklistProps {
   application?: Application
   onFilesAdded: (files: UploadedFile[]) => void
   onFileRemoved: (fileId: string) => void
+  onPauseUpload?: (fileId: string) => void
+  onResumeUpload?: (fileId: string) => void
   onSkipReasonChange: (reason: string) => void
   onSkipToggle: (skip: boolean) => void
 }
@@ -38,6 +40,8 @@ export function DocumentChecklist({
   application,
   onFilesAdded,
   onFileRemoved,
+  onPauseUpload,
+  onResumeUpload,
   onSkipReasonChange,
   onSkipToggle,
 }: DocumentChecklistProps) {
@@ -140,6 +144,8 @@ export function DocumentChecklist({
                     key={doc.id}
                     document={doc}
                     onDelete={() => onFileRemoved(doc.id)}
+                    onPause={onPauseUpload ? () => onPauseUpload(doc.id) : undefined}
+                    onResume={onResumeUpload ? () => onResumeUpload(doc.id) : undefined}
                   />
                 ))}
               </div>

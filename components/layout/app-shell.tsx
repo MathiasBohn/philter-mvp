@@ -4,6 +4,7 @@ import { ReactNode, useState } from "react"
 import { TopBar } from "./top-bar"
 import { Sidebar } from "./sidebar"
 import { MobileNav } from "./mobile-nav"
+import { StorageMonitor } from "@/components/features/storage/storage-monitor"
 
 interface AppShellProps {
   children: ReactNode
@@ -44,6 +45,7 @@ export function AppShell({ children, showSidebar = true }: AppShellProps) {
         {/* Main Content */}
         <main id="main-content" className={`flex-1 ${showSidebar ? 'lg:ml-64' : ''}`} tabIndex={-1}>
           <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <StorageMonitor />
             {children}
           </div>
         </main>
