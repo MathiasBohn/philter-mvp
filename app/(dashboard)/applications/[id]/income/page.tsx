@@ -14,6 +14,12 @@ import { ErrorSummary } from "@/components/forms/error-summary"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { PayCadence, type EmploymentRecord } from "@/lib/types"
 import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import {
+  saveFileToStorage,
+  getStoredFiles,
+  deleteStoredFile,
+  getFileObject
+} from "@/lib/upload-manager"
 
 export default function IncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -47,8 +53,12 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
         await new Promise(resolve => setTimeout(resolve, 300))
 
         const saved = storageService.get<string | null>(STORAGE_KEYS.income(id), null)
+        const storedFiles = await getStoredFiles()
+
         if (saved) {
           const data = typeof saved === 'string' ? JSON.parse(saved) : saved
+
+          // Restore employers
           if (data.employers) {
             const loadedEmployers = data.employers.map(
               (e: { startDate: string; endDate?: string }) => ({
@@ -59,14 +69,41 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
             )
             setEmployers(loadedEmployers)
           }
+
+          // Restore employment verification documents
           if (data.documents) {
-            setDocuments(data.documents)
+            const restoredDocs = data.documents.map((doc: UploadedFile) => {
+              const storedFile = storedFiles[doc.id]
+              if (storedFile) {
+                const file = getFileObject(storedFile)
+                const preview = storedFile.type.startsWith('image/')
+                  ? URL.createObjectURL(storedFile.blob)
+                  : undefined
+                return { ...doc, file, preview, status: 'complete' as const, progress: 100 }
+              }
+              return doc
+            })
+            setDocuments(restoredDocs)
           }
+
           if (data.isSelfEmployed !== undefined) {
             setIsSelfEmployed(data.isSelfEmployed)
           }
+
+          // Restore CPA letter documents
           if (data.cpaLetterDocuments) {
-            setCpaLetterDocuments(data.cpaLetterDocuments)
+            const restoredCpaDocs = data.cpaLetterDocuments.map((doc: UploadedFile) => {
+              const storedFile = storedFiles[doc.id]
+              if (storedFile) {
+                const file = getFileObject(storedFile)
+                const preview = storedFile.type.startsWith('image/')
+                  ? URL.createObjectURL(storedFile.blob)
+                  : undefined
+                return { ...doc, file, preview, status: 'complete' as const, progress: 100 }
+              }
+              return doc
+            })
+            setCpaLetterDocuments(restoredCpaDocs)
           }
         } else {
           // Initialize with one empty employer
@@ -83,6 +120,14 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     loadData()
   }, [id])
+
+  // Cleanup previews on unmount
+  useEffect(() => {
+    return () => {
+      documents.forEach(doc => doc.preview && URL.revokeObjectURL(doc.preview))
+      cpaLetterDocuments.forEach(doc => doc.preview && URL.revokeObjectURL(doc.preview))
+    }
+  }, [documents, cpaLetterDocuments])
 
   const updateEmployer = (id: string, updated: EmploymentRecord) => {
     setEmployers(employers.map((e) => (e.id === id ? updated : e)))
@@ -141,6 +186,14 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
               : doc
           )
         )
+
+        // Save to IndexedDB after completion
+        const document = documents.find(d => d.id === fileId)
+        if (document) {
+          saveFileToStorage(document.file, fileId, 'employment-verification').catch(error => {
+            console.error('Error saving file to IndexedDB:', error)
+          })
+        }
       }
     }, 300)
   }
@@ -170,16 +223,34 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
               : doc
           )
         )
+
+        // Save to IndexedDB after completion
+        const document = cpaLetterDocuments.find(d => d.id === fileId)
+        if (document) {
+          saveFileToStorage(document.file, fileId, 'cpa-letter').catch(error => {
+            console.error('Error saving file to IndexedDB:', error)
+          })
+        }
       }
     }, 300)
   }
 
-  const removeDocument = (id: string) => {
+  const removeDocument = async (id: string) => {
     setDocuments(documents.filter((d) => d.id !== id))
+    try {
+      await deleteStoredFile(id)
+    } catch (error) {
+      console.error('Error deleting file from IndexedDB:', error)
+    }
   }
 
-  const removeCpaDocument = (id: string) => {
+  const removeCpaDocument = async (id: string) => {
     setCpaLetterDocuments(cpaLetterDocuments.filter((d) => d.id !== id))
+    try {
+      await deleteStoredFile(id)
+    } catch (error) {
+      console.error('Error deleting file from IndexedDB:', error)
+    }
   }
 
   const validate = () => {
@@ -231,7 +302,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     setIsSaving(true)
 
-    // Save to centralized storage
+    // Save metadata to centralized storage
     const data = {
       employers,
       documents,
@@ -240,6 +311,25 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       updatedAt: new Date().toISOString(),
     }
     storageService.set(STORAGE_KEYS.income(id), data)
+
+    // Save files to IndexedDB
+    try {
+      // Save employment verification documents
+      for (const doc of documents) {
+        if (doc.status === 'complete') {
+          await saveFileToStorage(doc.file, doc.id, 'employment-verification')
+        }
+      }
+
+      // Save CPA letter documents
+      for (const doc of cpaLetterDocuments) {
+        if (doc.status === 'complete') {
+          await saveFileToStorage(doc.file, doc.id, 'cpa-letter')
+        }
+      }
+    } catch (error) {
+      console.error('Error saving files to IndexedDB:', error)
+    }
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))

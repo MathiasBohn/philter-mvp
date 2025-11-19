@@ -13,6 +13,13 @@ import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
 import { mockApplications } from "@/lib/mock-data/applications"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
+import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import {
+  saveFileToStorage,
+  getStoredFiles,
+  deleteStoredFile,
+  getFileObject
+} from "@/lib/upload-manager"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
   {
@@ -65,29 +72,81 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   // Get application data
   const application = mockApplications.find((app) => app.id === id);
 
-  const [categories, setCategories] = useState<DocumentCategory[]>(() => {
-    // Lazy initialization from localStorage
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(`documents-data-${id}`)
-      if (saved) {
-        const data = JSON.parse(saved)
-        if (data.categories) {
-          return data.categories
-        }
-      }
-    }
-    return INITIAL_CATEGORIES
-  })
+  const [categories, setCategories] = useState<DocumentCategory[]>(INITIAL_CATEGORIES)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
-  // Handle initial loading state
+  // Load data and files from storage on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
+    const loadData = async () => {
+      if (typeof window !== 'undefined') {
+        try {
+          // Load metadata from storageService
+          const saved = storageService.get(STORAGE_KEYS.documentsData(id), null)
+
+          // Load files from IndexedDB
+          const storedFiles = await getStoredFiles()
+
+          if (saved) {
+            const data = typeof saved === 'string' ? JSON.parse(saved) : saved
+            if (data.categories) {
+              // Merge metadata with actual files from IndexedDB
+              const categoriesWithFiles = data.categories.map((cat: DocumentCategory) => {
+                const documentsWithFiles = cat.documents.map((doc: UploadedFile) => {
+                  const storedFile = storedFiles[doc.id]
+                  if (storedFile) {
+                    // Restore the actual File object
+                    const file = getFileObject(storedFile)
+                    const preview = storedFile.type.startsWith('image/')
+                      ? URL.createObjectURL(storedFile.blob)
+                      : undefined
+
+                    return {
+                      ...doc,
+                      file,
+                      preview,
+                      status: 'complete' as const,
+                      progress: 100,
+                    }
+                  }
+                  return doc
+                })
+
+                return {
+                  ...cat,
+                  documents: documentsWithFiles,
+                }
+              })
+
+              setCategories(categoriesWithFiles)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading documents data:', error)
+        }
+      }
+
+      // Simulate brief loading for better UX
+      setTimeout(() => {
+        setIsLoading(false)
+      }, 300)
+    }
+
+    loadData()
+  }, [id])
+
+  // Cleanup previews on unmount
+  useEffect(() => {
+    return () => {
+      categories.forEach(cat => {
+        cat.documents.forEach(doc => {
+          if (doc.preview) {
+            URL.revokeObjectURL(doc.preview)
+          }
+        })
+      })
+    }
+  }, [categories])
 
   const handleFilesAdded = (categoryId: string, newFiles: UploadedFile[]) => {
     setCategories((prev) =>
@@ -154,11 +213,21 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
               : cat
           )
         )
+
+        // Save to IndexedDB after marking as complete
+        const category = categories.find(c => c.id === categoryId)
+        const document = category?.documents.find(d => d.id === fileId)
+        if (document) {
+          saveFileToStorage(document.file, fileId, categoryId).catch(error => {
+            console.error('Error saving file to IndexedDB:', error)
+          })
+        }
       }
     }, 300)
   }
 
-  const handleFileRemoved = (categoryId: string, fileId: string) => {
+  const handleFileRemoved = async (categoryId: string, fileId: string) => {
+    // Remove from state
     setCategories((prev) =>
       prev.map((cat) =>
         cat.id === categoryId
@@ -169,6 +238,13 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
           : cat
       )
     )
+
+    // Delete from IndexedDB
+    try {
+      await deleteStoredFile(fileId)
+    } catch (error) {
+      console.error('Error deleting file from IndexedDB:', error)
+    }
   }
 
   const handleSkipReasonChange = (categoryId: string, reason: string) => {
@@ -224,12 +300,26 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   const handleSave = async () => {
     setIsSaving(true)
 
-    // Save to localStorage
+    // Save metadata to storageService
     const data = {
       categories,
       updatedAt: new Date().toISOString(),
     }
-    localStorage.setItem(`documents-data-${id}`, JSON.stringify(data))
+    storageService.set(STORAGE_KEYS.documentsData(id), data)
+
+    // Save files to IndexedDB
+    try {
+      for (const category of categories) {
+        for (const doc of category.documents) {
+          if (doc.status === 'complete') {
+            await saveFileToStorage(doc.file, doc.id, category.id)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving files to IndexedDB:', error)
+      // Show error to user if needed
+    }
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500))

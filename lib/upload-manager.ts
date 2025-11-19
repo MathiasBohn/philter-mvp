@@ -1,8 +1,20 @@
 /**
  * Upload Manager
  *
- * Handles simulated file uploads with pause/resume capability and localStorage/IndexedDB storage
+ * Handles simulated file uploads with pause/resume capability and IndexedDB storage
  */
+
+import {
+  saveFileToIndexedDB,
+  getFileFromIndexedDB,
+  getAllFilesFromIndexedDB,
+  deleteFileFromIndexedDB,
+  clearAllFilesFromIndexedDB,
+  getIndexedDBStorageInfo,
+  storedFileToFile,
+  isIndexedDBAvailable,
+  type StoredFile,
+} from "./indexed-db"
 
 // Upload Manager types are defined inline below
 
@@ -120,7 +132,8 @@ class UploadManager {
 export const uploadManager = new UploadManager()
 
 /**
- * Convert File to base64 string for localStorage storage
+ * LEGACY: Convert File to base64 string (deprecated - use IndexedDB instead)
+ * @deprecated Use IndexedDB storage for better performance and capacity
  */
 export async function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -135,7 +148,8 @@ export async function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * Convert base64 string back to File object
+ * LEGACY: Convert base64 string back to File object (deprecated - use IndexedDB instead)
+ * @deprecated Use IndexedDB storage for better performance and capacity
  */
 export function base64ToFile(base64: string, filename: string, mimeType: string): File {
   const arr = base64.split(",")
@@ -150,60 +164,41 @@ export function base64ToFile(base64: string, filename: string, mimeType: string)
   return new File([u8arr], filename, { type: mimeType })
 }
 
-/**
- * Storage interface for uploaded files
- */
-export interface StoredFile {
-  id: string
-  filename: string
-  size: number
-  type: string
-  base64: string
-  uploadedAt: string
-  category?: string
-}
+// Note: StoredFile interface is now imported from ./indexed-db
+// Export it for backward compatibility
+export type { StoredFile }
 
 /**
- * Save file to localStorage
- * Note: localStorage has a size limit (~5-10MB). For larger files, consider IndexedDB
+ * Save file to IndexedDB storage
+ * IndexedDB has much better capacity (~50MB-1GB+) compared to localStorage (~5-10MB)
  */
 export async function saveFileToStorage(
   file: File,
   id: string,
   category?: string
 ): Promise<void> {
+  if (!isIndexedDBAvailable()) {
+    throw new Error("IndexedDB is not available in this browser")
+  }
+
   try {
-    const base64 = await fileToBase64(file)
-
-    const storedFile: StoredFile = {
-      id,
-      filename: file.name,
-      size: file.size,
-      type: file.type,
-      base64,
-      uploadedAt: new Date().toISOString(),
-      category,
-    }
-
-    // Get existing files
-    const existingFiles = getStoredFiles()
-    existingFiles[id] = storedFile
-
-    // Save to localStorage
-    localStorage.setItem("philter_uploaded_files", JSON.stringify(existingFiles))
+    await saveFileToIndexedDB(file, id, category)
   } catch (error) {
     console.error("Error saving file to storage:", error)
-    throw new Error("Failed to save file. File may be too large for localStorage.")
+    throw new Error("Failed to save file to IndexedDB")
   }
 }
 
 /**
- * Get all stored files from localStorage
+ * Get all stored files from IndexedDB
  */
-export function getStoredFiles(): Record<string, StoredFile> {
+export async function getStoredFiles(): Promise<Record<string, StoredFile>> {
+  if (!isIndexedDBAvailable()) {
+    return {}
+  }
+
   try {
-    const stored = localStorage.getItem("philter_uploaded_files")
-    return stored ? JSON.parse(stored) : {}
+    return await getAllFilesFromIndexedDB()
   } catch (error) {
     console.error("Error reading files from storage:", error)
     return {}
@@ -213,38 +208,183 @@ export function getStoredFiles(): Record<string, StoredFile> {
 /**
  * Get a specific file from storage
  */
-export function getStoredFile(id: string): StoredFile | null {
-  const files = getStoredFiles()
-  return files[id] || null
+export async function getStoredFile(id: string): Promise<StoredFile | null> {
+  if (!isIndexedDBAvailable()) {
+    return null
+  }
+
+  try {
+    return await getFileFromIndexedDB(id)
+  } catch (error) {
+    console.error("Error getting file from storage:", error)
+    return null
+  }
 }
 
 /**
  * Delete a file from storage
  */
-export function deleteStoredFile(id: string): void {
-  const files = getStoredFiles()
-  delete files[id]
-  localStorage.setItem("philter_uploaded_files", JSON.stringify(files))
+export async function deleteStoredFile(id: string): Promise<void> {
+  if (!isIndexedDBAvailable()) {
+    throw new Error("IndexedDB is not available")
+  }
+
+  try {
+    await deleteFileFromIndexedDB(id)
+  } catch (error) {
+    console.error("Error deleting file from storage:", error)
+    throw error
+  }
 }
 
 /**
  * Clear all stored files
  */
-export function clearAllStoredFiles(): void {
-  localStorage.removeItem("philter_uploaded_files")
+export async function clearAllStoredFiles(): Promise<void> {
+  if (!isIndexedDBAvailable()) {
+    throw new Error("IndexedDB is not available")
+  }
+
+  try {
+    await clearAllFilesFromIndexedDB()
+  } catch (error) {
+    console.error("Error clearing files from storage:", error)
+    throw error
+  }
 }
 
 /**
  * Get storage usage info
  */
-export function getStorageInfo(): { used: number; total: number; percentage: number } {
-  const stored = localStorage.getItem("philter_uploaded_files") || ""
-  const used = new Blob([stored]).size
-  const total = 5 * 1024 * 1024 // Approximate 5MB limit for localStorage
+export async function getStorageInfo(): Promise<{
+  used: number
+  fileCount: number
+  files: Array<{ id: string; filename: string; size: number }>
+}> {
+  if (!isIndexedDBAvailable()) {
+    return { used: 0, fileCount: 0, files: [] }
+  }
 
-  return {
-    used,
-    total,
-    percentage: (used / total) * 100,
+  try {
+    return await getIndexedDBStorageInfo()
+  } catch (error) {
+    console.error("Error getting storage info:", error)
+    return { used: 0, fileCount: 0, files: [] }
+  }
+}
+
+/**
+ * Convert a stored file back to a File object for use in the app
+ */
+export function getFileObject(storedFile: StoredFile): File {
+  return storedFileToFile(storedFile)
+}
+
+/**
+ * MIGRATION UTILITY: Migrate files from localStorage to IndexedDB
+ *
+ * This function helps transition from the old localStorage-based storage
+ * to the new IndexedDB-based storage. It will:
+ * 1. Read files from localStorage
+ * 2. Convert base64 back to File objects
+ * 3. Save to IndexedDB
+ * 4. Optionally clear localStorage after successful migration
+ *
+ * @param clearLocalStorageAfter - Whether to clear localStorage after migration (default: false)
+ * @returns Object with migration results
+ */
+export async function migrateFilesFromLocalStorage(
+  clearLocalStorageAfter = false
+): Promise<{
+  success: boolean
+  migratedCount: number
+  failedCount: number
+  errors: string[]
+}> {
+  const errors: string[] = []
+  let migratedCount = 0
+  let failedCount = 0
+
+  try {
+    if (!isIndexedDBAvailable()) {
+      throw new Error("IndexedDB is not available")
+    }
+
+    // Get files from localStorage (old format with base64)
+    const stored = localStorage.getItem("philter_uploaded_files")
+    if (!stored) {
+      return {
+        success: true,
+        migratedCount: 0,
+        failedCount: 0,
+        errors: [],
+      }
+    }
+
+    const oldFiles: Record<
+      string,
+      {
+        id: string
+        filename: string
+        size: number
+        type: string
+        base64: string
+        uploadedAt: string
+        category?: string
+      }
+    > = JSON.parse(stored)
+
+    // Migrate each file
+    for (const [id, oldFile] of Object.entries(oldFiles)) {
+      try {
+        // Convert base64 back to File
+        const file = base64ToFile(oldFile.base64, oldFile.filename, oldFile.type)
+
+        // Save to IndexedDB
+        await saveFileToIndexedDB(file, id, oldFile.category)
+
+        migratedCount++
+      } catch (error) {
+        failedCount++
+        errors.push(`Failed to migrate file ${oldFile.filename}: ${error}`)
+        console.error(`Error migrating file ${id}:`, error)
+      }
+    }
+
+    // Clear localStorage if requested and all files migrated successfully
+    if (clearLocalStorageAfter && failedCount === 0) {
+      localStorage.removeItem("philter_uploaded_files")
+    }
+
+    return {
+      success: failedCount === 0,
+      migratedCount,
+      failedCount,
+      errors,
+    }
+  } catch (error) {
+    console.error("Error during migration:", error)
+    return {
+      success: false,
+      migratedCount,
+      failedCount,
+      errors: [...errors, `Migration failed: ${error}`],
+    }
+  }
+}
+
+/**
+ * Check if there are files in localStorage that need migration
+ */
+export function hasLocalStorageFilesToMigrate(): boolean {
+  try {
+    const stored = localStorage.getItem("philter_uploaded_files")
+    if (!stored) return false
+
+    const files = JSON.parse(stored)
+    return Object.keys(files).length > 0
+  } catch (error) {
+    console.error("Error checking for localStorage files:", error)
+    return false
   }
 }
