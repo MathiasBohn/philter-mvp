@@ -2,18 +2,19 @@
  * LocalStorage persistence utility for the Philter MVP
  * Manages all data persistence across user flows
  * Features: Compression, Chunking, Error Recovery
+ *
+ * NOTE: This module now integrates with StorageService (lib/storage.ts)
+ * for caching and reactive updates. Direct use is still supported for
+ * backward compatibility.
  */
 
 import { Application, RFI, DecisionRecord, ApplicationStatus } from "./types"
 import * as LZString from "lz-string"
+import { StorageService, createUseStorage, STORAGE_KEYS as KEYS } from "./storage"
 
-// Storage keys
-const STORAGE_KEYS = {
-  APPLICATIONS: "philter_applications",
-  RFIS: "philter_rfis",
-  DECISIONS: "philter_decisions",
-  CURRENT_USER: "philter_current_user_id",
-} as const
+// Storage keys (re-export from storage.ts for compatibility)
+const STORAGE_KEYS = KEYS
+export { STORAGE_KEYS }
 
 // Configuration
 const CHUNK_SIZE = 50000 // Max chars per chunk (to stay well under localStorage limits)
@@ -398,10 +399,16 @@ export const storage = {
    * Clear all persisted data (useful for testing/reset)
    */
   clearAll: (): void => {
-    Object.values(STORAGE_KEYS).forEach(key => {
-      if (key !== STORAGE_KEYS.CURRENT_USER) {
-        storageHelper.safeRemove(key)
-      }
+    // Only clear string keys, not the formData function
+    const keysToRemove = [
+      STORAGE_KEYS.APPLICATIONS,
+      STORAGE_KEYS.RFIS,
+      STORAGE_KEYS.DECISIONS,
+      // Don't remove CURRENT_USER
+    ];
+
+    keysToRemove.forEach(key => {
+      storageHelper.safeRemove(key)
     })
   }
 }
@@ -410,3 +417,15 @@ export const storage = {
  * Export storage helper for direct use in components if needed
  */
 export { storageHelper }
+
+/**
+ * Initialize StorageService with storageHelper as the adapter
+ * This provides caching and reactive updates for localStorage
+ */
+export const storageService = new StorageService(storageHelper);
+
+/**
+ * Export the useStorage hook for reactive localStorage access
+ * Usage: const [value, setValue] = useStorage('my_key', defaultValue)
+ */
+export const useStorage = createUseStorage(storageService);
