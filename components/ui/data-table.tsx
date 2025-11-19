@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import {
   Table,
   TableBody,
@@ -32,6 +33,54 @@ interface DataTableProps<T> {
   initialSortColumn?: keyof T;
   initialSortDirection?: "asc" | "desc";
 }
+
+// Memoized table row component to prevent unnecessary re-renders
+interface DataRowProps<T> {
+  row: T;
+  columns: Column<T>[];
+  actions?: (row: T) => React.ReactNode;
+  onRowClick?: (row: T) => void;
+}
+
+const DataRow = memo(function DataRow<T>({
+  row,
+  columns,
+  actions,
+  onRowClick,
+}: DataRowProps<T>) {
+  return (
+    <TableRow
+      onClick={() => onRowClick?.(row)}
+      className={onRowClick ? "cursor-pointer" : undefined}
+    >
+      {columns.map((column) => (
+        <TableCell key={String(column.key)} className={column.className}>
+          {column.render
+            ? column.render(row[column.key], row)
+            : String(row[column.key])}
+        </TableCell>
+      ))}
+      {actions && (
+        <TableCell className="text-right">{actions(row)}</TableCell>
+      )}
+    </TableRow>
+  );
+}) as <T>(props: DataRowProps<T>) => React.ReactElement;
+
+// Memoized mobile card wrapper to prevent unnecessary re-renders
+interface MobileCardWrapperProps<T> {
+  row: T;
+  keyExtractor: (row: T) => string;
+  mobileCardRenderer: (row: T) => React.ReactNode;
+}
+
+const MobileCardWrapper = memo(function MobileCardWrapper<T>({
+  row,
+  keyExtractor,
+  mobileCardRenderer,
+}: MobileCardWrapperProps<T>) {
+  return <div key={keyExtractor(row)}>{mobileCardRenderer(row)}</div>;
+}) as <T>(props: MobileCardWrapperProps<T>) => React.ReactElement;
 
 export function DataTable<T>({
   data,
@@ -97,22 +146,13 @@ export function DataTable<T>({
           </TableHeader>
           <TableBody>
             {sortedData.map((row) => (
-              <TableRow
+              <DataRow
                 key={keyExtractor(row)}
-                onClick={() => onRowClick?.(row)}
-                className={onRowClick ? "cursor-pointer" : undefined}
-              >
-                {columns.map((column) => (
-                  <TableCell key={String(column.key)} className={column.className}>
-                    {column.render
-                      ? column.render(row[column.key], row)
-                      : String(row[column.key])}
-                  </TableCell>
-                ))}
-                {actions && (
-                  <TableCell className="text-right">{actions(row)}</TableCell>
-                )}
-              </TableRow>
+                row={row}
+                columns={columns}
+                actions={actions}
+                onRowClick={onRowClick}
+              />
             ))}
           </TableBody>
         </Table>
@@ -122,7 +162,12 @@ export function DataTable<T>({
       {mobileCardRenderer && (
         <div className="md:hidden space-y-4">
           {sortedData.map((row) => (
-            <div key={keyExtractor(row)}>{mobileCardRenderer(row)}</div>
+            <MobileCardWrapper
+              key={keyExtractor(row)}
+              row={row}
+              keyExtractor={keyExtractor}
+              mobileCardRenderer={mobileCardRenderer}
+            />
           ))}
         </div>
       )}

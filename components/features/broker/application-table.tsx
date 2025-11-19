@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,7 +128,7 @@ export function ApplicationTable({
 }: ApplicationTableProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
 
-  const emptyState = (
+  const emptyState = useMemo(() => (
     <EmptyState
       icon={FileText}
       title="No Applications Yet"
@@ -139,9 +139,9 @@ export function ApplicationTable({
         </Link>
       }
     />
-  );
+  ), []);
 
-  const renderActions = (application: Application) => (
+  const renderActions = useCallback((application: Application) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" aria-label="Open actions menu">
@@ -170,7 +170,7 @@ export function ApplicationTable({
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  ), [setShowInviteModal]);
 
   // If selection is enabled, wrap the table with custom rendering for checkboxes
   if (onToggleSelection) {

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -21,7 +22,7 @@ interface ApplicationMobileCardProps {
   application: Application;
 }
 
-export function ApplicationMobileCard({ application }: ApplicationMobileCardProps) {
+export const ApplicationMobileCard = memo(function ApplicationMobileCard({ application }: ApplicationMobileCardProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -102,4 +103,4 @@ export function ApplicationMobileCard({ application }: ApplicationMobileCardProp
       </CardContent>
     </Card>
   );
-}
+});

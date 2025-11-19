@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -52,18 +52,18 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
 
-  const handleStatusChange = (appId: string, newStatus: ApplicationStatus) => {
+  const handleStatusChange = useCallback((appId: string, newStatus: ApplicationStatus) => {
     if (onStatusChange) {
       onStatusChange(appId, newStatus);
     }
-  };
+  }, [onStatusChange]);
 
-  const handleAssignClick = (app: Application) => {
+  const handleAssignClick = useCallback((app: Application) => {
     setSelectedApplication(app);
     setAssignModalOpen(true);
-  };
+  }, []);
 
-  const handleAssignReviewer = (applicationId: string) => {
+  const handleAssignReviewer = useCallback((applicationId: string) => {
     // In a real app, this would call an API
     // For now, we'll just update the status and show a toast
     if (onStatusChange) {
@@ -74,9 +74,9 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
       title: "Reviewer Assigned",
       description: "The application has been assigned for review",
     });
-  };
+  }, [onStatusChange, toast]);
 
-  const handleDownloadPackage = (app: Application) => {
+  const handleDownloadPackage = useCallback((app: Application) => {
     const applicantNames = app.people?.map((p) => p.fullName).join(", ") || "Unknown";
 
     // Create a comprehensive JSON package of the application
@@ -120,9 +120,9 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
       title: "Package Downloaded",
       description: `Application package for ${applicantNames} has been downloaded`,
     });
-  };
+  }, [toast]);
 
-  const columns: Column<Application>[] = [
+  const columns: Column<Application>[] = useMemo(() => [
     {
       key: "id",
       label: "Applicant(s)",
@@ -211,15 +211,15 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
       className: "text-muted-foreground text-sm",
       render: (value) => formatDate(value as string, "relative"),
     },
-  ];
+  ], [handleStatusChange]);
 
-  const emptyState = (
+  const emptyState = useMemo(() => (
     <div className="text-center py-12 border rounded-lg">
       <p className="text-muted-foreground">No applications found</p>
     </div>
-  );
+  ), []);
 
-  const renderActions = (app: Application) => (
+  const renderActions = useCallback((app: Application) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" aria-label="Open actions menu">
@@ -246,7 +246,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  ), [handleAssignClick, handleDownloadPackage]);
 
   return (
     <>
