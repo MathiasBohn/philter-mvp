@@ -90,7 +90,7 @@ const columns: Column<Application>[] = [
   },
   {
     key: "submittedAt",
-    label: "Age",
+    label: "Time",
     sortable: true,
     render: (_, application) => {
       const age = getDaysSinceSubmission(application.submittedAt);
