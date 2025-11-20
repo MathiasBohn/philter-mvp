@@ -133,7 +133,7 @@ export function getStatusVariant(
 export const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   [TransactionType.COOP_PURCHASE]: "Co-op Purchase",
   [TransactionType.CONDO_PURCHASE]: "Condo Purchase",
-  [TransactionType.COOP_SUBLET]: "Co-op Sublet",
+  [TransactionType.COOP_SUBLET]: "Co-op Lease",
   [TransactionType.CONDO_LEASE]: "Condo Lease",
 } as const
 

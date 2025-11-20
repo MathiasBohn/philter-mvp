@@ -27,8 +27,8 @@ const transactionTypes = [
   },
   {
     value: "COOP_SUBLET" as TransactionType,
-    label: "Co-op Sublet",
-    description: "Subletting a co-op apartment",
+    label: "Co-op Lease",
+    description: "Renting a cooperative unit",
     icon: Key,
   },
   {
