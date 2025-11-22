@@ -21,6 +21,11 @@ const CHUNK_SIZE = 50000 // Max chars per chunk (to stay well under localStorage
 const COMPRESSION_THRESHOLD = 1000 // Compress data larger than 1KB
 
 /**
+ * Check if we're in a browser environment
+ */
+const isBrowser = typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+
+/**
  * Optimized storage helper utilities
  * Implements compression and chunking to handle large data
  */
@@ -51,6 +56,8 @@ const storageHelper = {
    * Split data into chunks if it exceeds chunk size
    */
   chunkData: (key: string, data: string): void => {
+    if (!isBrowser) return
+
     const chunks = Math.ceil(data.length / CHUNK_SIZE)
 
     if (chunks === 1) {
@@ -79,6 +86,8 @@ const storageHelper = {
    * Retrieve chunked data
    */
   unchunkData: (key: string): string | null => {
+    if (!isBrowser) return null
+
     const chunksCount = localStorage.getItem(`${key}_chunks`)
 
     if (!chunksCount) {
@@ -106,6 +115,8 @@ const storageHelper = {
    * Safe set with compression and chunking
    */
   safeSet: (key: string, value: unknown): void => {
+    if (!isBrowser) return
+
     try {
       const jsonString = JSON.stringify(value)
       const compressed = storageHelper.compress(jsonString)
@@ -126,12 +137,25 @@ const storageHelper = {
    * Safe get with decompression and unchunking
    */
   safeGet: <T>(key: string, defaultValue: T): T => {
+    if (!isBrowser) return defaultValue
+
     try {
       const data = storageHelper.unchunkData(key)
       if (!data) return defaultValue
 
       const decompressed = storageHelper.decompress(data)
-      return JSON.parse(decompressed) as T
+
+      // Try to parse as JSON, but if it fails, check if it's a primitive value
+      try {
+        return JSON.parse(decompressed) as T
+      } catch (parseError) {
+        // If JSON.parse fails, it might be a plain string (legacy data)
+        // Return as-is for string types, otherwise return default
+        if (typeof defaultValue === 'string') {
+          return decompressed as T
+        }
+        throw parseError // Re-throw if not a string type
+      }
     } catch (error) {
       console.error(`Error retrieving data for key ${key}:`, error)
       return defaultValue
@@ -142,6 +166,8 @@ const storageHelper = {
    * Remove item and all its chunks
    */
   safeRemove: (key: string): void => {
+    if (!isBrowser) return
+
     localStorage.removeItem(key)
     localStorage.removeItem(`${key}_chunks`)
     let i = 0
