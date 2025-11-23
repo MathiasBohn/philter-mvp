@@ -58,6 +58,15 @@ The application uses Next.js App Router with organized route groups:
 - `globals.css` - Tailwind CSS v4 with custom theme tokens and dark mode support
 - `error.tsx` - Global error boundary
 
+**Auth Route Group** (`/app/(auth)`):
+Authentication pages for user access:
+- `/sign-in` - User login
+- `/sign-up` - User registration
+- `/verify-email` - Email verification
+- `/reset-password` - Password reset
+- `/forgot-password` - Password recovery
+- `/accept-invitation/[token]` - Invitation acceptance
+
 **Dashboard Route Group** (`/app/(dashboard)`):
 The dashboard contains role-specific workflows:
 
@@ -99,6 +108,13 @@ The dashboard contains role-specific workflows:
    - `/help-support` - Documentation
    - `/test-pdf` - PDF testing utilities
 
+**API Routes** (`/app/api`):
+- `/applications/[id]/claim-link` - Claim link endpoint
+- `/cover-sheet` - PDF cover sheet generation
+- `/invitations` - Invitation management
+- `/test-supabase` - Supabase connection testing
+- `/auth/callback` - Supabase OAuth callback
+
 **Layout Architecture:**
 - Nested layouts with role-specific sidebars
 - AppShell component provides global navigation
@@ -125,9 +141,11 @@ The dashboard contains role-specific workflows:
 - **Zod** (4.1.12) - Schema validation and type inference
 
 **Data & Storage:**
+- **Supabase** (@supabase/supabase-js 2.84.0, @supabase/ssr 0.7.0) - Authentication and backend
 - **IndexedDB** - Primary file storage (browser native, 50MB-1GB+ capacity)
 - **localStorage** - Application metadata, form data
 - **lz-string** (1.5.0) - Data compression for large payloads
+- **crypto-js** (4.2.0) - Encryption utilities
 
 **PDF Handling:**
 - **pdfjs-dist** (5.4.394) - PDF viewing and rendering
@@ -214,6 +232,11 @@ The dashboard contains role-specific workflows:
 
 6. **Provider Components** (`/components/providers`)
    - `theme-provider.tsx` - Theme context (next-themes wrapper)
+
+7. **Auth Components** (`/components/auth`)
+   - `sign-in-form.tsx` - Login form with Supabase integration
+   - `sign-up-form.tsx` - Registration form with email verification
+   - Other auth-related forms and components
 
 **Component Naming Conventions:**
 - kebab-case for all component files (e.g., `upload-dropzone.tsx`)
@@ -794,6 +817,49 @@ toast.info('Validation in progress...')
 // Wrapper around Sonner for consistent toast notifications
 ```
 
+### Supabase Integration
+
+**Client-Side Utilities** ([lib/supabase/client.ts](lib/supabase/client.ts))
+```typescript
+import { createClient } from '@/lib/supabase/client'
+
+const supabase = createClient()
+// Use for client-side operations (browser)
+```
+
+**Server-Side Utilities** ([lib/supabase/server.ts](lib/supabase/server.ts))
+```typescript
+import { createClient } from '@/lib/supabase/server'
+
+// In Server Components
+const supabase = await createClient()
+
+// In API routes
+const supabase = await createClient()
+```
+
+**Auth Context** ([lib/contexts/auth-context.tsx](lib/contexts/auth-context.tsx))
+```typescript
+import { useAuth } from '@/lib/contexts/auth-context'
+
+function Component() {
+  const { user, profile, isLoading, signOut } = useAuth()
+
+  // user: User object with id, name, email, role
+  // profile: UserProfile from database with additional fields
+  // isLoading: Auth initialization state
+  // signOut: Logout function
+}
+```
+
+**Key Features:**
+- Email/password authentication
+- User profile management via `users` table
+- Automatic session management
+- Auth state change subscriptions
+- Server and client utilities for different contexts
+- Graceful handling of missing environment variables
+
 ## Mock Data System
 
 The application uses a comprehensive mock data system for development and testing in [lib/mock-data/](lib/mock-data/).
@@ -858,26 +924,33 @@ The application uses a lightweight state management approach:
 
 ### React Context
 
-**UserProvider** ([lib/user-context.tsx](lib/user-context.tsx))
+**AuthProvider** ([lib/contexts/auth-context.tsx](lib/contexts/auth-context.tsx))
 ```typescript
-import { useUser } from '@/lib/user-context'
+import { useAuth } from '@/lib/contexts/auth-context'
 
 function Component() {
-  const { user, login, logout, isAuthenticated } = useUser()
+  const { user, profile, isLoading, signOut } = useAuth()
 
-  if (!isAuthenticated) {
-    return <LoginForm onLogin={login} />
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
-  return <div>Welcome, {user.firstName}</div>
+  if (!user) {
+    return <LoginForm />
+  }
+
+  return <div>Welcome, {user.name}</div>
 }
 ```
 
 **Features:**
-- User authentication state (mock system)
-- Persists to localStorage
-- Role-based access control
-- Automatic session restoration
+- **Supabase authentication integration** - Real authentication with email/password
+- User session management with automatic refresh
+- User profile fetching from `users` table
+- Role-based access control (APPLICANT, BROKER, ADMIN, BOARD)
+- Automatic session restoration on page reload
+- Auth state change subscriptions
+- Backward compatible `useUser()` hook for existing code
 
 **ThemeProvider** ([components/providers/theme-provider.tsx](components/providers/theme-provider.tsx))
 ```typescript
@@ -902,9 +975,10 @@ function ThemeToggle() {
 - Custom hooks for reusable stateful logic
 
 **Server State:**
-- Currently using mock data (no backend)
-- Designed for future API integration
-- Optimistic updates with localStorage fallback
+- **Supabase backend** for authentication and user management
+- Mock data still used for applications (backend integration in progress)
+- Designed for full backend integration
+- Optimistic updates with localStorage fallback for non-auth data
 
 ## Styling System
 
@@ -1451,15 +1525,19 @@ import type { Application, Person } from '@/lib/types'
 
 ### Environment Variables
 
-Currently, the application runs entirely client-side with no backend. Environment variables are not required for development.
-
-**Future Backend Integration:**
+**Required for Supabase Integration:**
 ```bash
-# .env.local (when backend is added)
-NEXT_PUBLIC_API_URL=http://localhost:3001
-DATABASE_URL=postgresql://...
-AUTH_SECRET=...
+# .env.local
+NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key (for server-side operations)
 ```
+
+**Important Notes:**
+- The application gracefully handles missing Supabase env vars for Vercel builds
+- Without Supabase credentials, auth features will be disabled
+- Mock data system continues to work independently
+- See `.env.example` for template (if available)
 
 ### Browser Compatibility
 
@@ -1767,6 +1845,7 @@ tsconfig.json        # TypeScript config
 
 ---
 
-**Last Updated:** 2025-11-21
+**Last Updated:** 2025-11-23
 **Version:** 0.1.0
 **Maintained by:** Development Team
+**Recent Changes:** Added Supabase authentication integration, auth routes, and API endpoints
