@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { useUser } from "@/lib/user-context"
+import { useUser } from "@/lib/contexts/auth-context"
 import { Role } from "@/lib/types"
 
 interface SidebarProps {

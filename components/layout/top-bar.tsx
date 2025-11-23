@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { useUser } from "@/lib/user-context"
+import { useAuth } from "@/lib/contexts/auth-context"
 import { getRoleLabel } from "@/lib/constants/labels"
 
 interface TopBarProps {
@@ -22,11 +22,11 @@ interface TopBarProps {
 }
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  const { user, setUser, isLoading } = useUser()
+  const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
 
-  const handleSignOut = () => {
-    setUser(null)
+  const handleSignOut = async () => {
+    await signOut()
     router.push("/")
   }
 

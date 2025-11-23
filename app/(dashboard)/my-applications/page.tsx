@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@/lib/user-context";
+import { useUser } from "@/lib/contexts/auth-context";
 import { mockApplications } from "@/lib/mock-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
