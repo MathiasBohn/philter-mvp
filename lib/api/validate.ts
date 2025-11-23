@@ -1,0 +1,286 @@
+/**
+ * API Request Validation Utilities
+ *
+ * This module provides validation middleware for API routes using Zod schemas.
+ * It ensures that request bodies, query parameters, and other inputs are validated
+ * before processing.
+ */
+
+import { NextRequest } from 'next/server'
+import { z, ZodSchema, ZodError } from 'zod'
+import { ValidationError } from './errors'
+
+/**
+ * Validate request body against a Zod schema
+ *
+ * @param request - Next.js request object
+ * @param schema - Zod schema to validate against
+ * @returns Validated and typed data
+ * @throws ValidationError if validation fails
+ *
+ * @example
+ * ```typescript
+ * export async function POST(request: NextRequest) {
+ *   const data = await validateRequestBody(request, createApplicationSchema)
+ *   // data is now typed and validated
+ * }
+ * ```
+ */
+export async function validateRequestBody<T extends ZodSchema>(
+  request: NextRequest,
+  schema: T
+): Promise<z.infer<T>> {
+  try {
+    // Parse JSON body
+    const body = await request.json().catch(() => {
+      throw new ValidationError('Invalid JSON in request body')
+    })
+
+    // Validate against schema
+    const result = schema.parse(body)
+    return result
+  } catch (error) {
+    if (error instanceof ZodError) {
+      // Re-throw as ZodError to be handled by error handler
+      throw error
+    }
+    if (error instanceof ValidationError) {
+      throw error
+    }
+    throw new ValidationError('Request validation failed')
+  }
+}
+
+/**
+ * Validate query parameters against a Zod schema
+ *
+ * @param request - Next.js request object
+ * @param schema - Zod schema to validate against
+ * @returns Validated and typed query parameters
+ * @throws ValidationError if validation fails
+ *
+ * @example
+ * ```typescript
+ * export async function GET(request: NextRequest) {
+ *   const params = validateQueryParams(request, querySchema)
+ *   // params is now typed and validated
+ * }
+ * ```
+ */
+export function validateQueryParams<T extends ZodSchema>(
+  request: NextRequest,
+  schema: T
+): z.infer<T> {
+  try {
+    const { searchParams } = new URL(request.url)
+
+    // Convert URLSearchParams to object
+    const params: Record<string, string | string[]> = {}
+    searchParams.forEach((value, key) => {
+      const existing = params[key]
+      if (existing) {
+        // Handle multiple values for same key
+        params[key] = Array.isArray(existing)
+          ? [...existing, value]
+          : [existing, value]
+      } else {
+        params[key] = value
+      }
+    })
+
+    // Validate against schema
+    const result = schema.parse(params)
+    return result
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw error
+    }
+    throw new ValidationError('Query parameter validation failed')
+  }
+}
+
+/**
+ * Validate route parameters against a Zod schema
+ *
+ * @param params - Route parameters from Next.js
+ * @param schema - Zod schema to validate against
+ * @returns Validated and typed route parameters
+ * @throws ValidationError if validation fails
+ *
+ * @example
+ * ```typescript
+ * export async function GET(
+ *   request: NextRequest,
+ *   { params }: { params: { id: string } }
+ * ) {
+ *   const validated = validateRouteParams(params, z.object({ id: z.string().uuid() }))
+ *   // validated.id is now a valid UUID
+ * }
+ * ```
+ */
+export function validateRouteParams<T extends ZodSchema>(
+  params: unknown,
+  schema: T
+): z.infer<T> {
+  try {
+    const result = schema.parse(params)
+    return result
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw error
+    }
+    throw new ValidationError('Route parameter validation failed')
+  }
+}
+
+/**
+ * Validate partial data (useful for PATCH requests)
+ *
+ * @param data - Data to validate
+ * @param schema - Zod schema to validate against
+ * @returns Validated and typed partial data
+ * @throws ValidationError if validation fails
+ *
+ * @example
+ * ```typescript
+ * export async function PATCH(request: NextRequest) {
+ *   const body = await request.json()
+ *   const data = validatePartial(body, updateApplicationSchema)
+ *   // Only provided fields are validated
+ * }
+ * ```
+ */
+export function validatePartial<T extends z.ZodObject<any>>(
+  data: unknown,
+  schema: T
+): Partial<z.infer<T>> {
+  try {
+    // Make all fields optional for partial validation
+    const partialSchema = schema.partial()
+    const result = partialSchema.parse(data) as Partial<z.infer<T>>
+    return result
+  } catch (error) {
+    if (error instanceof ZodError) {
+      throw error
+    }
+    throw new ValidationError('Partial data validation failed')
+  }
+}
+
+/**
+ * Common validation schemas for reuse
+ */
+export const commonSchemas = {
+  /**
+   * UUID parameter schema
+   */
+  uuidParam: z.object({
+    id: z.string().uuid('Invalid ID format'),
+  }),
+
+  /**
+   * Pagination query schema
+   */
+  pagination: z.object({
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    offset: z.coerce.number().int().min(0).default(0),
+    cursor: z.string().optional(),
+  }),
+
+  /**
+   * Search query schema
+   */
+  search: z.object({
+    q: z.string().min(1, 'Search query cannot be empty').max(200),
+    limit: z.coerce.number().int().min(1).max(50).default(20),
+  }),
+
+  /**
+   * Date range query schema
+   */
+  dateRange: z.object({
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional(),
+  }).refine(
+    (data) => {
+      if (data.startDate && data.endDate) {
+        return data.startDate <= data.endDate
+      }
+      return true
+    },
+    {
+      message: 'Start date must be before or equal to end date',
+      path: ['startDate'],
+    }
+  ),
+
+  /**
+   * Sort query schema
+   */
+  sort: z.object({
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).default('desc'),
+  }),
+
+  /**
+   * Common filters schema
+   */
+  filters: z.object({
+    status: z.string().optional(),
+    buildingId: z.string().uuid().optional(),
+    transactionType: z.string().optional(),
+  }),
+}
+
+/**
+ * Compose multiple validation schemas together
+ *
+ * @example
+ * ```typescript
+ * const listQuerySchema = composeSchemas(
+ *   commonSchemas.pagination,
+ *   commonSchemas.filters,
+ *   commonSchemas.sort
+ * )
+ * ```
+ */
+export function composeSchemas<T extends z.ZodObject<any>[]>(...schemas: T) {
+  return z.object(
+    schemas.reduce((acc, schema) => {
+      return { ...acc, ...(schema as any).shape }
+    }, {})
+  )
+}
+
+/**
+ * Sanitize string input to prevent XSS
+ * Note: This is a basic sanitization. For rich text, use DOMPurify.
+ */
+export function sanitizeString(input: string): string {
+  return input
+    .replace(/[<>]/g, '') // Remove < and > characters
+    .trim()
+}
+
+/**
+ * Sanitize object by applying sanitizeString to all string values
+ */
+export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
+  const sanitized = { ...obj }
+
+  for (const key in sanitized) {
+    const value = sanitized[key]
+
+    if (typeof value === 'string') {
+      sanitized[key] = sanitizeString(value) as any
+    } else if (Array.isArray(value)) {
+      sanitized[key] = value.map((item: any) =>
+        typeof item === 'string' ? sanitizeString(item) : item
+      ) as any
+    } else if (value !== null && typeof value === 'object') {
+      sanitized[key] = sanitizeObject(value)
+    }
+  }
+
+  return sanitized
+}

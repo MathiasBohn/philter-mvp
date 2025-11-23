@@ -1,113 +1,70 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
-import { mockApplications } from "@/lib/mock-data";
+import { use } from "react";
+import { useApplication } from "@/lib/hooks/use-applications";
+import { useRFIs } from "@/lib/hooks/use-rfis";
 import { SectionList } from "@/components/features/application/section-list";
 import { InviteWidget } from "@/components/features/application/invite-widget";
 import { RFIBanner } from "@/components/features/application/rfi-banner";
 import { Badge } from "@/components/ui/badge";
-import { BuildingType } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
-import { storage, storageService, STORAGE_KEYS } from "@/lib/persistence";
-import { mockRFIs } from "@/lib/mock-data/rfis";
+import { AlertCircle } from "lucide-react";
 
 export default function ApplicationOverviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [application, setApplication] = useState(() => {
-    const mockApp = mockApplications.find((app) => app.id === id);
-    if (mockApp) {
-      return {
-        ...mockApp,
-        rfis: storage.getRFIsForApplication(id, mockRFIs)
-      };
-    }
-    return mockApp;
-  });
-  const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(!mockApplications.find((app) => app.id === id));
+  const { data: application, isLoading, error } = useApplication(id);
+  const { data: rfis } = useRFIs(id, !!id);
 
-  useEffect(() => {
-    // Sync form data to application storage
-    storage.syncFormDataToApplication(id);
-
-    // If not found in mock data, try localStorage
-    if (!application && isLoadingFromStorage) {
-      try {
-        const storedApp = storageService.get(STORAGE_KEYS.application(id), null);
-        if (storedApp) {
-          const parsedApp = typeof storedApp === 'string' ? JSON.parse(storedApp) : storedApp;
-          // Transform localStorage format to match Application type
-          const transformedApp = {
-            id: parsedApp.id,
-            buildingId: parsedApp.buildingCode,
-            building: {
-              id: parsedApp.buildingCode,
-              code: parsedApp.buildingCode,
-              name: "Demo Building",
-              type: BuildingType.CONDO,
-              address: {
-                street: "123 Main St",
-                city: "New York",
-                state: "NY",
-                zip: "10001"
-              },
-              managementCompanyId: "demo-mgmt"
-            },
-            unit: undefined,
-            transactionType: parsedApp.transactionType,
-            status: parsedApp.status,
-            createdBy: "current-user",
-            createdAt: new Date(parsedApp.createdAt),
-            lastActivityAt: new Date(parsedApp.createdAt),
-            people: [],
-            employmentRecords: [],
-            financialEntries: [],
-            realEstateProperties: [],
-            documents: [],
-            disclosures: [],
-            participants: [],
-            sections: Object.entries(parsedApp.sections || {}).map(([key, value]) => ({
-              key: key,
-              label: key.charAt(0).toUpperCase() + key.slice(1),
-              isComplete: (value as { complete?: boolean }).complete || false,
-              data: undefined
-            })),
-            completionPercentage: 0,
-            rfis: storage.getRFIsForApplication(id, mockRFIs),
-            isLocked: false
-          };
-
-          // Calculate completion percentage
-          const completedSections = transformedApp.sections.filter(s => s.isComplete).length;
-          transformedApp.completionPercentage = Math.round((completedSections / transformedApp.sections.length) * 100);
-
-          setApplication(transformedApp);
-        } else {
-          // Try to load from storage utility
-          const storedApplication = storage.getApplication(id, mockApplications);
-          if (storedApplication) {
-            setApplication({
-              ...storedApplication,
-              rfis: storage.getRFIsForApplication(id, mockRFIs)
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Error loading application from localStorage:", error);
-      } finally {
-        setIsLoadingFromStorage(false);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, isLoadingFromStorage]);
-
-  // Show loading state while checking localStorage
-  if (isLoadingFromStorage) {
+  // Loading skeleton
+  if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading application...</p>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-6 w-24" />
+          </div>
+          <Skeleton className="h-5 w-80" />
         </div>
+
+        <div className="space-y-4">
+          <Skeleton className="h-24 w-full" />
+
+          <div>
+            <Skeleton className="h-7 w-48 mb-4" />
+            <div className="grid gap-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-20 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Application Overview</h1>
+        </div>
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Failed to load application</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {error.message || "An error occurred while loading the application."}
+            </p>
+            <Button onClick={() => window.location.reload()} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -156,7 +113,7 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
       </div>
 
       {/* RFI Banner */}
-      <RFIBanner rfis={application.rfis} applicationId={id} />
+      <RFIBanner rfis={rfis || []} applicationId={id} />
 
       {/* Section List */}
       <div>
