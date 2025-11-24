@@ -36,7 +36,9 @@ export function useApplications(): UseQueryResult<Application[], Error> {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch applications')
       }
-      return response.json()
+      const data = await response.json()
+      // API returns { applications: [] }, extract the array
+      return data.applications || []
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
