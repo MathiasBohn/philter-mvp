@@ -36,22 +36,10 @@ export async function getApplications(
   const supabase = await createClient()
 
   // RLS policies will automatically filter based on user's role and permissions
+  // Note: Simplified query without joins until RLS policies are set up for all tables
   const { data, error } = await supabase
     .from('applications')
-    .select(`
-      *,
-      building:buildings(*),
-      people(*),
-      employment_records(*),
-      financial_entries(*),
-      real_estate_properties(*),
-      documents(*),
-      disclosures(*),
-      rfis(
-        *,
-        rfi_messages(*)
-      )
-    `)
+    .select('*, building:buildings(*)')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -59,7 +47,19 @@ export async function getApplications(
     throw new Error(`Failed to fetch applications: ${error.message}`)
   }
 
-  return (data || []) as unknown as Application[]
+  // Transform data to match Application type (with empty arrays for missing relations)
+  const applications = (data || []).map(app => ({
+    ...app,
+    people: [],
+    employment_records: [],
+    financial_entries: [],
+    real_estate_properties: [],
+    documents: [],
+    disclosures: [],
+    rfis: [],
+  }))
+
+  return applications as unknown as Application[]
 }
 
 /**
