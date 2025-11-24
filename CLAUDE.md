@@ -141,11 +141,11 @@ The dashboard contains role-specific workflows:
 - **Zod** (4.1.12) - Schema validation and type inference
 
 **Data & Storage:**
-- **Supabase** (@supabase/supabase-js 2.84.0, @supabase/ssr 0.7.0) - Authentication and backend
-- **IndexedDB** - Primary file storage (browser native, 50MB-1GB+ capacity)
-- **localStorage** - Application metadata, form data
-- **lz-string** (1.5.0) - Data compression for large payloads
-- **crypto-js** (4.2.0) - Encryption utilities
+- **Supabase** (@supabase/supabase-js 2.84.0, @supabase/ssr 0.7.0) - Authentication, database, and file storage
+- **Supabase Storage** - Primary file storage (cloud-based, unlimited capacity with buckets)
+- **localStorage** - UI state and temporary data only
+- **lz-string** (1.5.0) - Data compression for large payloads (legacy)
+- **crypto-js** (4.2.0) - Encryption utilities for sensitive data
 
 **PDF Handling:**
 - **pdfjs-dist** (5.4.394) - PDF viewing and rendering
@@ -438,40 +438,44 @@ decisionSchema
 
 ## File Storage & Persistence
 
-The application uses a hybrid storage approach optimized for performance and capacity.
+The application uses Supabase Storage for all file uploads, providing scalable cloud-based storage with built-in access control.
 
 ### Storage Architecture
 
-**IndexedDB** ([lib/indexed-db.ts](lib/indexed-db.ts) - 465 lines)
-- **Primary storage for file uploads** (50MB-1GB+ capacity, browser-dependent)
-- Stores files as **Blob objects** (not base64) for 33% space savings
-- Database: `philter_file_storage` (version 1)
-- Object store: `files` with indexes on `category` and `uploadedAt`
+**Supabase Storage** ([lib/supabase-storage.ts](lib/supabase-storage.ts) - 470 lines)
+- **Primary storage for all file uploads** (cloud-based, scalable capacity)
+- Three storage buckets: `documents`, `profile-photos`, `building-assets`
+- RLS policies control access at the storage level
+- Signed URLs for secure file access with expiration
+
+**Key Storage Buckets:**
+- `documents` - Application documents (private, authenticated only)
+- `profile-photos` - User profile photos (private)
+- `building-assets` - Building logos and images (public)
 
 **Key Functions:**
 ```typescript
-saveFileToIndexedDB(file: StoredFile): Promise<void>
-getFileFromIndexedDB(id: string): Promise<StoredFile | undefined>
-getAllFilesFromIndexedDB(): Promise<StoredFile[]>
-deleteFileFromIndexedDB(id: string): Promise<void>
-checkStorageQuota(): Promise<{ usage: number, quota: number, percentUsed: number }>
+uploadFile(bucket: string, path: string, file: File): Promise<{ path: string }>
+downloadFile(bucket: string, path: string, expiresIn?: number): Promise<string>
+deleteFile(bucket: string, path: string): Promise<void>
+listFiles(bucket: string, path?: string): Promise<StorageFile[]>
+getPublicUrl(bucket: string, path: string): string
 ```
 
-**StoredFile Structure:**
+**Storage Structure:**
 ```typescript
-{
-  id: string
-  filename: string
-  size: number
-  type: string
-  blob: Blob        // Native Blob, not base64
-  uploadedAt: Date
-  category: string
-}
+// Documents stored at: bucket/user-id/application-id/document-id
+documents/
+  ├── user-123/
+  │   ├── app-456/
+  │   │   ├── doc-789.pdf
+  │   │   └── doc-012.pdf
+  │   └── app-457/
+  │       └── doc-345.pdf
 ```
 
 **localStorage** ([lib/storage.ts](lib/storage.ts) - 247 lines)
-- **Application metadata and form data only**
+- **UI state and temporary data only**
 - Centralized through `storageService` class
 - In-memory caching for performance
 - Observer pattern for reactive updates
@@ -491,135 +495,97 @@ useStorage<T>(key: string, defaultValue: T)
 
 ### Upload System
 
-**UploadManager** ([lib/upload-manager.ts](lib/upload-manager.ts) - 391 lines)
+**UploadManager** ([lib/upload-manager.ts](lib/upload-manager.ts) - Updated for Supabase)
 
-Orchestrates file uploads with simulated progress tracking:
+Orchestrates file uploads with real progress tracking:
 
 ```typescript
-// Start upload with progress tracking
-uploadManager.startUpload(
-  fileId,
-  (progress) => console.log(`Progress: ${progress}%`),
-  () => console.log('Complete'),
-  (error) => console.error(error)
-)
+// Upload file to Supabase Storage
+const { path } = await uploadFile('documents', storagePath, file)
 
-// Save to IndexedDB after upload completes
-await saveFileToStorage(file, fileId, 'documents')
+// Get signed URL for viewing
+const signedUrl = await downloadFile('documents', path, 3600) // 1 hour
 
-// Retrieve files
-const files = await getStoredFiles()
-const file = await getStoredFile(fileId)
+// Delete file from storage
+await deleteFile('documents', path)
 
-// Convert stored file back to File object
-const fileObject = getFileObject(storedFile)
-
-// Delete file
-await deleteStoredFile(fileId)
+// List files in a directory
+const files = await listFiles('documents', `user-123/app-456`)
 ```
 
 **Upload Features:**
-- Simulated progress (0-100%)
-- Pause/resume capability
-- Error handling with retry logic
-- Integration with IndexedDB
-- Blob URL generation for previews
+- Real progress tracking from Supabase
+- Automatic retry logic for failed uploads
+- Error handling with user-friendly messages
+- Integration with document metadata API
+- Signed URL generation for secure access
 
 ### Data Persistence
 
-**Persistence Utilities** ([lib/persistence.ts](lib/persistence.ts) - 432 lines)
+**Database Integration:**
+- Document metadata stored in `documents` table
+- Storage path references link to Supabase Storage
+- React Query manages client-side caching
+- Optimistic updates for better UX
 
-Handles form data and application state persistence:
-
+**API Integration:**
 ```typescript
-// Application data management
-saveApplicationData(id: string, data: Partial<Application>): void
-getApplicationData(id: string): Application | null
-mergeWithMockData(id: string, changes: Partial<Application>): Application
+// Create document metadata after upload
+await fetch(`/api/applications/${appId}/documents`, {
+  method: 'POST',
+  body: JSON.stringify({
+    filename: file.name,
+    storage_path: path,
+    category: 'BANK_STATEMENT',
+    size: file.size,
+    mime_type: file.type
+  })
+})
 
-// Compression for large data (threshold: 1KB)
-saveCompressedData(key: string, data: any): void
-loadCompressedData(key: string): any | null
+// Get all documents for an application
+const response = await fetch(`/api/applications/${appId}/documents`)
+const documents = await response.json()
 
-// Chunking for very large data (50KB chunks)
-saveChunkedData(key: string, data: any): void
-loadChunkedData(key: string): any | null
-
-// Form synchronization
-syncFormData(formId: string, data: any): void
+// Delete document (removes metadata and storage file)
+await fetch(`/api/documents/${docId}`, { method: 'DELETE' })
 ```
 
-**Key Features:**
-- LZ-String compression (threshold: 1KB)
-- Chunking for large data (50KB chunks)
-- Automatic merge with mock data
-- Form state synchronization
-- RFI and decision record persistence
+### React Query Integration
 
-### Migration System
-
-**Automatic Migration** ([components/features/storage/migration-checker.tsx](components/features/storage/migration-checker.tsx))
-
-Automatically migrates legacy base64 files from localStorage to IndexedDB:
+**Document Hooks** ([lib/hooks/use-documents.ts](lib/hooks/use-documents.ts))
 
 ```typescript
-// Triggered on dashboard load
-<MigrationChecker />
+import { useDocuments, useUploadDocument, useDeleteDocument } from '@/lib/hooks/use-documents'
 
-// Manual migration
-import { migrateFilesFromLocalStorage } from '@/lib/upload-manager'
+function DocumentsPage() {
+  const { data: documents, isLoading } = useDocuments(applicationId)
+  const uploadMutation = useUploadDocument()
+  const deleteMutation = useDeleteDocument()
 
-const result = await migrateFilesFromLocalStorage(true) // true = cleanup localStorage
-console.log(`Migrated ${result.migratedCount} files`)
-console.log(`Failed: ${result.failedCount}`)
-```
+  const handleUpload = async (file: File) => {
+    await uploadMutation.mutateAsync({
+      applicationId,
+      file,
+      category: 'BANK_STATEMENT'
+    })
+  }
 
-**Migration Process:**
-1. Detects legacy `philter_uploaded_files` key in localStorage
-2. Shows migration progress UI to user
-3. Converts base64 strings to Blobs
-4. Saves to IndexedDB with proper structure
-5. Cleans up localStorage after success
-6. Shows user-friendly success/error messages
-
-### Data Integrity
-
-**Integrity Tools** ([lib/data-integrity.ts](lib/data-integrity.ts))
-
-Validates and repairs file references:
-
-```typescript
-// Validate file references for an application
-const integrity = await checkDataIntegrity('app-id')
-if (!integrity.valid) {
-  console.log('Issues found:', integrity.issues)
-  // issues: ['Document doc-123 references missing file']
+  return (/* UI */)
 }
-
-// Find orphaned files (no application reference)
-const orphans = await findOrphanedFiles()
-console.log(`Found ${orphans.length} orphaned files`)
-
-// Cleanup orphaned files
-await cleanupOrphanedFiles(false) // false = actual deletion, true = dry run
-
-// Auto-repair inconsistencies
-const repairResult = await repairDataIntegrity('app-id', true)
-console.log(`Repaired: ${repairResult.repairedCount}`)
-console.log(`Removed: ${repairResult.removedCount}`)
 ```
 
-### Storage Monitoring
+### Legacy Storage (Deprecated)
 
-**StorageMonitor** ([components/features/storage/storage-monitor.tsx](components/features/storage/storage-monitor.tsx))
+**IndexedDB** ([lib/indexed-db.ts](lib/indexed-db.ts) - DEPRECATED)
+- ⚠️ Legacy file storage system - no longer used
+- Migrated to Supabase Storage in Phase 4
+- Kept for reference only
+- Do not use for new development
 
-Monitors browser storage quota in real-time:
-
-- Automatically checks every 5 minutes
-- Shows warning at 80% capacity
-- Shows critical alert at 90% capacity
-- Displays usage statistics
-- Mounted at dashboard layout level
+**Migration from IndexedDB:**
+- All files migrated to Supabase Storage
+- IndexedDB code retained for backward compatibility
+- New development should use Supabase Storage exclusively
 
 ### Upload Components
 
@@ -627,15 +593,17 @@ Monitors browser storage quota in real-time:
 - Drag-and-drop file upload
 - Multiple file support
 - File type filtering
-- Size limit validation
+- Size limit validation (25MB default)
 - Visual drag state feedback
+- Uploads directly to Supabase Storage
 
 **DocumentCard** ([components/features/application/document-card.tsx](components/features/application/document-card.tsx))
 - Displays uploaded files
 - Shows upload progress
 - File metadata display
-- Preview/delete actions
-- Image preview for supported formats
+- Preview via signed URLs
+- Download via signed URLs
+- Delete functionality
 
 **DocumentChecklist** ([components/features/application/document-checklist.tsx](components/features/application/document-checklist.tsx))
 - Organizes uploads by category
@@ -645,82 +613,94 @@ Monitors browser storage quota in real-time:
 
 ### Storage Best Practices
 
-**1. Always persist files to IndexedDB after upload:**
+**1. Upload files to Supabase Storage and create metadata:**
 ```typescript
-// After upload completes
-if (doc.status === 'complete') {
-  await saveFileToStorage(doc.file, doc.id, 'documents')
+// Upload file
+const { path } = await uploadFile('documents', storagePath, file)
+
+// Create metadata record
+await createDocumentMetadata({
+  application_id: appId,
+  filename: file.name,
+  storage_path: path,
+  category: 'BANK_STATEMENT',
+  size: file.size,
+  mime_type: file.type
+})
+```
+
+**2. Use signed URLs for secure file access:**
+```typescript
+// Generate signed URL (expires in 1 hour)
+const signedUrl = await downloadFile('documents', path, 3600)
+
+// Use in img/iframe tags
+<img src={signedUrl} alt={filename} />
+<iframe src={signedUrl} />
+```
+
+**3. Handle signed URL expiration:**
+```typescript
+const [url, setUrl] = useState(initialUrl)
+
+const handleError = async () => {
+  // Regenerate signed URL on expiration
+  const newUrl = await downloadFile('documents', path, 3600)
+  setUrl(newUrl)
 }
-```
 
-**2. Restore files on page load:**
-```typescript
-useEffect(() => {
-  const loadFiles = async () => {
-    const storedFiles = await getStoredFiles()
-    // Merge with metadata and restore to state
-  }
-  loadFiles()
-}, [])
-```
-
-**3. Clean up blob URLs to prevent memory leaks:**
-```typescript
-useEffect(() => {
-  return () => {
-    documents.forEach(doc => {
-      if (doc.preview) URL.revokeObjectURL(doc.preview)
-    })
-  }
-}, [documents])
+<img src={url} onError={handleError} />
 ```
 
 **4. Handle storage errors gracefully:**
 ```typescript
 try {
-  await saveFileToStorage(file, id, category)
+  await uploadFile('documents', path, file)
+  toast.success('File uploaded successfully')
 } catch (error) {
-  if (error.message.includes('quota')) {
-    // Show quota exceeded message to user
-    toast.error('Storage quota exceeded. Please delete some files.')
+  if (error.message.includes('size')) {
+    toast.error('File too large. Maximum size is 25MB.')
+  } else if (error.message.includes('type')) {
+    toast.error('File type not allowed.')
   } else {
-    // Generic error handling
-    toast.error('Failed to save file. Please try again.')
+    toast.error('Upload failed. Please try again.')
   }
 }
 ```
 
-**5. Use data integrity tools after bulk operations:**
+**5. Clean up on deletion:**
 ```typescript
-// After importing/migrating multiple files
-const integrity = await checkDataIntegrity(applicationId)
-if (!integrity.valid) {
-  await repairDataIntegrity(applicationId, true)
-}
+// Delete both metadata and storage file
+await fetch(`/api/documents/${docId}`, { method: 'DELETE' })
+// API route handles both database record and storage file deletion
 ```
 
 ### Troubleshooting Storage Issues
 
-**Files not persisting after refresh:**
-- Verify `saveFileToStorage()` is called after upload completes
-- Check IndexedDB in DevTools (Application → IndexedDB → philter_file_storage)
-- Check browser console for storage errors
+**Files not uploading:**
+- Check network connectivity
+- Verify Supabase Storage configuration
+- Check file size (25MB limit)
+- Check file type restrictions
+- Verify RLS policies allow upload
 
-**Migration not triggering:**
-- Migration only runs if `philter_uploaded_files` key exists in localStorage
-- Check browser console for migration errors
-- Verify `MigrationChecker` is mounted in dashboard layout
+**Signed URLs not working:**
+- Check URL expiration (default 1 hour)
+- Regenerate signed URL if expired
+- Verify RLS policies allow file access
+- Check CORS configuration
 
-**Storage quota exceeded:**
-- IndexedDB quota varies by browser (50MB-1GB+, often ~500MB)
-- Use `checkStorageQuota()` to check current usage
-- Consider implementing file size limits (e.g., 10MB per file)
-- Implement cleanup strategies for old/orphaned files
+**Storage quota issues:**
+- Supabase Storage has project-level quotas
+- Monitor usage in Supabase dashboard
+- Implement cleanup for old files
+- Consider upgrading plan if needed
 
-**Blob URLs not displaying:**
-- Ensure blob URLs are created with `URL.createObjectURL(blob)`
-- Verify blob URLs are revoked on component unmount
-- Check browser console for CORS or security errors
+**Access denied errors:**
+- Verify user is authenticated
+- Check RLS policies on storage buckets
+- Ensure user has access to application
+- Verify storage path follows user-id/app-id structure
 
 ## Utility Functions
 
@@ -1136,13 +1116,10 @@ export const DOCUMENT_CATEGORY_LABELS: Record<DocumentCategory, string> = {
 
 ```typescript
 export const STORAGE_KEYS = {
-  CURRENT_USER: 'philter_current_user',
-  APPLICATIONS: 'philter_applications',
-  FORM_DATA: 'philter_form_data',
-  UPLOADED_FILES: 'philter_uploaded_files', // Legacy, migrated to IndexedDB
+  // UI state and temporary data only
   THEME: 'philter_theme',
-  RFI_RECORDS: 'philter_rfi_records',
-  DECISION_RECORDS: 'philter_decision_records',
+  // Note: All application data now stored in Supabase database
+  // No longer using localStorage for applications, documents, or user data
 } as const
 ```
 
@@ -1427,24 +1404,28 @@ const submittedApp = mockApplications.find(a => a.status === 'SUBMITTED')
 
 **Storage Testing:**
 ```typescript
-// Test IndexedDB integration
-import { saveFileToIndexedDB, getFileFromIndexedDB } from '@/lib/indexed-db'
+// Test Supabase Storage integration
+import { uploadFile, downloadFile, deleteFile } from '@/lib/supabase-storage'
 
-// Test migration
-import { migrateFilesFromLocalStorage } from '@/lib/upload-manager'
+// Test document upload flow
+const { path } = await uploadFile('documents', storagePath, file)
 
-// Test data integrity
-import { checkDataIntegrity, repairDataIntegrity } from '@/lib/data-integrity'
+// Test signed URL generation
+const url = await downloadFile('documents', path, 3600)
+
+// Test file deletion
+await deleteFile('documents', path)
 ```
 
 ### Manual Testing Checklist
 
-See [documents/development/indexeddb-integration-tests.md](documents/development/indexeddb-integration-tests.md) for comprehensive test checklist covering:
-- File upload and persistence
-- Migration functionality
-- Data integrity validation
+**File Storage Testing:**
+- File upload to Supabase Storage
+- Signed URL generation and expiration
+- File download functionality
+- File deletion (metadata + storage)
+- Access control via RLS policies
 - Error handling scenarios
-- Memory management
 - Cross-browser compatibility
 
 ## Project Conventions
@@ -1548,15 +1529,16 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key (for server-side operations)
 - Edge 90+
 
 **Required Browser Features:**
-- IndexedDB support (all modern browsers)
-- Local Storage support
+- Local Storage support (for UI state)
 - ES2017+ JavaScript features
 - CSS Grid and Flexbox
+- Fetch API support
 
 **Browser-Specific Notes:**
-- IndexedDB quota varies by browser (50MB-1GB+)
-- Safari has stricter storage limits in Private Browsing mode
-- Firefox shows quota prompts for large storage requests
+- All file storage handled by Supabase Storage (cloud-based)
+- No browser storage quota concerns for files
+- Safari may require specific CORS configuration
+- All modern browsers fully supported
 
 ### Development Tools
 
@@ -1568,10 +1550,10 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key (for server-side operations)
 - Prettier (if configured)
 
 **Browser DevTools:**
-- **IndexedDB Inspector:** Application → IndexedDB → philter_file_storage
-- **localStorage Inspector:** Application → Local Storage
-- **Network Tab:** Monitor simulated uploads
-- **Console:** View storage logs and errors
+- **Network Tab:** Monitor API calls and file uploads to Supabase
+- **localStorage Inspector:** Application → Local Storage (UI state only)
+- **Console:** View API logs and errors
+- **Supabase Dashboard:** Monitor storage usage and database
 
 ## Common Tasks
 
@@ -1661,9 +1643,24 @@ export function CustomComponent({ className, ...props }: CustomComponentProps) {
 
 ### Adding File Upload to a Section
 
-1. Add upload state:
+1. Use React Query hooks:
 ```typescript
-const [documents, setDocuments] = useState<Document[]>([])
+import { useDocuments, useUploadDocument } from '@/lib/hooks/use-documents'
+
+function DocumentsPage({ applicationId }) {
+  const { data: documents, isLoading } = useDocuments(applicationId)
+  const uploadMutation = useUploadDocument()
+
+  const handleUpload = async (files: File[]) => {
+    for (const file of files) {
+      await uploadMutation.mutateAsync({
+        applicationId,
+        file,
+        category: 'BANK_STATEMENT'
+      })
+    }
+  }
+}
 ```
 
 2. Add UploadDropzone component:
@@ -1671,50 +1668,22 @@ const [documents, setDocuments] = useState<Document[]>([])
 import { UploadDropzone } from '@/components/features/application/upload-dropzone'
 
 <UploadDropzone
-  onFilesSelected={(files) => {
-    // Handle file selection
-    const newDocs = files.map(file => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      category: 'BANK_STATEMENT',
-      status: 'uploading' as const,
-      file,
-    }))
-    setDocuments(prev => [...prev, ...newDocs])
-
-    // Start upload for each file
-    newDocs.forEach(doc => {
-      uploadManager.startUpload(
-        doc.id,
-        (progress) => {
-          // Update progress
-        },
-        async () => {
-          // Save to IndexedDB
-          await saveFileToStorage(doc.file, doc.id, 'documents')
-        },
-        (error) => {
-          console.error('Upload failed:', error)
-        }
-      )
-    })
-  }}
+  onFilesSelected={handleUpload}
   accept={{ 'application/pdf': ['.pdf'] }}
-  maxSize={10 * 1024 * 1024} // 10MB
+  maxSize={25 * 1024 * 1024} // 25MB
+  disabled={uploadMutation.isPending}
 />
 ```
 
-3. Restore files on mount:
+3. Display documents:
 ```typescript
-useEffect(() => {
-  const loadFiles = async () => {
-    const storedFiles = await getStoredFiles()
-    // Merge with existing documents state
-  }
-  loadFiles()
-}, [])
+{isLoading ? (
+  <div>Loading documents...</div>
+) : (
+  documents?.map(doc => (
+    <DocumentCard key={doc.id} document={doc} />
+  ))
+)}
 ```
 
 ## Documentation
@@ -1781,10 +1750,10 @@ When adding a backend, consider:
 ### Scalability Considerations
 
 **Storage:**
-- Move from IndexedDB to cloud storage for production
-- Implement CDN for file delivery
-- Add file virus scanning
-- Implement file retention policies
+- ✅ Already using Supabase Storage (cloud-based)
+- Implement CDN for file delivery (if needed)
+- Add file virus scanning (optional for MVP)
+- Implement automated file retention policies
 
 **Performance:**
 - Implement API caching
@@ -1821,31 +1790,32 @@ npm run lint         # Lint codebase
 
 **Key Files:**
 ```
-app/layout.tsx       # Root layout
-app/globals.css      # Global styles and theme
-lib/types.ts         # Type definitions (521 lines)
-lib/validators.ts    # Zod schemas (314 lines)
-lib/utils.ts         # Utility functions
-lib/storage.ts       # localStorage service (247 lines)
-lib/indexed-db.ts    # IndexedDB utilities (465 lines)
-lib/persistence.ts   # Data persistence (432 lines)
-components.json      # shadcn/ui config
-tsconfig.json        # TypeScript config
+app/layout.tsx           # Root layout
+app/globals.css          # Global styles and theme
+lib/types.ts             # Type definitions (521 lines)
+lib/validators.ts        # Zod schemas (314 lines)
+lib/utils.ts             # Utility functions
+lib/storage.ts           # localStorage service (UI state only)
+lib/supabase-storage.ts  # Supabase Storage utilities (470 lines)
+lib/api/                 # Data access layer (applications, documents, etc.)
+lib/hooks/               # React Query hooks
+components.json          # shadcn/ui config
+tsconfig.json            # TypeScript config
 ```
 
 **Important Patterns:**
 - Server Components by default, `"use client"` when needed
 - Form validation with Zod + React Hook Form
-- File storage with IndexedDB (not localStorage)
-- Persist form data on every change
-- Use mock data system for development
+- File storage with Supabase Storage (cloud-based)
+- Data persistence via Supabase database + React Query
+- Use mock data for buildings (pending backend API)
 - Follow accessibility guidelines (WCAG 2.2 AA)
-- Handle storage quota gracefully
-- Clean up blob URLs to prevent memory leaks
+- Use signed URLs for secure file access
+- Handle signed URL expiration gracefully
 
 ---
 
-**Last Updated:** 2025-11-23
+**Last Updated:** 2025-01-24
 **Version:** 0.1.0
 **Maintained by:** Development Team
-**Recent Changes:** Added Supabase authentication integration, auth routes, and API endpoints
+**Recent Changes:** Migrated from IndexedDB to Supabase Storage, updated documentation to reflect Phase 4 completion

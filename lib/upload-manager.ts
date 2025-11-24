@@ -275,14 +275,27 @@ export function base64ToFile(base64: string, filename: string, mimeType: string)
 export type { StoredFile }
 
 /**
- * Save file to IndexedDB storage
- * IndexedDB has much better capacity (~50MB-1GB+) compared to localStorage (~5-10MB)
+ * @deprecated LEGACY: Save file to IndexedDB storage
+ *
+ * **DO NOT USE** - This function is deprecated as of Phase 4 (January 2025).
+ * All new code should use Supabase Storage via the `useUploadDocument` React Query hook.
+ *
+ * This function saves files to browser IndexedDB, which is limited by browser storage quotas
+ * and is not suitable for production use. Files uploaded this way are NOT persisted to the
+ * backend and will be lost if the user clears browser data.
+ *
+ * @see {@link useUploadDocument} for the recommended approach
+ * @see lib/hooks/use-documents.ts
  */
 export async function saveFileToStorage(
   file: File,
   id: string,
   category?: string
 ): Promise<void> {
+  console.warn(
+    '⚠️ DEPRECATED: saveFileToStorage() is deprecated. Use useUploadDocument() hook instead.'
+  )
+
   if (!isIndexedDBAvailable()) {
     throw new Error("IndexedDB is not available in this browser")
   }
@@ -296,9 +309,19 @@ export async function saveFileToStorage(
 }
 
 /**
- * Get all stored files from IndexedDB
+ * @deprecated LEGACY: Get all stored files from IndexedDB
+ *
+ * **DO NOT USE** - This function is deprecated as of Phase 4 (January 2025).
+ * Use the `useDocuments` React Query hook to fetch documents from the database.
+ *
+ * @see {@link useDocuments} for the recommended approach
+ * @see lib/hooks/use-documents.ts
  */
 export async function getStoredFiles(): Promise<Record<string, StoredFile>> {
+  console.warn(
+    '⚠️ DEPRECATED: getStoredFiles() is deprecated. Use useDocuments() hook instead.'
+  )
+
   if (!isIndexedDBAvailable()) {
     return {}
   }
@@ -312,9 +335,19 @@ export async function getStoredFiles(): Promise<Record<string, StoredFile>> {
 }
 
 /**
- * Get a specific file from storage
+ * @deprecated LEGACY: Get a specific file from IndexedDB storage
+ *
+ * **DO NOT USE** - This function is deprecated as of Phase 4 (January 2025).
+ * Use the `useDocument` React Query hook to fetch a document and its signed URL.
+ *
+ * @see {@link useDocument} for the recommended approach
+ * @see lib/hooks/use-documents.ts
  */
 export async function getStoredFile(id: string): Promise<StoredFile | null> {
+  console.warn(
+    '⚠️ DEPRECATED: getStoredFile() is deprecated. Use useDocument() hook instead.'
+  )
+
   if (!isIndexedDBAvailable()) {
     return null
   }
@@ -328,9 +361,19 @@ export async function getStoredFile(id: string): Promise<StoredFile | null> {
 }
 
 /**
- * Delete a file from storage
+ * @deprecated LEGACY: Delete a file from IndexedDB storage
+ *
+ * **DO NOT USE** - This function is deprecated as of Phase 4 (January 2025).
+ * Use the `useDeleteDocument` React Query hook to delete documents.
+ *
+ * @see {@link useDeleteDocument} for the recommended approach
+ * @see lib/hooks/use-documents.ts
  */
 export async function deleteStoredFile(id: string): Promise<void> {
+  console.warn(
+    '⚠️ DEPRECATED: deleteStoredFile() is deprecated. Use useDeleteDocument() hook instead.'
+  )
+
   if (!isIndexedDBAvailable()) {
     throw new Error("IndexedDB is not available")
   }
@@ -344,9 +387,16 @@ export async function deleteStoredFile(id: string): Promise<void> {
 }
 
 /**
- * Clear all stored files
+ * @deprecated LEGACY: Clear all files from IndexedDB storage
+ *
+ * **DO NOT USE** - This function is deprecated as of Phase 4 (January 2025).
+ * IndexedDB storage is no longer used for file storage.
  */
 export async function clearAllStoredFiles(): Promise<void> {
+  console.warn(
+    '⚠️ DEPRECATED: clearAllStoredFiles() is deprecated. IndexedDB storage is no longer used.'
+  )
+
   if (!isIndexedDBAvailable()) {
     throw new Error("IndexedDB is not available")
   }
@@ -360,13 +410,20 @@ export async function clearAllStoredFiles(): Promise<void> {
 }
 
 /**
- * Get storage usage info
+ * @deprecated LEGACY: Get IndexedDB storage usage info
+ *
+ * **DO NOT USE** - This function is deprecated as of Phase 4 (January 2025).
+ * IndexedDB storage is no longer used for file storage.
  */
 export async function getStorageInfo(): Promise<{
   used: number
   fileCount: number
   files: Array<{ id: string; filename: string; size: number }>
 }> {
+  console.warn(
+    '⚠️ DEPRECATED: getStorageInfo() is deprecated. IndexedDB storage is no longer used.'
+  )
+
   if (!isIndexedDBAvailable()) {
     return { used: 0, fileCount: 0, files: [] }
   }

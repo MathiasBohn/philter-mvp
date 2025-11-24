@@ -26,6 +26,9 @@ const createApplicationSchema = z.object({
   buildingId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid building ID'),
   unit: z.string().optional(),
   transactionType: z.nativeEnum(TransactionType),
+  // For broker-initiated applications
+  primaryApplicantEmail: z.string().email().optional(),
+  primaryApplicantName: z.string().optional(),
 })
 
 /**

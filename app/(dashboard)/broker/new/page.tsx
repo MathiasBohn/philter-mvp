@@ -79,6 +79,8 @@ export default function BrokerNewApplicationPage() {
         buildingId,
         unit,
         transactionType: transactionType || undefined,
+        primaryApplicantEmail: applicantEmail,
+        primaryApplicantName: applicantName,
       })
 
       setCreatedApplicationId(newApplication.id)

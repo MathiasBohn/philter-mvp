@@ -20,6 +20,9 @@ export type CreateApplicationInput = {
   buildingId: string
   unit?: string
   transactionType: TransactionType
+  // For broker-initiated applications
+  primaryApplicantEmail?: string
+  primaryApplicantName?: string
 }
 
 /**
@@ -134,6 +137,16 @@ export async function createApplication(
     throw new Error('User not authenticated')
   }
 
+  // Get user's role to determine if this is broker-initiated
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  const isBroker = profile?.role === 'BROKER'
+  const isBrokerOwned = isBroker && !!data.primaryApplicantEmail
+
   const { data: application, error } = await supabase
     .from('applications')
     .insert({
@@ -145,6 +158,9 @@ export async function createApplication(
       current_section: 'profile',
       completion_percentage: 0,
       is_locked: false,
+      broker_owned: isBrokerOwned,
+      primary_applicant_email: data.primaryApplicantEmail || null,
+      primary_applicant_id: null, // Will be set when applicant accepts invitation
     })
     .select(`
       *,
