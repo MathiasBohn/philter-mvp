@@ -175,39 +175,25 @@ export class StorageService {
 
 /**
  * Type-safe storage keys
+ *
+ * NOTE: Application data is now managed via Supabase/React Query.
+ * This file only contains keys for UI state, preferences, and temporary features
+ * pending backend implementation.
  */
 export const STORAGE_KEYS = {
-  APPLICATIONS: "philter_applications",
-  RFIS: "philter_rfis",
-  DECISIONS: "philter_decisions",
+  // Auth & User (managed by auth context)
   CURRENT_USER: "philter_current_user_id",
-  CUSTOM_BUILDINGS: "custom_buildings",
-  TEMPLATES: "templates",
-  AUDIT_LOG: "audit_log",
+
+  // UI Preferences
   THEME: "theme",
-  BROKER_DRAFT: "broker_application_draft",
+  UI_STATE: "philter_ui_state",
 
-  // Dynamic keys (functions)
-  application: (id: string) => `application_${id}`,
-  profile: (id: string) => `profile_${id}`,
-  profileData: (id: string) => `profile-data-${id}`,
-  leaseterms: (id: string) => `lease-terms_${id}`,
-  financials: (id: string) => `financials-data-${id}`,
-  financialsData: (id: string) => `financials-data-${id}`,
-  income: (id: string) => `income-data-${id}`,
-  incomeData: (id: string) => `income-data-${id}`,
-  people: (id: string) => `people_${id}`,
-  parties: (id: string) => `parties_${id}`,
-  disclosures: (id: string) => `disclosures-data-${id}`,
-  disclosuresData: (id: string) => `disclosures-data-${id}`,
-  documentsData: (id: string) => `documents-data-${id}`,
-  submission: (id: string) => `submission-${id}`,
-  review: (id: string) => `review_${id}`,
-  applicationOverrides: (id: string) => `application_overrides_${id}`,
+  // Temporary features (pending backend implementation)
+  CUSTOM_BUILDINGS: "custom_buildings", // Used by create-building-modal
+  AUDIT_LOG: "audit_log", // Used by qa-panel (broker overrides audit trail)
 
-  // Form data keys (dynamic)
-  formData: (section: string, applicationId: string) =>
-    `${section}_${applicationId}`,
+  // Dynamic keys for temporary features
+  applicationOverrides: (id: string) => `application_overrides_${id}`, // QA panel overrides
 } as const;
 
 /**
@@ -244,3 +230,46 @@ export function createUseStorage(service: StorageService) {
     return [state, setValue];
   };
 }
+
+/**
+ * Default storage adapter using localStorage
+ */
+const defaultAdapter: StorageAdapter = {
+  safeGet<T>(key: string, defaultValue: T): T {
+    try {
+      if (typeof window === 'undefined') return defaultValue;
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      console.error(`Error reading from localStorage key "${key}":`, error);
+      return defaultValue;
+    }
+  },
+  safeSet(key: string, value: unknown): void {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(`Error writing to localStorage key "${key}":`, error);
+    }
+  },
+  safeRemove(key: string): void {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error(`Error removing from localStorage key "${key}":`, error);
+    }
+  },
+};
+
+/**
+ * Global storage service instance
+ */
+export const storageService = new StorageService(defaultAdapter);
+
+/**
+ * React hook for using storage with automatic subscriptions
+ * Usage: const [value, setValue] = useStorage('my_key', defaultValue)
+ */
+export const useStorage = createUseStorage(storageService);

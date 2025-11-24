@@ -10,6 +10,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { BuildingPolicies } from "@/lib/types";
 import { PolicyItem } from "@/components/features/application/policy-item";
+import { useApplication } from "@/lib/hooks/use-applications";
+import { notFound } from "next/navigation";
+import { FormSkeleton } from "@/components/loading/form-skeleton";
 
 // Mock building policies data - in a real app, this would come from the template/building
 const MOCK_BUILDING_POLICIES: BuildingPolicies = {
@@ -25,13 +28,36 @@ const MOCK_BUILDING_POLICIES: BuildingPolicies = {
 export default function BuildingPoliciesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-
-  const policies = MOCK_BUILDING_POLICIES;
+  const { data: application, isLoading, error } = useApplication(id);
 
   const handleContinue = () => {
     // Navigate to next section in sequence: Lease Terms
     router.push(`/applications/${id}/lease-terms`);
   };
+
+  if (isLoading) {
+    return <FormSkeleton sections={2} fieldsPerSection={3} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    notFound();
+  }
+
+  // Get building policies from the application's building, or use mock data as fallback
+  const policies = application.building?.buildingPolicies || MOCK_BUILDING_POLICIES;
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

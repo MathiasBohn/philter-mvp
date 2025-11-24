@@ -12,14 +12,16 @@ import { Save, CheckCircle, Trash2, Plus } from "lucide-react";
 import Link from "next/link";
 import { Participant, Role } from "@/lib/types";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
+import { notFound } from "next/navigation";
 
 type ParticipantForm = Omit<Participant, "id"> & { id?: string };
 
 export default function PartiesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: application, isLoading, error } = useApplication(id);
+  const updateApplication = useUpdateApplication(id);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -42,50 +44,48 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
   // Applicant's Attorney (optional)
   const [applicantAttorney, setApplicantAttorney] = useState<ParticipantForm | null>(null);
 
-  // Load saved data from centralized storage on mount
+  // Load data from application when it's fetched
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Simulate brief loading for better UX
-        await new Promise(resolve => setTimeout(resolve, 300));
+    if (application?.participants) {
+      const participants = application.participants;
 
-        const savedData = storageService.get<string | null>(STORAGE_KEYS.parties(id), null);
-        if (savedData) {
-          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
-          if (parsed.unitOwner) setUnitOwner(parsed.unitOwner);
-          if (parsed.ownerBroker) setOwnerBroker(parsed.ownerBroker);
-          if (parsed.ownerAttorney) setOwnerAttorney(parsed.ownerAttorney);
-          if (parsed.applicantAttorney) setApplicantAttorney(parsed.applicantAttorney);
-        }
-      } catch (error) {
-        console.error("Error loading parties data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      // Find each participant by role
+      const owner = participants.find(p => p.role === Role.UNIT_OWNER);
+      const ownerBrok = participants.find(p => p.role === Role.OWNER_BROKER);
+      const ownerAtt = participants.find(p => p.role === Role.OWNER_ATTORNEY);
+      const applicantAtt = participants.find(p => p.role === Role.APPLICANT_ATTORNEY);
 
-    loadData();
-  }, [id]);
+      if (owner) setUnitOwner(owner);
+      if (ownerBrok) setOwnerBroker(ownerBrok);
+      if (ownerAtt) setOwnerAttorney(ownerAtt);
+      if (applicantAtt) setApplicantAttorney(applicantAtt);
+    }
+  }, [application]);
 
   const handleSave = async () => {
+    if (!application) return;
+
     setIsSaving(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Collect all participants
+      const participants: Participant[] = [unitOwner as Participant];
+      if (ownerBroker) participants.push(ownerBroker as Participant);
+      if (ownerAttorney) participants.push(ownerAttorney as Participant);
+      if (applicantAttorney) participants.push(applicantAttorney as Participant);
 
-    // Save to centralized storage
-    const participants = {
-      unitOwner,
-      ownerBroker,
-      ownerAttorney,
-      applicantAttorney,
-    };
+      await updateApplication.mutateAsync({
+        participants,
+      });
 
-    storageService.set(STORAGE_KEYS.parties(id), participants);
-
-    setIsSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving parties data:", error);
+      alert("Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleContinue = async () => {
@@ -248,6 +248,23 @@ export default function PartiesPage({ params }: { params: Promise<{ id: string }
 
   if (isLoading) {
     return <FormSkeleton sections={4} fieldsPerSection={5} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <Alert variant="destructive">
+          <AlertTitle>Error loading application</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Failed to load application data"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return notFound();
   }
 
   return (

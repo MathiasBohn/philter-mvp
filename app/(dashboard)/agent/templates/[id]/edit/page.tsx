@@ -1,35 +1,57 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { mockTemplates } from "@/lib/mock-data";
+import { useTemplate } from "@/lib/hooks/use-templates";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { TemplateWizard } from "@/components/features/agent/template-wizard";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { notFound } from "next/navigation";
 
 export default function EditTemplatePage() {
   const params = useParams();
   const router = useRouter();
   const templateId = params.id as string;
 
-  const template = mockTemplates.find((t) => t.id === templateId);
+  const { data: template, isLoading, error } = useTemplate(templateId);
 
-  if (!template) {
+  if (isLoading) {
     return (
       <div className="mx-auto max-w-6xl flex flex-col gap-6">
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-muted-foreground">
-            Template Not Found
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            The template you&apos;re trying to edit doesn&apos;t exist.
-          </p>
+        <Skeleton className="h-10 w-48" />
+        <div>
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-96 mt-2" />
+        </div>
+        <Skeleton className="h-96 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl flex flex-col gap-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading template</AlertTitle>
+          <AlertDescription>
+            {error.message || "Failed to load template. Please try again."}
+          </AlertDescription>
+        </Alert>
+        <div className="flex gap-2">
+          <Button onClick={() => window.location.reload()}>Retry</Button>
           <Link href="/agent/templates">
-            <Button className="mt-4">Back to Templates</Button>
+            <Button variant="outline">Back to Templates</Button>
           </Link>
         </div>
       </div>
     );
+  }
+
+  if (!template) {
+    notFound();
   }
 
   return (
@@ -53,16 +75,8 @@ export default function EditTemplatePage() {
         </p>
       </div>
 
-      {/* Template Editor - Using the wizard component */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-        <p className="text-sm text-yellow-800">
-          <strong>Note:</strong> This is the MVP version. Template editing uses the same wizard
-          as creating a new template. In a future version, the form will be pre-populated
-          with existing template data.
-        </p>
-      </div>
-
-      <TemplateWizard />
+      {/* Template Editor - Wizard in edit mode with initial data */}
+      <TemplateWizard mode="edit" initialData={template} />
     </div>
   );
 }

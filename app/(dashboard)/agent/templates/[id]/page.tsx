@@ -1,39 +1,65 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { mockTemplates } from "@/lib/mock-data";
-import { mockBuildings } from "@/lib/mock-data";
+import { useTemplate } from "@/lib/hooks/use-templates";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Edit, ArrowLeft } from "lucide-react";
+import { Edit, ArrowLeft, AlertCircle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { notFound } from "next/navigation";
 
 export default function ViewTemplatePage() {
   const params = useParams();
   const router = useRouter();
   const templateId = params.id as string;
 
-  const template = mockTemplates.find((t) => t.id === templateId);
-  const building = mockBuildings.find((b) => b.id === template?.buildingId);
+  const { data: template, isLoading, error } = useTemplate(templateId);
 
-  if (!template) {
+  if (isLoading) {
     return (
       <div className="mx-auto max-w-6xl flex flex-col gap-6">
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold text-muted-foreground">
-            Template Not Found
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            The template you&apos;re looking for doesn&apos;t exist.
-          </p>
+        <Skeleton className="h-10 w-48" />
+        <div className="flex items-start justify-between">
+          <div>
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="h-5 w-96 mt-2" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl flex flex-col gap-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading template</AlertTitle>
+          <AlertDescription>
+            {error.message || "Failed to load template. Please try again."}
+          </AlertDescription>
+        </Alert>
+        <div className="flex gap-2">
+          <Button onClick={() => window.location.reload()}>Retry</Button>
           <Link href="/agent/templates">
-            <Button className="mt-4">Back to Templates</Button>
+            <Button variant="outline">Back to Templates</Button>
           </Link>
         </div>
       </div>
     );
+  }
+
+  if (!template) {
+    notFound();
   }
 
   return (
@@ -73,8 +99,8 @@ export default function ViewTemplatePage() {
           <h2 className="text-lg font-semibold mb-4">Template Information</h2>
           <div className="space-y-3">
             <div>
-              <p className="text-sm text-muted-foreground">Building</p>
-              <p className="font-medium">{building?.name || "Unknown"}</p>
+              <p className="text-sm text-muted-foreground">Building ID</p>
+              <p className="font-medium">{template.buildingId}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Version</p>
@@ -108,8 +134,7 @@ export default function ViewTemplatePage() {
         <Card className="p-6">
           <h2 className="text-lg font-semibold mb-4">Template Purpose</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            This template defines the application requirements for{" "}
-            <strong>{building?.name || "this building"}</strong>. It specifies which sections are required,
+            This template defines the application requirements for a building. It specifies which sections are required,
             what documents applicants must upload, and which disclosures need to be acknowledged.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed mt-3">

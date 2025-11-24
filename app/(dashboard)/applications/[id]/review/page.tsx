@@ -6,43 +6,48 @@ import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { CheckCircle2, Loader2, FileText } from "lucide-react"
+import { CheckCircle2, Loader2, FileText, AlertCircle } from "lucide-react"
 import {
   ValidationSummary,
   type ValidationItem,
 } from "@/components/features/application/validation-summary"
 import { TransactionType } from "@/lib/types"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { useApplication, useSubmitApplication } from "@/lib/hooks/use-applications"
+import { FormSkeleton } from "@/components/loading/form-skeleton"
 
 export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
+
+  // Fetch application data using React Query
+  const { data: application, isLoading, error } = useApplication(id)
+  const submitApplication = useSubmitApplication(id)
+
   const [validationItems, setValidationItems] = useState<ValidationItem[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-  const [submittedAt, setSubmittedAt] = useState<Date | null>(null)
-  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+
+  const transactionType = application?.transactionType || null
+  const isSubmitted = application?.status === 'SUBMITTED'
+  const submittedAt = application?.submittedAt ? new Date(application.submittedAt) : null
 
   const validateApplication = useCallback(() => {
+    if (!application) return
+
     const items: ValidationItem[] = []
 
     // Check profile
-    const profileData = storageService.get(STORAGE_KEYS.profileData(id), null)
+    const hasProfile = application.people && application.people.length > 0 && application.people[0].fullName
     items.push({
       section: "Profile",
       requirement: "Complete personal information",
-      status: profileData ? "complete" : "incomplete",
+      status: hasProfile ? "complete" : "incomplete",
       link: `/applications/${id}/profile`,
-      message: profileData
+      message: hasProfile
         ? "Name, email, phone, DOB, SSN, and 2-year address history"
         : "Please complete your profile",
     })
 
     // Check employment
-    const incomeData = storageService.get(STORAGE_KEYS.incomeData(id), null)
-    const hasIncome = incomeData
-      ? (typeof incomeData === 'string' ? JSON.parse(incomeData) : incomeData).employers?.length > 0
-      : false
+    const hasIncome = application.employmentRecords && application.employmentRecords.length > 0
     items.push({
       section: "Employment & Income",
       requirement: "At least one employer or income source",
@@ -54,10 +59,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     })
 
     // Check financials
-    const financialsData = storageService.get(STORAGE_KEYS.financialsData(id), null)
-    const hasFinancials = financialsData
-      ? (typeof financialsData === 'string' ? JSON.parse(financialsData) : financialsData).entries?.length > 0
-      : false
+    const hasFinancials = application.financialEntries && application.financialEntries.length > 0
     items.push({
       section: "Financial Summary",
       requirement: "Financial information complete",
@@ -69,12 +71,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     })
 
     // Check documents
-    const documentsData = storageService.get(STORAGE_KEYS.documentsData(id), null)
-    const hasGovtId = documentsData
-      ? (typeof documentsData === 'string' ? JSON.parse(documentsData) : documentsData).categories?.find(
-          (c: { id: string; documents?: unknown[] }) => c.id === "govt-id" && c.documents?.length && c.documents.length > 0
-        )
-      : false
+    const hasGovtId = application.documents?.find(
+      (doc) => doc.category === "GOVERNMENT_ID"
+    )
     items.push({
       section: "Documents",
       requirement: "At least one government-issued ID",
@@ -91,10 +90,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       transactionType === TransactionType.COOP_SUBLET
 
     if (isLeaseOrSublet) {
-      const disclosuresData = storageService.get(STORAGE_KEYS.disclosuresData(id), null)
-      const allAcknowledged = disclosuresData
-        ? (typeof disclosuresData === 'string' ? JSON.parse(disclosuresData) : disclosuresData).disclosures?.every((d: { acknowledged: boolean }) => d.acknowledged)
-        : false
+      const allAcknowledged = application.disclosures?.every((d: { acknowledged: boolean }) => d.acknowledged)
       items.push({
         section: "Disclosures",
         requirement: "All disclosures acknowledged",
@@ -107,52 +103,15 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     }
 
     setValidationItems(items)
-  }, [id, transactionType])
+  }, [application, id, transactionType])
 
+  // Perform validation when application data changes
   useEffect(() => {
-    const loadData = () => {
-      try {
-        let loadedTxType: TransactionType | null = null
-        let loadedSubmitted = false
-        let loadedSubmittedAt: Date | null = null
-
-        // Load transaction type
-        const appData = storageService.get(STORAGE_KEYS.application(id), null)
-        if (appData) {
-          const data = typeof appData === 'string' ? JSON.parse(appData) : appData
-          loadedTxType = data.transactionType
-        }
-
-        // Check submission status
-        const submissionData = storageService.get(STORAGE_KEYS.submission(id), null)
-        if (submissionData) {
-          const data = typeof submissionData === 'string' ? JSON.parse(submissionData) : submissionData
-          loadedSubmitted = data.submitted
-          loadedSubmittedAt = data.submittedAt ? new Date(data.submittedAt) : null
-        }
-
-        // Batch state updates
-        if (loadedTxType) {
-          setTransactionType(loadedTxType)
-        }
-        setIsSubmitted(loadedSubmitted)
-        if (loadedSubmittedAt) {
-          setSubmittedAt(loadedSubmittedAt)
-        }
-      } catch (error) {
-        console.error("Error loading application data:", error)
-      }
+    if (application) {
+      validateApplication()
     }
-
-    loadData()
-  }, [id])
-
-  // Perform validation when dependencies change
-  useEffect(() => {
-    // validateApplication is a memoized callback that updates validation state
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    validateApplication()
-  }, [validateApplication])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [application, id, transactionType])
 
   const canSubmit = () => {
     return validationItems.every((item) => item.status === "complete" || item.status === "warning")
@@ -163,22 +122,43 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
       return
     }
 
-    setIsSubmitting(true)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    // Mark as submitted
-    const submissionData = {
-      submitted: true,
-      submittedAt: new Date().toISOString(),
-      applicationId: id,
+    try {
+      // Submit application via API
+      await submitApplication.mutateAsync()
+      // Success toast is handled by the mutation hook
+    } catch (error) {
+      console.error('Error submitting application:', error)
+      // Error toast is handled by the mutation hook
     }
-    storageService.set(STORAGE_KEYS.submission(id), submissionData)
+  }
 
-    setIsSubmitted(true)
-    setSubmittedAt(new Date())
-    setIsSubmitting(false)
+  if (isLoading) {
+    return <FormSkeleton sections={2} fieldsPerSection={3} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert>
+          <AlertDescription>
+            Application not found.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   if (isSubmitted) {
@@ -325,9 +305,9 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
           <Button
             size="lg"
             onClick={handleSubmit}
-            disabled={!canSubmit() || isSubmitting}
+            disabled={!canSubmit() || submitApplication.isPending}
           >
-            {isSubmitting ? (
+            {submitApplication.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Submitting to Broker...

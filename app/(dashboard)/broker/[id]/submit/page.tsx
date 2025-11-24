@@ -1,106 +1,44 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
-import { mockApplications } from "@/lib/mock-data";
+import { use, useState } from "react";
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
 import { notFound, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, AlertCircle, FileText, Clock, Loader2 } from "lucide-react";
-import { Application, Role, BuildingType, TransactionType, ApplicationStatus } from "@/lib/types";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { ApplicationStatus } from "@/lib/types";
 
 export default function BrokerSubmitPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [application, setApplication] = useState<Application | undefined>(() =>
-    mockApplications.find((app) => app.id === id)
-  );
-  const [isLoading, setIsLoading] = useState(!mockApplications.find((app) => app.id === id));
+  const { data: application, isLoading, error } = useApplication(id);
+  const updateApplication = useUpdateApplication(id);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-
-  useEffect(() => {
-    // If not found in mock data, try centralized storage
-    if (!application && isLoading) {
-      try {
-        const parsedApp = storageService.get<Record<string, unknown> | null>(STORAGE_KEYS.application(id), null);
-        if (parsedApp) {
-          // Transform localStorage format to match Application type
-          const transformedApp: Application = {
-            id: parsedApp.id as string,
-            buildingId: (parsedApp.buildingId || parsedApp.buildingCode) as string,
-            building: {
-              id: (parsedApp.buildingId || parsedApp.buildingCode) as string,
-              code: (parsedApp.buildingCode || parsedApp.buildingId) as string,
-              name: (parsedApp.buildingName || "Demo Building") as string,
-              type: (parsedApp.buildingType || "CONDO") as BuildingType,
-              address: {
-                street: "123 Main St",
-                city: "New York",
-                state: "NY",
-                zip: "10001"
-              }
-            },
-            unit: parsedApp.unit as string,
-            transactionType: parsedApp.transactionType as TransactionType,
-            status: parsedApp.status as ApplicationStatus,
-            createdBy: (parsedApp.createdBy || "broker-user") as string,
-            createdAt: new Date(parsedApp.createdAt as string),
-            submittedAt: parsedApp.submittedAt ? new Date(parsedApp.submittedAt as string) : undefined,
-            lastActivityAt: new Date(parsedApp.createdAt as string),
-            people: parsedApp.applicantName ? [{
-              id: "person-1",
-              fullName: parsedApp.applicantName as string,
-              email: (parsedApp.applicantEmail || "") as string,
-              phone: "",
-              dob: new Date(),
-              ssnLast4: "",
-              addressHistory: [],
-              role: Role.APPLICANT
-            }] : [],
-            employmentRecords: [],
-            financialEntries: [],
-            realEstateProperties: [],
-            documents: [],
-            disclosures: [],
-            participants: [],
-            sections: Object.entries(parsedApp.sections || {}).map(([key, value]) => ({
-              key: key,
-              label: key.charAt(0).toUpperCase() + key.slice(1),
-              isComplete: (value as { complete?: boolean }).complete || false,
-              data: undefined
-            })),
-            completionPercentage: 0,
-            rfis: [],
-            isLocked: false
-          };
-
-          // Calculate completion percentage
-          const completedSections = transformedApp.sections.filter(s => s.isComplete).length;
-          transformedApp.completionPercentage = transformedApp.sections.length > 0
-            ? Math.round((completedSections / transformedApp.sections.length) * 100)
-            : 0;
-
-          setApplication(transformedApp);
-          setSubmitted(transformedApp.status === "SUBMITTED");
-        }
-      } catch (error) {
-        console.error("Error loading application from localStorage:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    } else if (application) {
-      setSubmitted(application.status === "SUBMITTED");
-    }
-  }, [id, application, isLoading]);
 
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
           <p className="text-muted-foreground">Loading application...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Application</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {error instanceof Error ? error.message : "Failed to load application. Please try again."}
+            </p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -138,14 +76,21 @@ export default function BrokerSubmitPage({ params }: { params: Promise<{ id: str
 
   const allComplete = deliverables.every((d) => d.completed);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    // Simulate submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await updateApplication.mutateAsync({
+        id,
+        status: ApplicationStatus.SUBMITTED,
+        submittedAt: new Date(),
+      });
       setSubmitted(true);
-      // In a real app, would update application status to SUBMITTED
-    }, 2000);
+    } catch (error) {
+      console.error("Failed to submit application:", error);
+      alert("Failed to submit application. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const activityLog = [

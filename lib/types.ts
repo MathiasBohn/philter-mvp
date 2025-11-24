@@ -198,6 +198,7 @@ export type Building = {
     state: string;
     zip: string;
   };
+  buildingPolicies?: BuildingPolicies;
 };
 
 export type AddressHistoryEntry = {
@@ -434,6 +435,7 @@ export type Application = {
   employmentRecords: EmploymentRecord[];
   financialEntries: FinancialEntry[];
   realEstateProperties: RealEstateProperty[]; // Phase 2
+  leaseTerms?: LeaseTerms; // Phase 2 - for sublet/lease applications
   documents: Document[];
   disclosures: Disclosure[];
   participants: Participant[]; // Deal parties (owner, brokers, attorneys)

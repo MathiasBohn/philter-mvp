@@ -15,6 +15,19 @@ const eslintConfig = defineConfig([
     // Ignore public folder (contains binary files like PDFs)
     "public/**",
   ]),
+  {
+    rules: {
+      // Allow unused variables when they start with an underscore
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

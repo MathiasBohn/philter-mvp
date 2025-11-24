@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -12,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Home, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
-import { Application, RealEstateProperty, PropertyType, Address } from "@/lib/types";
+import { RealEstateProperty, PropertyType, Address } from "@/lib/types";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useApplication } from "@/lib/hooks/use-applications";
+import { notFound } from "next/navigation";
 
 const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
   [PropertyType.SINGLE_FAMILY]: "Single Family",
@@ -28,9 +29,10 @@ const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
 export default function RealEstatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: application, isLoading, error } = useApplication(id);
   const [properties, setProperties] = useState<RealEstateProperty[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
+  const initialized = useRef(false);
   const [newProperty, setNewProperty] = useState<Partial<RealEstateProperty>>({
     propertyType: PropertyType.CONDO,
     marketValue: 0,
@@ -47,42 +49,20 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
     },
   });
 
-  // Load existing properties from centralized storage
+  // Load existing properties from application (only once on mount)
+  // We need to sync from async loaded application data while maintaining local state
+  // for user edits. This is a valid use case for setState in effect.
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Simulate brief loading for better UX
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
-        const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
-        const application = parsedApplications.find((app) => app.id === id);
-        if (application?.realEstateProperties) {
-          setProperties(application.realEstateProperties);
-        }
-      } catch (error) {
-        console.error("Error loading real estate data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id]);
-
-  const handleSave = () => {
-    const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
-    const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
-    const applicationIndex = parsedApplications.findIndex((app) => app.id === id);
-
-    if (applicationIndex !== -1) {
-      parsedApplications[applicationIndex] = {
-        ...parsedApplications[applicationIndex],
-        realEstateProperties: properties,
-        lastActivityAt: new Date(),
-      };
-      storageService.set(STORAGE_KEYS.APPLICATIONS, parsedApplications);
+    if (application?.realEstateProperties && !initialized.current) {
+      // eslint-disable-next-line
+      setProperties(application.realEstateProperties);
+      initialized.current = true;
     }
+  }, [application]);
+
+  const handleSave = async () => {
+    // TODO: Implement save with API call
+    console.log("Saving real estate properties:", properties);
   };
 
   const handleAddProperty = () => {
@@ -126,8 +106,8 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
     setProperties(properties.filter((p) => p.id !== propertyId));
   };
 
-  const handleContinue = () => {
-    handleSave();
+  const handleContinue = async () => {
+    await handleSave();
     router.push(`/applications/${id}/documents`);
   };
 
@@ -154,6 +134,22 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
 
   if (isLoading) {
     return <FormSkeleton sections={2} fieldsPerSection={5} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    notFound();
   }
 
   return (

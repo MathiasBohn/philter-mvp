@@ -23,7 +23,8 @@ import { AlertCircle, Save, CheckCircle, DollarSign, Calendar } from "lucide-rea
 import { DateInput } from "@/components/forms/date-input";
 import Link from "next/link";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
+import { notFound } from "next/navigation";
 
 const leaseTermsSchema = z.object({
   monthlyRent: z.number().min(1, "Monthly rent is required"),
@@ -46,7 +47,8 @@ type LeaseTermsFormData = z.infer<typeof leaseTermsSchema>;
 export default function LeaseTermsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: application, isLoading, error } = useApplication(id);
+  const updateApplication = useUpdateApplication(id);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -56,6 +58,7 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
     setValue,
     watch,
     formState: { errors },
+    reset,
   } = useForm<LeaseTermsFormData>({
     resolver: zodResolver(leaseTermsSchema),
     defaultValues: {
@@ -85,52 +88,49 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
     }
   }, [leaseStartDate, leaseLengthYears, setValue]);
 
-  // Load saved data from localStorage on mount
+  // Load lease terms data from application
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Simulate brief loading for better UX
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const savedData = storageService.get<string | null>(STORAGE_KEYS.leaseterms(id), null);
-        if (savedData) {
-          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
-          if (parsed.monthlyRent) setValue("monthlyRent", parsed.monthlyRent);
-          if (parsed.securityDeposit) setValue("securityDeposit", parsed.securityDeposit);
-          if (parsed.leaseLengthYears) setValue("leaseLengthYears", parsed.leaseLengthYears);
-          if (parsed.leaseStartDate) setValue("leaseStartDate", new Date(parsed.leaseStartDate));
-          if (parsed.leaseEndDate) setValue("leaseEndDate", new Date(parsed.leaseEndDate));
-          if (parsed.moveInDate) setValue("moveInDate", new Date(parsed.moveInDate));
-          if (parsed.specialConditions) setValue("specialConditions", parsed.specialConditions);
-        }
-      } catch (error) {
-        console.error("Error loading lease terms data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id, setValue]);
+    if (application?.leaseTerms) {
+      const leaseTerms = application.leaseTerms;
+      reset({
+        monthlyRent: leaseTerms.monthlyRent || 0,
+        securityDeposit: leaseTerms.securityDeposit || 0,
+        leaseLengthYears: leaseTerms.leaseLengthYears || 1,
+        leaseStartDate: leaseTerms.leaseStartDate ? new Date(leaseTerms.leaseStartDate) : new Date(),
+        leaseEndDate: leaseTerms.leaseEndDate ? new Date(leaseTerms.leaseEndDate) : new Date(),
+        moveInDate: leaseTerms.moveInDate ? new Date(leaseTerms.moveInDate) : new Date(),
+        specialConditions: leaseTerms.specialConditions || "",
+      });
+    }
+  }, [application, reset]);
 
   const onSubmit = async (data: LeaseTermsFormData) => {
+    if (!application) return;
+
     setIsSaving(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      await updateApplication.mutateAsync({
+        leaseTerms: {
+          monthlyRent: data.monthlyRent,
+          securityDeposit: data.securityDeposit,
+          leaseLengthYears: data.leaseLengthYears,
+          leaseStartDate: data.leaseStartDate,
+          leaseEndDate: data.leaseEndDate,
+          moveInDate: data.moveInDate,
+          specialConditions: data.specialConditions || "",
+          annualRent,
+        },
+      });
 
-    // Save to centralized storage
-    storageService.set(STORAGE_KEYS.leaseterms(id), {
-      ...data,
-      annualRent,
-      leaseStartDate: data.leaseStartDate.toISOString(),
-      leaseEndDate: data.leaseEndDate.toISOString(),
-      moveInDate: data.moveInDate.toISOString(),
-    });
-
-    setIsSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving lease terms:", error);
+      alert("Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleContinue = async () => {
@@ -159,6 +159,23 @@ export default function LeaseTermsPage({ params }: { params: Promise<{ id: strin
 
   if (isLoading) {
     return <FormSkeleton sections={3} fieldsPerSection={5} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    notFound();
   }
 
   return (

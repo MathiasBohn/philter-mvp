@@ -4,11 +4,13 @@ import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 import { FinancialTable } from "@/components/features/application/financial-table"
 import { TotalsBar } from "@/components/features/application/totals-bar"
 import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
+import { notFound } from "next/navigation"
 import {
   FinancialEntryType,
   AssetCategory,
@@ -64,36 +66,25 @@ const EXPENSE_CATEGORIES = [
 export default function FinancialsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true);
-  const [entries, setEntries] = useState<FinancialEntry[]>(() => {
-    // Lazy initialization from centralized storage
-    if (typeof window !== 'undefined') {
-      const saved = storageService.get<string | null>(STORAGE_KEYS.financials(id), null)
-      if (saved) {
-        const data = typeof saved === 'string' ? JSON.parse(saved) : saved
-        if (data.entries) {
-          // Ensure all amounts are numbers, not strings
-          return data.entries.map((entry: FinancialEntry) => ({
-            ...entry,
-            amount: typeof entry.amount === 'number' ? entry.amount : parseFloat(String(entry.amount)) || 0
-          }))
-        }
-      }
-    }
-    return []
-  })
+  const { data: application, isLoading, error } = useApplication(id)
+  const updateApplication = useUpdateApplication(id)
+  const [entries, setEntries] = useState<FinancialEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<FinancialEntryType>(
     FinancialEntryType.ASSET
   )
 
-  // Handle initial loading state
+  // Load financial entries from application
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, []);
+    if (application?.financialEntries) {
+      // Ensure all amounts are numbers, not strings
+      const loadedEntries = application.financialEntries.map((entry: FinancialEntry) => ({
+        ...entry,
+        amount: typeof entry.amount === 'number' ? entry.amount : parseFloat(String(entry.amount)) || 0
+      }))
+      setEntries(loadedEntries)
+    }
+  }, [application]);
 
   const addEntry = (entryType: FinancialEntryType) => {
     // Get default category for the entry type
@@ -133,19 +124,20 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   }
 
   const handleSave = async () => {
+    if (!application) return
+
     setIsSaving(true)
 
-    // Save to centralized storage
-    const data = {
-      entries,
-      updatedAt: new Date().toISOString(),
+    try {
+      await updateApplication.mutateAsync({
+        financialEntries: entries,
+      })
+    } catch (error) {
+      console.error('Error saving financials:', error)
+      alert('Failed to save. Please try again.')
+    } finally {
+      setIsSaving(false)
     }
-    storageService.set(STORAGE_KEYS.financials(id), data)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    setIsSaving(false)
   }
 
   const handleContinue = async () => {
@@ -172,6 +164,23 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
 
   if (isLoading) {
     return <FormSkeleton sections={4} fieldsPerSection={4} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <Alert variant="destructive">
+          <AlertTitle>Error loading application</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Failed to load application data"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  if (!application) {
+    return notFound()
   }
 
   return (

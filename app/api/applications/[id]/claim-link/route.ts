@@ -79,7 +79,7 @@ export async function POST(
     }
 
     // Generate the shareable URL
-    const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/claim/${claimToken}`
+    const claimUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://philter-mvp.vercel.app'}/claim/${claimToken}`
 
     return NextResponse.json({
       success: true,

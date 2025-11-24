@@ -1,31 +1,39 @@
 "use client";
 
-import { useState } from "react";
-import { mockApplications } from "@/lib/mock-data";
+import { useState, useMemo } from "react";
+import { useApplications } from "@/lib/hooks/use-applications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Eye, Building2, Calendar, Search, User, CheckCircle, AlertCircle } from "lucide-react";
+import { Eye, Building2, Calendar, Search, User, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { ApplicationStatus } from "@/lib/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function BoardDecisionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch applications from API
+  const { data: applications, isLoading, error } = useApplications();
+
   // Filter applications that are awaiting board decision
-  const pendingApplications = mockApplications.filter((app) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      app.people[0]?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.building?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.id.toLowerCase().includes(searchQuery.toLowerCase());
+  const pendingApplications = useMemo(() => {
+    if (!applications) return [];
 
-    // Applications in review status are awaiting board decision
-    const isPending = app.status === ApplicationStatus.IN_REVIEW;
+    return applications.filter((app) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        app.people[0]?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.building?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        app.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch && isPending;
-  });
+      // Applications in review status are awaiting board decision
+      const isPending = app.status === ApplicationStatus.IN_REVIEW;
+
+      return matchesSearch && isPending;
+    });
+  }, [applications, searchQuery]);
 
   // Group applications by building
   const applicationsByBuilding = pendingApplications.reduce((acc, app) => {
@@ -36,6 +44,42 @@ export default function BoardDecisionsPage() {
     acc[buildingName].push(app);
     return acc;
   }, {} as Record<string, typeof pendingApplications>);
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Pending Decisions</h1>
+          <p className="mt-2 text-muted-foreground">
+            Review and make approval decisions for applications
+          </p>
+        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Pending Decisions</h1>
+          <p className="mt-2 text-muted-foreground">
+            Review and make approval decisions for applications
+          </p>
+        </div>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {error.message || 'Failed to load applications'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

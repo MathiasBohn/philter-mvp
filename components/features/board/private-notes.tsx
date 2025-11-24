@@ -5,7 +5,7 @@ import { Lock } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { storageService } from "@/lib/persistence";
+import { storageService } from "@/lib/storage";
 
 interface PrivateNotesProps {
   applicationId: string;

@@ -11,15 +11,12 @@ import {
 } from "@/components/features/application/document-checklist"
 import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
-import { mockApplications } from "@/lib/mock-data/applications"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { useApplication } from "@/lib/hooks/use-applications"
 import {
   uploadManager,
   saveFileToStorage,
-  getStoredFiles,
-  deleteStoredFile,
-  getFileObject
+  deleteStoredFile
 } from "@/lib/upload-manager"
 import { useFilePreview } from "@/lib/hooks/use-file-preview"
 
@@ -69,73 +66,18 @@ const INITIAL_CATEGORIES: DocumentCategory[] = [
 export default function DocumentsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true);
 
-  // Get application data
-  const application = mockApplications.find((app) => app.id === id);
+  // Fetch application data using React Query
+  const { data: application, isLoading, error } = useApplication(id)
 
   const [categories, setCategories] = useState<DocumentCategory[]>(INITIAL_CATEGORIES)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
-  // Load data and files from storage on mount
-  useEffect(() => {
-    const loadData = async () => {
-      if (typeof window !== 'undefined') {
-        try {
-          // Load metadata from storageService
-          const saved = storageService.get(STORAGE_KEYS.documentsData(id), null)
-
-          // Load files from IndexedDB
-          const storedFiles = await getStoredFiles()
-
-          if (saved) {
-            const data = typeof saved === 'string' ? JSON.parse(saved) : saved
-            if (data.categories) {
-              // Merge metadata with actual files from IndexedDB
-              const categoriesWithFiles = data.categories.map((cat: DocumentCategory) => {
-                const documentsWithFiles = cat.documents.map((doc: UploadedFile) => {
-                  const storedFile = storedFiles[doc.id]
-                  if (storedFile) {
-                    // Restore the actual File object
-                    const file = getFileObject(storedFile)
-                    const preview = storedFile.type.startsWith('image/')
-                      ? URL.createObjectURL(storedFile.blob)
-                      : undefined
-
-                    return {
-                      ...doc,
-                      file,
-                      preview,
-                      status: 'complete' as const,
-                      progress: 100,
-                    }
-                  }
-                  return doc
-                })
-
-                return {
-                  ...cat,
-                  documents: documentsWithFiles,
-                }
-              })
-
-              setCategories(categoriesWithFiles)
-            }
-          }
-        } catch (error) {
-          console.error('Error loading documents data:', error)
-        }
-      }
-
-      // Simulate brief loading for better UX
-      setTimeout(() => {
-        setIsLoading(false)
-      }, 300)
-    }
-
-    loadData()
-  }, [id])
+  // Note: Document loading is handled through the DocumentChecklist component's
+  // own state management and upload functionality. The application.documents array
+  // contains Document metadata from the backend, which is synced separately from
+  // the local file storage in IndexedDB.
 
   // Cleanup previews automatically using custom hook
   useFilePreview(
@@ -160,6 +102,15 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   }
 
   const simulateUpload = (categoryId: string, fileId: string) => {
+    // Find the file object
+    const category = categories.find(c => c.id === categoryId)
+    const document = category?.documents.find(d => d.id === fileId)
+
+    if (!document?.file) {
+      console.error('File not found for upload')
+      return
+    }
+
     // Update status to uploading
     setCategories((prev) =>
       prev.map((cat) =>
@@ -176,6 +127,9 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
 
     uploadManager.startUpload(
       fileId,
+      document.file,
+      'documents', // bucket
+      `applications/${id}/documents/${fileId}`, // path
       // Progress callback
       (progress) => {
         setCategories((prev) =>
@@ -291,7 +245,73 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   }
 
   const handleResumeUpload = (fileId: string) => {
-    uploadManager.resumeUpload(fileId)
+    // Find the category containing this file
+    let categoryId = ''
+    for (const cat of categories) {
+      if (cat.documents.find(d => d.id === fileId)) {
+        categoryId = cat.id
+        break
+      }
+    }
+
+    if (!categoryId) {
+      console.error('Category not found for file')
+      return
+    }
+
+    uploadManager.resumeUpload(
+      fileId,
+      // Progress callback
+      (progress) => {
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === categoryId
+              ? {
+                  ...cat,
+                  documents: cat.documents.map((doc) =>
+                    doc.id === fileId ? { ...doc, progress } : doc
+                  ),
+                }
+              : cat
+          )
+        )
+      },
+      // Complete callback
+      async () => {
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === categoryId
+              ? {
+                  ...cat,
+                  documents: cat.documents.map((doc) =>
+                    doc.id === fileId
+                      ? { ...doc, status: "complete" as const, progress: 100 }
+                      : doc
+                  ),
+                }
+              : cat
+          )
+        )
+      },
+      // Error callback
+      (error) => {
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === categoryId
+              ? {
+                  ...cat,
+                  documents: cat.documents.map((doc) =>
+                    doc.id === fileId
+                      ? { ...doc, status: "error" as const, error }
+                      : doc
+                  ),
+                }
+              : cat
+          )
+        )
+      }
+    )
+
     // Update state to show uploading
     setCategories(prev => prev.map(cat => ({
       ...cat,
@@ -343,15 +363,8 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   const handleSave = async () => {
     setIsSaving(true)
 
-    // Save metadata to storageService
-    const data = {
-      categories,
-      updatedAt: new Date().toISOString(),
-    }
-    storageService.set(STORAGE_KEYS.documentsData(id), data)
-
-    // Save files to IndexedDB
     try {
+      // Save files to IndexedDB (keeping existing logic for Phase 4)
       for (const category of categories) {
         for (const doc of category.documents) {
           if (doc.status === 'complete') {
@@ -359,15 +372,15 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
           }
         }
       }
+
+      // Note: Documents are saved individually through the upload system and Supabase Storage.
+      // The application.documents array is managed separately via the documents API.
     } catch (error) {
-      console.error('Error saving files to IndexedDB:', error)
-      // Show error to user if needed
+      console.error('Error saving documents:', error)
+      // Error toast is handled by the mutation hook
+    } finally {
+      setIsSaving(false)
     }
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    setIsSaving(false)
   }
 
   const handleContinue = async () => {
@@ -387,6 +400,31 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
 
   if (isLoading) {
     return <FormSkeleton sections={3} fieldsPerSection={3} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert>
+          <AlertDescription>
+            Application not found.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (

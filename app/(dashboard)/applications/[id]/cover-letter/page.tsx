@@ -1,16 +1,16 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Eye, Edit3, Info, Save } from "lucide-react";
+import { FileText, Eye, Edit3, Info, Save, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
-import { Application } from "@/lib/types";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
+import { FormSkeleton } from "@/components/loading/form-skeleton";
 
 const MAX_CHARACTERS = 2000;
 
@@ -18,46 +18,74 @@ export default function CoverLetterPage({ params }: { params: Promise<{ id: stri
   const { id } = use(params);
   const router = useRouter();
 
-  // Load existing cover letter from centralized storage
-  const [coverLetter, setCoverLetter] = useState(() => {
-    const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
-    const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
-    const application = parsedApplications.find((app) => app.id === id);
-    return application?.coverLetter || "";
-  });
+  // Fetch application data using React Query
+  const { data: application, isLoading, error } = useApplication(id);
+  const updateApplication = useUpdateApplication(id);
 
+  const [coverLetter, setCoverLetter] = useState("");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  const handleSave = () => {
+  // Load cover letter from application when data is available
+  useEffect(() => {
+    if (application?.coverLetter) {
+      setCoverLetter(application.coverLetter);
+    }
+  }, [application]);
+
+  const handleSave = async () => {
     setIsSaving(true);
 
-    // Save to centralized storage
-    const applications = storageService.get<Application[]>(STORAGE_KEYS.APPLICATIONS, []);
-    const parsedApplications: Application[] = typeof applications === 'string' ? JSON.parse(applications) : applications;
-    const applicationIndex = parsedApplications.findIndex((app) => app.id === id);
-
-    if (applicationIndex !== -1) {
-      parsedApplications[applicationIndex] = {
-        ...parsedApplications[applicationIndex],
+    try {
+      await updateApplication.mutateAsync({
         coverLetter,
-        lastActivityAt: new Date(),
-      };
-      storageService.set(STORAGE_KEYS.APPLICATIONS, parsedApplications);
+      });
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Error saving cover letter:', error);
+      // Error toast is handled by the mutation hook
+    } finally {
+      setIsSaving(false);
     }
-
-    setLastSaved(new Date());
-    setIsSaving(false);
   };
 
-  const handleContinue = () => {
-    handleSave();
+  const handleContinue = async () => {
+    await handleSave();
     router.push(`/applications/${id}/disclosures`);
   };
 
   const charactersRemaining = MAX_CHARACTERS - coverLetter.length;
   const isOverLimit = charactersRemaining < 0;
+
+  if (isLoading) {
+    return <FormSkeleton sections={1} fieldsPerSection={1} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert>
+          <AlertDescription>
+            Application not found.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

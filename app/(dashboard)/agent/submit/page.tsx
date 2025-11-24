@@ -1,22 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { mockApplications } from "@/lib/mock-data";
+import { useApplications } from "@/lib/hooks/use-applications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
-import { Send, Building2, Calendar, ChevronRight, Search, User, CheckCircle } from "lucide-react";
+import { Send, Building2, Calendar, ChevronRight, Search, User, CheckCircle, AlertCircle } from "lucide-react";
 import { getStatusLabel } from "@/lib/constants/labels";
 import { ApplicationStatus } from "@/lib/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function AgentSubmitPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Fetch applications from API
+  const { data: applications, isLoading, error } = useApplications();
+
   // Filter applications that are ready for submission to Board
   // These are applications that Transaction Agent has reviewed and are ready to send to Board
-  const readyToSubmitApplications = mockApplications.filter((app) => {
+  const readyToSubmitApplications = (applications || []).filter((app) => {
     const matchesSearch =
       searchQuery === "" ||
       app.people[0]?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -39,6 +44,51 @@ export default function AgentSubmitPage() {
     acc[buildingName].push(app);
     return acc;
   }, {} as Record<string, typeof readyToSubmitApplications>);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-9 w-64" />
+            <Skeleton className="mt-2 h-5 w-96" />
+          </div>
+          <Skeleton className="h-6 w-40" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <div className="space-y-4">
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Submit to Board</h1>
+          <p className="mt-2 text-muted-foreground">
+            Review and submit applications to board members for approval
+          </p>
+        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error Loading Applications</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Failed to load applications. Please try again."}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => window.location.reload()} variant="outline">
+          Try Again
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

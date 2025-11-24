@@ -1,20 +1,56 @@
 "use client";
 
 import { useState } from "react";
-import { mockApplications } from "@/lib/mock-data";
+import { useApplications } from "@/lib/hooks/use-applications";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, Eye, TrendingUp, Clock, CheckCircle, Building2 } from "lucide-react";
+import { Search, Eye, TrendingUp, Clock, CheckCircle, Building2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { ApplicationStatus } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function BoardDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: applications, isLoading, error } = useApplications();
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-5 w-96 mt-2" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-32 w-full" />
+        </div>
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading applications</AlertTitle>
+          <AlertDescription>
+            {error.message || "Failed to load applications. Please try again."}
+          </AlertDescription>
+        </Alert>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
+      </div>
+    );
+  }
 
   // Filter applications that are ready for board review
-  const boardApplications = mockApplications.filter(
+  const boardApplications = (applications || []).filter(
     (app) => app.status === ApplicationStatus.IN_REVIEW
   );
 
@@ -46,12 +82,12 @@ export default function BoardDashboardPage() {
   const pendingCount = boardApplications.filter(
     (app) => app.status === ApplicationStatus.IN_REVIEW
   ).length;
-  const totalApplications = mockApplications.filter(
+  const totalApplications = (applications || []).filter(
     (app) => app.status === ApplicationStatus.IN_REVIEW ||
              app.status === ApplicationStatus.APPROVED ||
              app.status === ApplicationStatus.DENIED
   ).length;
-  const approvedCount = mockApplications.filter(
+  const approvedCount = (applications || []).filter(
     (app) => app.status === ApplicationStatus.APPROVED
   ).length;
 

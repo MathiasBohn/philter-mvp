@@ -11,7 +11,7 @@ import { PrivateNotes } from "./private-notes";
 import { DownloadNotice } from "./download-notice";
 import { formatDate } from "@/lib/utils";
 import { createBoardWatermarkData } from "@/lib/pdf-utils";
-import { storageService } from "@/lib/persistence";
+import { storageService } from "@/lib/storage";
 
 interface ReadOnlyViewerProps {
   application: Application;
