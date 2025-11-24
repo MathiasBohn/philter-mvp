@@ -105,21 +105,8 @@ function SignUpForm() {
       if (error) {
         setError(error.message)
       } else if (data.user) {
-        // Create user profile in the users table
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            first_name: firstName,
-            last_name: lastName,
-            role: role,
-          })
-
-        if (profileError) {
-          console.error('Error creating user profile:', profileError)
-          // Note: User auth account is created but profile failed
-          // This should be handled by a database trigger in production
-        }
+        // User profile is automatically created by database trigger
+        // The trigger reads from raw_user_meta_data (passed in options.data above)
 
         // If signing up via invitation, link user to application
         if (invitationData && invitationToken) {
