@@ -30,7 +30,7 @@ export const GET = async (_request: NextRequest) => {
     const adminClient = createAdminClient()
     const { data: profile, error: profileError } = await adminClient
       .from('users')
-      .select('id, email, role')
+      .select('id, role, first_name, last_name')
       .eq('id', user.id)
       .single()
 
