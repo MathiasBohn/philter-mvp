@@ -13,6 +13,11 @@ export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
 
+  // Debug: log when component renders
+  if (typeof window !== 'undefined') {
+    console.log('Homepage rendered, user:', user ? 'authenticated' : 'not authenticated');
+  }
+
   const userFlows = [
     {
       title: "Applicant",
@@ -61,14 +66,24 @@ export default function Home() {
   ];
 
   const handleFlowClick = (flow: typeof userFlows[0]) => {
-    // If user is already authenticated, go directly to the flow
-    if (user) {
-      router.push(flow.href);
-    } else {
-      // Otherwise, redirect to sign-in page
-      // Optionally store the intended destination
-      sessionStorage.setItem('redirect_after_login', flow.href);
-      router.push('/sign-in');
+    console.log('Flow clicked:', flow.title, 'User:', user ? 'authenticated' : 'not authenticated');
+
+    try {
+      // If user is already authenticated, go directly to the flow
+      if (user) {
+        console.log('Navigating to:', flow.href);
+        router.push(flow.href);
+      } else {
+        // Otherwise, redirect to sign-in page
+        // Optionally store the intended destination
+        console.log('Storing redirect and going to sign-in');
+        sessionStorage.setItem('redirect_after_login', flow.href);
+        router.push('/sign-in');
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Fallback to hard navigation if router fails
+      window.location.href = user ? flow.href : '/sign-in';
     }
   };
 
