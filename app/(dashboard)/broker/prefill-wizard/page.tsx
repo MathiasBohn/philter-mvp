@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,11 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TransactionType, DocumentCategory } from "@/lib/types";
+import { TransactionType, DocumentCategory, ApplicationStatus, Role } from "@/lib/types";
 import { mockBuildings } from "@/lib/mock-data";
 import { Loader2, CheckCircle2, ChevronLeft, ChevronRight, Save } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useStorage, storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useCreateApplication } from "@/lib/hooks/use-applications";
+import { toast } from "sonner";
 
 const WIZARD_STEPS = [
   { id: 1, name: "Building", description: "Select property" },
@@ -80,20 +81,34 @@ const defaultWizardData: WizardData = {
   brokerPhone: "(212) 555-0100",
 };
 
+const DRAFT_STORAGE_KEY = 'philter_broker_wizard_draft';
+
 export default function BrokerPrefillWizardPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [createdApplicationId, setCreatedApplicationId] = useState("");
 
-  // Use centralized storage for wizard draft (auto-saves)
-  const [wizardData, setWizardData] = useStorage<WizardData>(
-    STORAGE_KEYS.BROKER_DRAFT,
-    defaultWizardData
-  );
+  // Load draft from localStorage on mount
+  const [wizardData, setWizardData] = useState<WizardData>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(DRAFT_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : defaultWizardData;
+    }
+    return defaultWizardData;
+  });
 
-  // Track current step in local state (doesn't need persistence)
+  // Track current step in local state
   const [currentStep, setCurrentStep] = useState(1);
+
+  // Use React Query mutation for creating application
+  const createApplication = useCreateApplication();
+
+  // Auto-save draft to localStorage when data changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(wizardData));
+    }
+  }, [wizardData]);
 
   const updateWizardData = <K extends keyof WizardData>(field: K, value: WizardData[K]) => {
     setWizardData({ ...wizardData, [field]: value });
@@ -158,61 +173,63 @@ export default function BrokerPrefillWizardPage() {
   };
 
   const handleSaveDraft = () => {
-    // Draft is already auto-saved, just show confirmation
-    alert("Draft saved successfully!");
+    // Draft is already auto-saved to localStorage, just show confirmation
+    toast.success("Draft saved successfully!");
   };
 
   const handleSubmit = async () => {
-    setIsLoading(true);
+    try {
+      // Create application via API
+      const newApplication = await createApplication.mutateAsync({
+        buildingId: wizardData.buildingId,
+        transactionType: wizardData.transactionType as TransactionType,
+        status: ApplicationStatus.IN_PROGRESS,
+        unit: wizardData.unit,
+        people: [
+          {
+            id: crypto.randomUUID(),
+            role: Role.APPLICANT as const,
+            fullName: wizardData.applicantName,
+            email: wizardData.applicantEmail,
+            phone: wizardData.applicantPhone || "",
+            dob: new Date(),
+            ssnLast4: "",
+            addressHistory: [],
+          },
+          ...(wizardData.coApplicantName ? [{
+            id: crypto.randomUUID(),
+            role: Role.CO_APPLICANT as const,
+            fullName: wizardData.coApplicantName,
+            email: wizardData.coApplicantEmail,
+            phone: "",
+            dob: new Date(),
+            ssnLast4: "",
+            addressHistory: [],
+          }] : []),
+        ],
+        // Store lease terms if provided
+        leaseTerms: (wizardData.leaseStartDate && wizardData.monthlyRent) ? {
+          monthlyRent: Number(wizardData.monthlyRent),
+          annualRent: Number(wizardData.monthlyRent) * 12,
+          securityDeposit: 0,
+          leaseLengthYears: 1,
+          leaseStartDate: new Date(wizardData.leaseStartDate),
+          leaseEndDate: wizardData.leaseEndDate ? new Date(wizardData.leaseEndDate) : new Date(new Date(wizardData.leaseStartDate).setFullYear(new Date(wizardData.leaseStartDate).getFullYear() + 1)),
+          moveInDate: new Date(wizardData.leaseStartDate),
+        } : undefined,
+      });
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Clear draft from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
+      }
 
-    // Create a new application ID
-    const newApplicationId = `app_${Date.now()}`;
-
-    // Store application data
-    const selectedBuilding = mockBuildings.find((b) => b.id === wizardData.buildingId);
-    const applicationData = {
-      id: newApplicationId,
-      buildingCode: selectedBuilding?.code || wizardData.buildingId,
-      buildingId: wizardData.buildingId,
-      unit: wizardData.unit,
-      transactionType: wizardData.transactionType,
-      status: "IN_PROGRESS",
-      createdAt: new Date().toISOString(),
-      createdBy: "broker-user-id",
-      applicantEmail: wizardData.applicantEmail,
-      applicantName: wizardData.applicantName,
-      applicantPhone: wizardData.applicantPhone,
-      coApplicantName: wizardData.coApplicantName,
-      coApplicantEmail: wizardData.coApplicantEmail,
-      leaseStartDate: wizardData.leaseStartDate,
-      leaseEndDate: wizardData.leaseEndDate,
-      monthlyRent: wizardData.monthlyRent,
-      requiredDocuments: wizardData.requiredDocuments,
-      brokerInfo: {
-        name: wizardData.brokerName,
-        email: wizardData.brokerEmail,
-        phone: wizardData.brokerPhone,
-      },
-      sections: {
-        profile: { complete: false },
-        income: { complete: false },
-        financials: { complete: false },
-        documents: { complete: false },
-        disclosures: { complete: false },
-      },
-    };
-
-    storageService.set(STORAGE_KEYS.application(newApplicationId), applicationData);
-
-    // Clear draft
-    storageService.remove(STORAGE_KEYS.BROKER_DRAFT);
-
-    setCreatedApplicationId(newApplicationId);
-    setIsLoading(false);
-    setShowSuccessDialog(true);
+      setCreatedApplicationId(newApplication.id);
+      setShowSuccessDialog(true);
+    } catch (error) {
+      console.error("Failed to create application:", error);
+      toast.error("Failed to create application. Please try again.");
+    }
   };
 
   const selectedBuilding = mockBuildings.find((b) => b.id === wizardData.buildingId);
@@ -633,8 +650,8 @@ export default function BrokerPrefillWizardPage() {
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
-            <Button onClick={handleSubmit} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleSubmit} disabled={createApplication.isPending}>
+              {createApplication.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create & Send Invitation
             </Button>
           )}

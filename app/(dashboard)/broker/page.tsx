@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { mockApplications } from "@/lib/mock-data";
+import { useApplications } from "@/lib/hooks/use-applications";
 import { ApplicationTable } from "@/components/features/broker/application-table";
 import { FilterBar } from "@/components/features/broker/filter-bar";
 import { Button } from "@/components/ui/button";
-import { Plus, Download, Send, CheckSquare, FileSpreadsheet, ChevronDown } from "lucide-react";
+import { Plus, Download, Send, CheckSquare, FileSpreadsheet, ChevronDown, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useApplicationFilters } from "@/lib/hooks/use-application-filters";
 import { ApplicationStatus } from "@/lib/types";
@@ -25,15 +25,18 @@ import {
 } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function BrokerPipelinePage() {
+  const { data: applications, isLoading, error } = useApplications();
+
   const {
     filteredApplications,
     filters,
     setStatusFilter,
     setBuildingFilter,
     setDateRange,
-  } = useApplicationFilters(mockApplications, {
+  } = useApplicationFilters(applications || [], {
     enableDateRange: true,
   });
 
@@ -150,6 +153,35 @@ export default function BrokerPipelinePage() {
   };
 
   const isAllSelected = selectedApplicationIds.length === filteredApplications.length && filteredApplications.length > 0;
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Loading applications...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Applications</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {error instanceof Error ? error.message : "Failed to load applications. Please try again."}
+            </p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

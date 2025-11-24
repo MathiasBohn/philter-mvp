@@ -107,6 +107,6 @@ export const queryKeys = {
   building: (id: string) => ['buildings', id] as const,
 
   // Activity Log
-  activityLog: (filters?: any) => ['activity-log', filters] as const,
+  activityLog: (filters?: Record<string, unknown>) => ['activity-log', filters] as const,
   applicationActivityLog: (applicationId: string) => ['activity-log', 'application', applicationId] as const,
 } as const

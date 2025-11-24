@@ -5,15 +5,16 @@ import { useRouter } from "next/navigation"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { EmployerEntry } from "@/components/features/application/employer-entry"
 import { UploadDropzone, type UploadedFile } from "@/components/features/application/upload-dropzone"
 import { DocumentCard } from "@/components/features/application/document-card"
 import { FormActions } from "@/components/forms/form-actions"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
-import { PayCadence, type EmploymentRecord } from "@/lib/types"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { PayCadence, type EmploymentRecord, DocumentStatus, DocumentCategory } from "@/lib/types"
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
+import { notFound } from "next/navigation"
 import {
   uploadManager,
   saveFileToStorage,
@@ -23,10 +24,26 @@ import {
 } from "@/lib/upload-manager"
 import { useFilePreview } from "@/lib/hooks/use-file-preview"
 
+// Helper function to map upload status to DocumentStatus enum
+const mapUploadStatusToDocumentStatus = (status: string): DocumentStatus => {
+  switch (status) {
+    case 'complete':
+      return DocumentStatus.UPLOADED
+    case 'error':
+      return DocumentStatus.REJECTED
+    case 'pending':
+    case 'uploading':
+    case 'paused':
+    default:
+      return DocumentStatus.PENDING
+  }
+}
+
 export default function IncomePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: application, isLoading, error } = useApplication(id)
+  const updateApplication = useUpdateApplication(id)
   const [employers, setEmployers] = useState<EmploymentRecord[]>([])
   const [documents, setDocuments] = useState<UploadedFile[]>([])
   const [isSelfEmployed, setIsSelfEmployed] = useState(false)
@@ -47,81 +64,75 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     setEmployers((prev) => [...prev, newEmployer])
   }
 
-  // Load data from centralized storage on mount
+  // Load data from application when it's fetched
   useEffect(() => {
     const loadData = async () => {
-      try {
-        // Simulate brief loading for better UX
-        await new Promise(resolve => setTimeout(resolve, 300))
+      if (!application) return
 
-        const saved = storageService.get<string | null>(STORAGE_KEYS.income(id), null)
+      try {
         const storedFiles = await getStoredFiles()
 
-        if (saved) {
-          const data = typeof saved === 'string' ? JSON.parse(saved) : saved
+        // Restore employers from application data
+        if (application.employmentRecords && application.employmentRecords.length > 0) {
+          const loadedEmployers = application.employmentRecords.map((e: EmploymentRecord) => ({
+            ...e,
+            // Ensure dates are Date objects (they might be strings from JSON serialization)
+            startDate: e.startDate instanceof Date ? e.startDate : new Date(e.startDate),
+            endDate: e.endDate ? (e.endDate instanceof Date ? e.endDate : new Date(e.endDate)) : undefined,
+          }))
+          setEmployers(loadedEmployers)
+        } else {
+          // Initialize with one empty employer if none exist
+          addEmployer()
+        }
 
-          // Restore employers
-          if (data.employers) {
-            const loadedEmployers = data.employers.map(
-              (e: { startDate: string; endDate?: string }) => ({
-                ...e,
-                startDate: new Date(e.startDate),
-                endDate: e.endDate ? new Date(e.endDate) : undefined,
-              })
-            )
-            setEmployers(loadedEmployers)
-          }
+        // Note: isSelfEmployed flag is managed in local component state
+        // It could be stored in application data in a future enhancement
+
+        // Restore document metadata from application and files from IndexedDB
+        if (application.documents) {
+          const employmentDocs = application.documents.filter(
+            (doc: { category?: string; [key: string]: unknown }) => doc.category === 'employment-verification'
+          )
+          const cpaDocs = application.documents.filter(
+            (doc: { category?: string; [key: string]: unknown }) => doc.category === 'cpa-letter'
+          )
 
           // Restore employment verification documents
-          if (data.documents) {
-            const restoredDocs = data.documents.map((doc: UploadedFile) => {
-              const storedFile = storedFiles[doc.id]
-              if (storedFile) {
-                const file = getFileObject(storedFile)
-                const preview = storedFile.type.startsWith('image/')
-                  ? URL.createObjectURL(storedFile.blob)
-                  : undefined
-                return { ...doc, file, preview, status: 'complete' as const, progress: 100 }
-              }
-              return doc
-            })
-            setDocuments(restoredDocs)
-          }
-
-          if (data.isSelfEmployed !== undefined) {
-            setIsSelfEmployed(data.isSelfEmployed)
-          }
+          const restoredDocs = employmentDocs.map((doc: { id: string; [key: string]: unknown }) => {
+            const storedFile = storedFiles[doc.id]
+            if (storedFile) {
+              const file = getFileObject(storedFile)
+              const preview = storedFile.type.startsWith('image/')
+                ? URL.createObjectURL(storedFile.blob)
+                : undefined
+              return { ...doc, file, preview, status: 'complete' as const, progress: 100 }
+            }
+            return doc
+          }) as unknown as UploadedFile[]
+          setDocuments(restoredDocs)
 
           // Restore CPA letter documents
-          if (data.cpaLetterDocuments) {
-            const restoredCpaDocs = data.cpaLetterDocuments.map((doc: UploadedFile) => {
-              const storedFile = storedFiles[doc.id]
-              if (storedFile) {
-                const file = getFileObject(storedFile)
-                const preview = storedFile.type.startsWith('image/')
-                  ? URL.createObjectURL(storedFile.blob)
-                  : undefined
-                return { ...doc, file, preview, status: 'complete' as const, progress: 100 }
-              }
-              return doc
-            })
-            setCpaLetterDocuments(restoredCpaDocs)
-          }
-        } else {
-          // Initialize with one empty employer
-          addEmployer()
+          const restoredCpaDocs = cpaDocs.map((doc: { id: string; [key: string]: unknown }) => {
+            const storedFile = storedFiles[doc.id]
+            if (storedFile) {
+              const file = getFileObject(storedFile)
+              const preview = storedFile.type.startsWith('image/')
+                ? URL.createObjectURL(storedFile.blob)
+                : undefined
+              return { ...doc, file, preview, status: 'complete' as const, progress: 100 }
+            }
+            return doc
+          }) as unknown as UploadedFile[]
+          setCpaLetterDocuments(restoredCpaDocs)
         }
       } catch (error) {
         console.error("Error loading income data:", error)
-        // Initialize with one empty employer on error
-        addEmployer()
-      } finally {
-        setIsLoading(false)
       }
     }
 
     loadData()
-  }, [id])
+  }, [application])
 
   // Cleanup previews automatically using custom hook
   useFilePreview(documents)
@@ -167,6 +178,13 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   }
 
   const simulateUpload = (fileId: string) => {
+    // Find the document to upload
+    const document = documents.find(d => d.id === fileId)
+    if (!document?.file) {
+      console.error('File not found for upload')
+      return
+    }
+
     setDocuments((prev) =>
       prev.map((doc) =>
         doc.id === fileId ? { ...doc, status: "uploading" as const } : doc
@@ -175,6 +193,9 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     uploadManager.startUpload(
       fileId,
+      document.file,
+      'documents',
+      `applications/${id}/employment/${fileId}`,
       (progress) => {
         setDocuments((prev) =>
           prev.map((doc) => (doc.id === fileId ? { ...doc, progress } : doc))
@@ -189,10 +210,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           )
         )
 
-        const document = documents.find(d => d.id === fileId)
-        if (document) {
-          await saveFileToStorage(document.file, fileId, 'employment-verification')
-        }
+        // Save to IndexedDB as backup
+        await saveFileToStorage(document.file, fileId, 'employment-verification')
       },
       (error) => {
         setDocuments((prev) =>
@@ -205,6 +224,13 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   }
 
   const simulateCpaUpload = (fileId: string) => {
+    // Find the document to upload
+    const document = cpaLetterDocuments.find(d => d.id === fileId)
+    if (!document?.file) {
+      console.error('File not found for upload')
+      return
+    }
+
     setCpaLetterDocuments((prev) =>
       prev.map((doc) =>
         doc.id === fileId ? { ...doc, status: "uploading" as const } : doc
@@ -213,6 +239,9 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     uploadManager.startUpload(
       fileId,
+      document.file,
+      'documents',
+      `applications/${id}/cpa-letter/${fileId}`,
       (progress) => {
         setCpaLetterDocuments((prev) =>
           prev.map((doc) => (doc.id === fileId ? { ...doc, progress } : doc))
@@ -227,10 +256,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
           )
         )
 
-        const document = cpaLetterDocuments.find(d => d.id === fileId)
-        if (document) {
-          await saveFileToStorage(document.file, fileId, 'cpa-letter')
-        }
+        // Save to IndexedDB as backup
+        await saveFileToStorage(document.file, fileId, 'cpa-letter')
       },
       (error) => {
         setCpaLetterDocuments((prev) =>
@@ -303,45 +330,61 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   }
 
   const handleSave = async () => {
+    if (!application) return
+
     if (!validate()) {
       return
     }
 
     setIsSaving(true)
 
-    // Save metadata to centralized storage
-    const data = {
-      employers,
-      documents,
-      isSelfEmployed,
-      cpaLetterDocuments,
-      updatedAt: new Date().toISOString(),
-    }
-    storageService.set(STORAGE_KEYS.income(id), data)
-
-    // Save files to IndexedDB
     try {
-      // Save employment verification documents
+      // Prepare document metadata (keep IndexedDB for actual files)
+      const allDocuments = [
+        ...documents.map(doc => ({ ...doc, category: 'employment-verification' })),
+        ...cpaLetterDocuments.map(doc => ({ ...doc, category: 'cpa-letter' }))
+      ]
+
+      // Save employment data and document metadata via API
+      await updateApplication.mutateAsync({
+        employmentRecords: employers,
+        // Note: isSelfEmployed flag is stored in localStorage for now (Phase 4: add to backend)
+        // Note: Document metadata saved here, but actual files stay in IndexedDB (Phase 4)
+        documents: [
+          ...(application.documents?.filter(
+            (d: { category?: string }) => d.category !== 'employment-verification' && d.category !== 'cpa-letter'
+          ) || []),
+          ...allDocuments.map(doc => ({
+            id: doc.id,
+            filename: doc.file.name,
+            size: doc.file.size,
+            mimeType: doc.file.type,
+            category: doc.category as DocumentCategory,
+            status: mapUploadStatusToDocumentStatus(doc.status),
+            uploadedAt: new Date(),
+            uploadedBy: application.createdBy,
+          }))
+        ]
+      })
+
+      // Save actual files to IndexedDB (will be migrated to Supabase Storage in Phase 4)
       for (const doc of documents) {
-        if (doc.status === 'complete') {
+        if (doc.status === 'complete' && doc.file) {
           await saveFileToStorage(doc.file, doc.id, 'employment-verification')
         }
       }
 
-      // Save CPA letter documents
       for (const doc of cpaLetterDocuments) {
-        if (doc.status === 'complete') {
+        if (doc.status === 'complete' && doc.file) {
           await saveFileToStorage(doc.file, doc.id, 'cpa-letter')
         }
       }
     } catch (error) {
-      console.error('Error saving files to IndexedDB:', error)
+      console.error('Error saving income data:', error)
+      alert('Failed to save. Please try again.')
+    } finally {
+      setIsSaving(false)
     }
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    setIsSaving(false)
   }
 
   const handleContinue = async () => {
@@ -366,6 +409,23 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
   if (isLoading) {
     return <FormSkeleton sections={3} fieldsPerSection={5} />
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <Alert variant="destructive">
+          <AlertTitle>Error loading application</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Failed to load application data"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  if (!application) {
+    return notFound()
   }
 
   return (

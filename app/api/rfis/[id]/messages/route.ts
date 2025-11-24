@@ -10,7 +10,6 @@ import { createClient } from '@/lib/supabase/server'
 import {
   getRFIMessages,
   addRFIMessage,
-  type CreateRFIMessageInput,
 } from '@/lib/api/rfis'
 import { z } from 'zod'
 

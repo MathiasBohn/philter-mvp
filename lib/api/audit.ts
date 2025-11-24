@@ -64,8 +64,8 @@ export interface ActivityLogEntry {
   action: string
   entity_type: string
   entity_id?: string
-  old_values?: Record<string, any>
-  new_values?: Record<string, any>
+  old_values?: Record<string, unknown>
+  new_values?: Record<string, unknown>
   ip_address?: string
   user_agent?: string
   created_at: string
@@ -79,9 +79,9 @@ export interface CreateActivityLogInput {
   entity_type?: EntityType
   entity_id?: string
   application_id?: string
-  old_values?: Record<string, any>
-  new_values?: Record<string, any>
-  metadata?: Record<string, any>
+  old_values?: Record<string, unknown>
+  new_values?: Record<string, unknown>
+  metadata?: Record<string, unknown>
 }
 
 /**

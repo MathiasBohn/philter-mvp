@@ -36,7 +36,7 @@ function logResult(result: TestResult) {
 async function testRoute(
   method: string,
   path: string,
-  options: { requiresAuth?: boolean; requiresAdmin?: boolean; body?: any } = {}
+  options: { requiresAuth?: boolean; requiresAdmin?: boolean; body?: Record<string, unknown> } = {}
 ) {
   const url = `${API_BASE}${path}`
 

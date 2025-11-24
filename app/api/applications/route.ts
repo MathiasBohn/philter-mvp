@@ -32,20 +32,19 @@ const createApplicationSchema = z.object({
  * GET /api/applications
  * Get all applications for the current user based on their role
  */
-export const GET = withErrorHandler(async (request: NextRequest) => {
+export const GET = withErrorHandler(async (_request: NextRequest) => {
   const supabase = await createClient()
 
   // Get current user
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser()
 
   // Assert user is authenticated (throws AuthenticationError if not)
   assertAuthenticated(user?.id)
 
   // Get user profile to determine role
-  const { data: profile, error: profileError } = await supabase
+  const { data: profile } = await supabase
     .from('users')
     .select('role')
     .eq('id', user.id)
@@ -70,7 +69,6 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   // Get current user
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser()
 
   // Assert user is authenticated (throws AuthenticationError if not)

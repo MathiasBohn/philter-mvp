@@ -9,7 +9,7 @@ import { DisclosureCard, type Disclosure, type Pet } from "@/components/features
 import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { TransactionType, DisclosureType } from "@/lib/types"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
 
 const DISCLOSURE_TEMPLATES = {
   LEAD_PAINT_CERTIFICATION: {
@@ -262,80 +262,59 @@ const DISCLOSURE_TEMPLATES = {
 export default function DisclosuresPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-  const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
+
+  // Fetch application data using React Query
+  const { data: application, isLoading, error } = useApplication(id)
+  const updateApplication = useUpdateApplication(id)
+
   const [disclosures, setDisclosures] = useState<Disclosure[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
 
-  // Load transaction type and disclosures from centralized storage
+  const transactionType = application?.transactionType || null
+
+  // Load and initialize disclosures based on application data
   useEffect(() => {
     const loadData = async () => {
+      if (!application) return
+
       try {
-        // Simulate brief loading for better UX
-        await new Promise(resolve => setTimeout(resolve, 300))
-        // Try to get transaction type from application data
-        const appData = storageService.get(STORAGE_KEYS.application(id), null)
-        let loadedTxType: TransactionType | null = null
+        const loadedTxType = application.transactionType
 
-        if (appData) {
-          const data = typeof appData === 'string' ? JSON.parse(appData) : appData
-          loadedTxType = data.transactionType
-        }
-
-        // Load saved disclosures
-        const saved = storageService.get(STORAGE_KEYS.disclosures(id), null)
+        // Use saved disclosures from application if available
         let loadedDisclosures: typeof disclosures | null = null
 
-        if (saved) {
-          const data = typeof saved === 'string' ? JSON.parse(saved) : saved
-          if (data.disclosures) {
-            loadedDisclosures = data.disclosures
-          }
+        if (application.disclosures && application.disclosures.length > 0) {
+          loadedDisclosures = application.disclosures as Disclosure[]
         } else if (loadedTxType) {
           // Initialize disclosures for lease/sublet
           if (
             loadedTxType === TransactionType.CONDO_LEASE ||
             loadedTxType === TransactionType.COOP_SUBLET
           ) {
-            // Load profile data to pre-populate consumer report authorization
-            const profileData = storageService.get(STORAGE_KEYS.profile(id), null)
+            // Pre-populate consumer report authorization from application profile
+            const person = application.people?.[0]
+            // Parse fullName into first, middle, last (simple split)
+            const nameParts = person?.fullName?.split(' ') || []
+            const firstName = nameParts[0] || ""
+            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : ""
+            const middleName = nameParts.length > 2 ? nameParts.slice(1, -1).join(' ') : ""
+
             const consumerReportTemplate: Disclosure = {
               ...DISCLOSURE_TEMPLATES.CONSUMER_REPORT_AUTH,
               consumerReportData: {
-                firstName: "",
-                middleName: "",
-                lastName: "",
-                ssn: "",
-                address: {
+                firstName,
+                middleName,
+                lastName,
+                ssn: person?.ssnFull || "",
+                dob: person?.dob ? new Date(person.dob) : undefined,
+                address: person?.addressHistory?.[0] || {
                   street: "",
                   unit: "",
                   city: "",
                   state: "",
                   zip: "",
                 },
-              }
-            }
-
-            if (profileData) {
-              try {
-                const profile = typeof profileData === 'string' ? JSON.parse(profileData) : profileData
-                consumerReportTemplate.consumerReportData = {
-                  firstName: profile.firstName || "",
-                  middleName: profile.middleName || "",
-                  lastName: profile.lastName || "",
-                  ssn: profile.ssn || "",
-                  dob: profile.dob ? new Date(profile.dob) : undefined,
-                  address: profile.currentAddress || {
-                    street: "",
-                    unit: "",
-                    city: "",
-                    state: "",
-                    zip: "",
-                  },
-                }
-              } catch (error) {
-                console.error("Error parsing profile data:", error)
               }
             }
 
@@ -368,22 +347,17 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
           }
         }
 
-        // Batch state updates
-        if (loadedTxType) {
-          setTransactionType(loadedTxType)
-        }
+        // Update disclosures state
         if (loadedDisclosures) {
           setDisclosures(loadedDisclosures)
         }
       } catch (error) {
         console.error("Error loading disclosures data:", error)
-      } finally {
-        setIsLoading(false)
       }
     }
 
     loadData()
-  }, [id])
+  }, [application])
 
   const handleAcknowledge = (disclosureId: string, acknowledged: boolean) => {
     setDisclosures((prev) =>
@@ -624,17 +598,17 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
   const handleSave = async () => {
     setIsSaving(true)
 
-    // Save to centralized storage
-    const data = {
-      disclosures,
-      updatedAt: new Date().toISOString(),
+    try {
+      // Save disclosures to database via API
+      await updateApplication.mutateAsync({
+        disclosures,
+      })
+    } catch (error) {
+      console.error('Error saving disclosures:', error)
+      // Error toast is handled by the mutation hook
+    } finally {
+      setIsSaving(false)
     }
-    storageService.set(STORAGE_KEYS.disclosures(id), data)
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    setIsSaving(false)
   }
 
   const handleContinue = async () => {
@@ -646,21 +620,39 @@ export default function DisclosuresPage({ params }: { params: Promise<{ id: stri
     router.push(`/applications/${id}/review`)
   }
 
-  // Skip this screen if not a lease/sublet transaction
-  const isLeaseOrSublet =
-    transactionType === TransactionType.CONDO_LEASE ||
-    transactionType === TransactionType.COOP_SUBLET
-
-  // Redirect effect for non-lease/sublet transactions
-  useEffect(() => {
-    if (!isLeaseOrSublet && transactionType) {
-      router.push(`/applications/${id}/review`)
-    }
-  }, [isLeaseOrSublet, transactionType, id, router])
-
   if (isLoading) {
     return <FormSkeleton sections={2} fieldsPerSection={3} />
   }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load application data. Please try refreshing the page.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Alert>
+          <AlertDescription>
+            Application not found.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  // Check if this is a lease/sublet transaction
+  const isLeaseOrSublet =
+    transactionType === TransactionType.CONDO_LEASE ||
+    transactionType === TransactionType.COOP_SUBLET
 
   if (!isLeaseOrSublet && transactionType) {
     return (

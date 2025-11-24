@@ -41,7 +41,7 @@ const createTemplateSchema = z.object({
  * GET /api/templates
  * Get all templates (agent/admin only)
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const supabase = await createClient()
 

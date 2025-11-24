@@ -1,6 +1,10 @@
 /**
  * IndexedDB File Storage
  *
+ * @deprecated This file will be replaced by Supabase Storage in Phase 4.
+ * Currently kept for backward compatibility and reference only.
+ * DO NOT USE for new features - use Supabase Storage APIs instead.
+ *
  * Provides persistent file storage with much higher capacity than localStorage.
  * - localStorage: ~5-10MB total
  * - IndexedDB: ~50MB-1GB+ (browser dependent)

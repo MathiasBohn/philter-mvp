@@ -15,14 +15,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
+import { notFound } from "next/navigation";
 
 type PersonForm = Omit<Person, "id" | "dob" | "addressHistory"> & { id?: string };
 
 export default function PeoplePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: application, isLoading, error } = useApplication(id);
+  const updateApplication = useUpdateApplication(id);
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [people, setPeople] = useState<PersonForm[]>([]);
@@ -35,40 +37,44 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
     role: Role.CO_APPLICANT,
   });
 
-  // Load saved data from centralized storage on mount
+  // Load data from application when it's fetched
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Simulate brief loading for better UX
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        const savedData = storageService.get<string | null>(STORAGE_KEYS.people(id), null);
-        if (savedData) {
-          const parsed = typeof savedData === 'string' ? JSON.parse(savedData) : savedData;
-          setPeople(parsed.people || []);
-        }
-      } catch (error) {
-        console.error("Error loading people data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadData();
-  }, [id]);
+    if (application?.people) {
+      // Filter to get only co-applicants and guarantors (not the primary applicant)
+      const coApplicantsAndGuarantors = application.people.filter(
+        p => p.role === Role.CO_APPLICANT || p.role === Role.GUARANTOR
+      );
+      setPeople(coApplicantsAndGuarantors);
+    }
+  }, [application]);
 
   const handleSave = async () => {
+    if (!application) return;
+
     setIsSaving(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // Merge with existing people data (preserve primary applicant)
+      const primaryApplicant = application.people.find(p =>
+        p.role !== Role.CO_APPLICANT && p.role !== Role.GUARANTOR
+      );
 
-    // Save to centralized storage
-    storageService.set(STORAGE_KEYS.people(id), { people });
+      const updatedPeople = primaryApplicant
+        ? [primaryApplicant, ...people.map(p => p as Person)]
+        : people.map(p => p as Person);
 
-    setIsSaving(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+      await updateApplication.mutateAsync({
+        people: updatedPeople,
+      });
+
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      console.error("Error saving people data:", error);
+      alert("Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleContinue = async () => {
@@ -108,6 +114,23 @@ export default function PeoplePage({ params }: { params: Promise<{ id: string }>
 
   if (isLoading) {
     return <FormSkeleton sections={2} fieldsPerSection={4} />;
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl">
+        <Alert variant="destructive">
+          <AlertTitle>Error loading application</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Failed to load application data"}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!application) {
+    return notFound();
   }
 
   return (

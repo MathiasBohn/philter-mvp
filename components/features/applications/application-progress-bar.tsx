@@ -2,19 +2,17 @@
 
 import { useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
-import { Application } from "@/lib/types";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useApplication } from "@/lib/hooks/use-applications";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
 
 const TOTAL_SECTIONS = 13; // Total number of application sections
 
 export function ApplicationProgressBar({ applicationId }: { applicationId: string }) {
-  const completedCount = useMemo(() => {
-    const applicationsData = storageService.get(STORAGE_KEYS.APPLICATIONS, "[]");
-    const applications = (typeof applicationsData === 'string' ? JSON.parse(applicationsData) : applicationsData) as Application[];
-    const application = applications.find((app) => app.id === applicationId);
+  const { data: application, isLoading } = useApplication(applicationId);
 
+  const completedCount = useMemo(() => {
     if (!application) return 0;
 
     const statuses: Record<string, SectionStatus> = {
@@ -22,13 +20,11 @@ export function ApplicationProgressBar({ applicationId }: { applicationId: strin
       "building-policies": "complete", // Review only, always complete
     };
 
-    // Lease Terms - check storage
-    const leaseTermsData = storageService.get(`lease-terms_${applicationId}`, null);
-    statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
+    // Lease Terms - check application data
+    statuses["lease-terms"] = application.leaseTerms ? "complete" : "not-started";
 
-    // Parties - check storage
-    const partiesData = storageService.get(`parties_${applicationId}`, null);
-    statuses.parties = partiesData ? "complete" : "not-started";
+    // Parties - check application data (participants)
+    statuses.parties = application.participants && application.participants.length > 0 ? "complete" : "not-started";
 
     // Profile - check if basic info exists
     if (application.people && application.people.length > 0) {
@@ -67,10 +63,19 @@ export function ApplicationProgressBar({ applicationId }: { applicationId: strin
 
     // Count completed sections
     return Object.values(statuses).filter(status => status === "complete").length;
-  }, [applicationId]);
+  }, [application]);
 
   const totalCount = TOTAL_SECTIONS;
   const progressPercentage = (completedCount / totalCount) * 100;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-6xl mx-auto mb-6">
+        <Skeleton className="h-24 w-full rounded-lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-6xl mx-auto mb-6">

@@ -112,17 +112,10 @@ export function useCreateApplication(): UseMutationResult<
         newApplication
       )
 
-      toast({
-        title: 'Application created',
-        description: 'Your application has been created successfully.',
-      })
+      toast.success('Your application has been created successfully.')
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create application',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to create application')
     },
   })
 }
@@ -186,10 +179,7 @@ export function useUpdateApplication(
           old?.map((app) => (app.id === id ? updatedApplication : app)) || []
       )
 
-      toast({
-        title: 'Application updated',
-        description: 'Your changes have been saved.',
-      })
+      toast.success('Your changes have been saved.')
     },
     onError: (error, _variables, context) => {
       // Rollback on error
@@ -200,11 +190,7 @@ export function useUpdateApplication(
         )
       }
 
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to update application',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to update application')
     },
   })
 }
@@ -241,17 +227,10 @@ export function useDeleteApplication(
       // Remove individual application cache
       queryClient.removeQueries({ queryKey: queryKeys.application(id) })
 
-      toast({
-        title: 'Application deleted',
-        description: 'The application has been deleted successfully.',
-      })
+      toast.success('The application has been deleted successfully.')
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete application',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to delete application')
     },
   })
 }
@@ -294,17 +273,10 @@ export function useSubmitApplication(
           old?.map((app) => (app.id === id ? updatedApplication : app)) || []
       )
 
-      toast({
-        title: 'Application submitted',
-        description: 'Your application has been submitted successfully.',
-      })
+      toast.success('Your application has been submitted successfully.')
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to submit application',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to submit application')
     },
   })
 }

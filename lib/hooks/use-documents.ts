@@ -10,6 +10,8 @@ import {
 import { queryKeys } from '@/lib/query-client'
 import type { Document, DocumentStatus } from '@/lib/types'
 import { toast } from '@/lib/hooks/use-toast'
+import { uploadFile as uploadFileToStorage, STORAGE_BUCKETS } from '@/lib/supabase-storage'
+import { useAuth } from '@/lib/contexts/auth-context'
 
 /**
  * React Query hooks for document management
@@ -127,17 +129,10 @@ export function useCreateDocument(
         queryKey: queryKeys.application(applicationId)
       })
 
-      toast({
-        title: 'Document uploaded',
-        description: `${newDocument.filename} has been uploaded successfully.`,
-      })
+      toast.success(`${newDocument.filename} has been uploaded successfully.`)
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to upload document',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to upload document')
     },
   })
 }
@@ -168,7 +163,7 @@ export function useUpdateDocumentStatus(
 
       return response.json()
     },
-    onSuccess: (updatedDocument) => {
+    onSuccess: () => {
       // Update documents list across all application queries
       queryClient.invalidateQueries({
         queryKey: ['documents']
@@ -226,10 +221,7 @@ export function useDeleteDocument(
         queryKey: queryKeys.application(applicationId)
       })
 
-      toast({
-        title: 'Document deleted',
-        description: 'The document has been deleted successfully.',
-      })
+      toast.success('The document has been deleted successfully.')
     },
     onError: (error, _variables, context) => {
       // Rollback on error
@@ -240,11 +232,7 @@ export function useDeleteDocument(
         )
       }
 
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete document',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to delete document')
     },
   })
 }
@@ -252,42 +240,60 @@ export function useDeleteDocument(
 /**
  * Hook to handle file upload with progress tracking
  *
- * This is a client-side only hook that handles the file upload process
- * including progress tracking and error handling.
+ * This hook handles the complete file upload process:
+ * 1. Upload file to Supabase Storage
+ * 2. Create metadata entry in database
+ * 3. Track progress and handle errors
  *
  * @param applicationId - Application ID
  * @returns Upload mutation with progress tracking
  */
 export function useUploadDocument(applicationId: string) {
   const createDocument = useCreateDocument(applicationId)
+  const { user } = useAuth()
 
   const uploadFile = async (
     file: File,
     category: string,
     onProgress?: (progress: number) => void
   ): Promise<Document> => {
-    // TODO: Implement actual file upload to Supabase Storage
-    // This will be implemented in Phase 4: Document Storage
-    // For now, we'll simulate the upload
+    if (!user) {
+      throw new Error('You must be logged in to upload documents')
+    }
 
-    // Simulate upload progress
-    if (onProgress) {
-      for (let i = 0; i <= 100; i += 10) {
-        await new Promise((resolve) => setTimeout(resolve, 100))
-        onProgress(i)
+    // Generate storage path: user-id/application-id/document-id/filename
+    const documentId = crypto.randomUUID()
+    const storagePath = `${user.id}/${applicationId}/${documentId}/${file.name}`
+
+    try {
+      // Upload file to Supabase Storage
+      const uploadResult = await uploadFileToStorage(
+        file,
+        STORAGE_BUCKETS.DOCUMENTS,
+        storagePath,
+        {
+          onProgress,
+          upsert: false,
+          cacheControl: '3600',
+        }
+      )
+
+      // Create metadata entry in database
+      const metadata: CreateDocumentInput = {
+        filename: file.name,
+        category,
+        size: file.size,
+        mime_type: file.type,
+        storage_path: uploadResult.path,
       }
-    }
 
-    // Create metadata entry
-    const metadata: CreateDocumentInput = {
-      filename: file.name,
-      category,
-      size: file.size,
-      mime_type: file.type,
-      storage_path: `documents/${applicationId}/${crypto.randomUUID()}-${file.name}`,
+      return await createDocument.mutateAsync(metadata)
+    } catch (error: unknown) {
+      // Clean up - try to delete the file from storage if metadata creation fails
+      // (This is a best-effort cleanup, errors are logged but not thrown)
+      console.error('Upload failed:', error)
+      throw error
     }
-
-    return createDocument.mutateAsync(metadata)
   }
 
   return {

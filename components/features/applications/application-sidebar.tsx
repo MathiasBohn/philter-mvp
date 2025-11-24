@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Home,
   Users,
@@ -23,8 +24,7 @@ import {
   Send,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { Application } from "@/lib/types";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useApplication } from "@/lib/hooks/use-applications";
 
 type SectionStatus = "not-started" | "in-progress" | "complete" | "error";
 
@@ -230,13 +230,10 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const { data: application, isLoading } = useApplication(applicationId);
 
   // Calculate section statuses based on application data using useMemo
   const sectionStatuses = useMemo(() => {
-    const applicationsData = storageService.get(STORAGE_KEYS.APPLICATIONS, "[]");
-    const applications = (typeof applicationsData === 'string' ? JSON.parse(applicationsData) : applicationsData) as Application[];
-    const application = applications.find((app) => app.id === applicationId);
-
     if (!application) return {};
 
     const statuses: Record<string, SectionStatus> = {
@@ -244,13 +241,11 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       "building-policies": "complete", // Review only, always complete
     };
 
-    // Lease Terms - check storage
-    const leaseTermsData = storageService.get(`lease-terms_${applicationId}`, null);
-    statuses["lease-terms"] = leaseTermsData ? "complete" : "not-started";
+    // Lease Terms - check application data
+    statuses["lease-terms"] = application.leaseTerms ? "complete" : "not-started";
 
-    // Parties - check storage
-    const partiesData = storageService.get(`parties_${applicationId}`, null);
-    statuses.parties = partiesData ? "complete" : "not-started";
+    // Parties - check application data (participants)
+    statuses.parties = application.participants && application.participants.length > 0 ? "complete" : "not-started";
 
     // Profile - check if basic info exists
     if (application.people && application.people.length > 0) {
@@ -288,12 +283,40 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
                       application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";
 
     return statuses;
-  }, [applicationId]);
+  }, [application]);
 
   const handleNavigate = (path: string) => {
     router.push(`/applications/${applicationId}${path}`);
     setIsOpen(false); // Close mobile menu
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <>
+        {/* Mobile Menu Button */}
+        <Button
+          variant="outline"
+          size="icon"
+          className="fixed top-4 left-4 z-50 lg:hidden"
+          disabled
+        >
+          <Menu className="h-4 w-4" />
+        </Button>
+
+        {/* Sidebar - Desktop Loading */}
+        <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white dark:bg-gray-950 dark:border-gray-800 overflow-hidden" aria-label="Application navigation">
+          <div className="p-4 space-y-4">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </aside>
+      </>
+    );
+  }
 
   return (
     <>

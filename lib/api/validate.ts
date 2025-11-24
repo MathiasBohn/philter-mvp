@@ -150,7 +150,7 @@ export function validateRouteParams<T extends ZodSchema>(
  * }
  * ```
  */
-export function validatePartial<T extends z.ZodObject<any>>(
+export function validatePartial<T extends z.ZodObject<z.ZodRawShape>>(
   data: unknown,
   schema: T
 ): Partial<z.infer<T>> {
@@ -244,10 +244,10 @@ export const commonSchemas = {
  * )
  * ```
  */
-export function composeSchemas<T extends z.ZodObject<any>[]>(...schemas: T) {
+export function composeSchemas<T extends z.ZodObject<z.ZodRawShape>[]>(...schemas: T) {
   return z.object(
     schemas.reduce((acc, schema) => {
-      return { ...acc, ...(schema as any).shape }
+      return { ...acc, ...schema.shape }
     }, {})
   )
 }
@@ -265,20 +265,20 @@ export function sanitizeString(input: string): string {
 /**
  * Sanitize object by applying sanitizeString to all string values
  */
-export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
+export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
   const sanitized = { ...obj }
 
   for (const key in sanitized) {
     const value = sanitized[key]
 
     if (typeof value === 'string') {
-      sanitized[key] = sanitizeString(value) as any
+      sanitized[key] = sanitizeString(value) as T[typeof key]
     } else if (Array.isArray(value)) {
-      sanitized[key] = value.map((item: any) =>
+      sanitized[key] = value.map((item: unknown) =>
         typeof item === 'string' ? sanitizeString(item) : item
-      ) as any
+      ) as T[typeof key]
     } else if (value !== null && typeof value === 'object') {
-      sanitized[key] = sanitizeObject(value)
+      sanitized[key] = sanitizeObject(value as Record<string, unknown>) as T[typeof key]
     }
   }
 

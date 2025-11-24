@@ -11,33 +11,35 @@ import { DecisionPanel } from "@/components/features/agent/decision-panel";
 import { ValidationAssistant } from "@/components/features/agent/validation-assistant";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockApplications } from "@/lib/mock-data/applications";
-import { mockRFIs } from "@/lib/mock-data/rfis";
-import { storage } from "@/lib/persistence";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useApplication } from "@/lib/hooks/use-applications";
+import { useRFIs, useCreateRFI } from "@/lib/hooks/use-rfis";
+import { useCreateDecision } from "@/lib/hooks/use-decisions";
 import {
   Role,
-  RFIStatus,
   ActivityLogEntry,
-  RFIMessage,
   DecisionRecord,
-  Decision,
-  ApplicationStatus,
 } from "@/lib/types";
 
 export default function AgentReviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [currentSection, setCurrentSection] = useState("profile");
-  const [rfis, setRfis] = useState(() => storage.getRFIsForApplication(id, mockRFIs));
 
-  // Find the application
-  const application = mockApplications.find((app) => app.id === id);
+  // Fetch application and RFIs using React Query hooks
+  const { data: application, isLoading: appLoading, error: appError } = useApplication(id);
+  const { data: rfis, isLoading: rfisLoading, error: rfisError } = useRFIs(id);
 
-  if (!application) {
-    notFound();
-  }
+  // Mutations
+  const createRFI = useCreateRFI(id);
+  const createDecision = useCreateDecision(id);
 
-  // Generate mock activity log entries
+  // Generate mock activity log entries - must be before early returns (Rules of Hooks)
   const activityLog: ActivityLogEntry[] = useMemo(() => {
+    if (!application) return [];
+
     const twoDaysAgo = new Date();
     twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
@@ -62,7 +64,7 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
         description: "Started reviewing application",
         timestamp: twoDaysAgo,
       },
-      ...(rfis
+      ...((rfis || [])
         .filter((rfi) => rfi.applicationId === id)
         .map((rfi, index) => ({
           id: `act-rfi-${index}`,
@@ -77,70 +79,91 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
     ];
   }, [id, application, rfis]);
 
-  const handleCreateRFI = (data: {
+  // Loading state
+  if (appLoading || rfisLoading) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] -mx-4 -my-8 sm:-mx-6 lg:-mx-8">
+        <div className="border-b p-6">
+          <Skeleton className="h-9 w-64" />
+          <Skeleton className="h-5 w-96 mt-2" />
+        </div>
+        <div className="flex-1 flex">
+          <div className="w-64 border-r p-4">
+            <Skeleton className="h-full w-full" />
+          </div>
+          <div className="flex-1 p-6">
+            <Skeleton className="h-full w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (appError || rfisError) {
+    return (
+      <div className="flex flex col h-[calc(100vh-4rem)] p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error loading application</AlertTitle>
+          <AlertDescription>
+            {appError?.message || rfisError?.message || "Failed to load application data."}
+          </AlertDescription>
+        </Alert>
+        <Button className="mt-4" onClick={() => window.location.reload()}>
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
+  if (!application) {
+    notFound();
+  }
+
+  const handleCreateRFI = async (data: {
     sectionKey: string;
     assigneeRole: Role.APPLICANT | Role.BROKER;
     message: string;
   }) => {
-    const newRFI = {
-      id: `rfi-${Date.now()}`,
-      applicationId: id,
-      sectionKey: data.sectionKey,
-      status: RFIStatus.OPEN,
-      assigneeRole: data.assigneeRole,
-      createdBy: "user-4", // Transaction Agent user
-      createdAt: new Date(),
-      messages: [
-        {
-          id: `msg-${Date.now()}`,
-          authorId: "user-4",
-          authorName: "David Martinez",
-          authorRole: Role.ADMIN,
-          message: data.message,
-          createdAt: new Date(),
-        } as RFIMessage,
-      ],
-    };
-
-    // Save to storage
-    storage.addRFI(newRFI, mockRFIs);
-    // Update local state
-    setRfis(storage.getRFIsForApplication(id, mockRFIs));
+    await createRFI.mutateAsync({
+      section_key: data.sectionKey,
+      assignee_role: data.assigneeRole,
+      description: data.message,
+    });
   };
 
-  const handleReplyRFI = (rfiId: string, message: string) => {
-    const targetRFI = rfis.find(rfi => rfi.id === rfiId);
-    if (!targetRFI) return;
+  const handleReplyRFI = async (rfiId: string, message: string) => {
+    try {
+      const response = await fetch(`/api/rfis/${rfiId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      });
 
-    const updatedRFI = {
-      ...targetRFI,
-      messages: [
-        ...targetRFI.messages,
-        {
-          id: `msg-${Date.now()}`,
-          authorId: "user-4",
-          authorName: "David Martinez",
-          authorRole: Role.ADMIN,
-          message,
-          createdAt: new Date(),
-        } as RFIMessage,
-      ],
-    };
-
-    // Save to storage
-    storage.updateRFI(rfiId, updatedRFI, mockRFIs);
-    // Update local state
-    setRfis(storage.getRFIsForApplication(id, mockRFIs));
+      if (!response.ok) {
+        throw new Error('Failed to add RFI message');
+      }
+    } catch (error) {
+      console.error('Failed to add RFI message:', error);
+      throw error;
+    }
   };
 
-  const handleResolveRFI = (rfiId: string) => {
-    // Save to storage
-    storage.updateRFI(rfiId, {
-      status: RFIStatus.RESOLVED,
-      resolvedAt: new Date(),
-    }, mockRFIs);
-    // Update local state
-    setRfis(storage.getRFIsForApplication(id, mockRFIs));
+  const handleResolveRFI = async (rfiId: string) => {
+    try {
+      const response = await fetch(`/api/rfis/${rfiId}/resolve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to resolve RFI');
+      }
+    } catch (error) {
+      console.error('Failed to resolve RFI:', error);
+      throw error;
+    }
   };
 
   // Adapter for ValidationAssistant to use handleCreateRFI
@@ -152,23 +175,8 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
     });
   };
 
-  // Helper function to map Decision to ApplicationStatus
-  const mapDecisionToStatus = (decision: Decision): ApplicationStatus => {
-    switch (decision) {
-      case Decision.APPROVE:
-        return ApplicationStatus.APPROVED;
-      case Decision.CONDITIONAL:
-        return ApplicationStatus.CONDITIONAL;
-      case Decision.DENY:
-        return ApplicationStatus.DENIED;
-    }
-  };
-
-  const handleDecisionSubmit = (decisionRecord: DecisionRecord) => {
-    // Save decision to storage
-    storage.saveDecision(decisionRecord);
-    // Update application status based on decision
-    storage.updateApplicationStatus(id, mapDecisionToStatus(decisionRecord.decision));
+  const handleDecisionSubmit = async (decisionRecord: DecisionRecord) => {
+    await createDecision.mutateAsync(decisionRecord);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -218,7 +226,7 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
         {/* Left: Section Navigator (25%) */}
         <div className="w-1/4 min-w-[250px] max-w-[350px]">
           <ReviewNavigator
-            application={{ ...application, rfis }}
+            application={{ ...application, rfis: rfis || [] }}
             currentSection={currentSection}
             onSectionChange={setCurrentSection}
           />
@@ -250,7 +258,7 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
             </TabsContent>
             <TabsContent value="rfis" className="flex-1 mt-0 overflow-hidden">
               <RFIThread
-                rfis={rfis}
+                rfis={rfis || []}
                 applicationId={id}
                 onReply={handleReplyRFI}
                 onResolve={handleResolveRFI}

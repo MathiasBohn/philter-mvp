@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Building, BuildingType } from "@/lib/types"
 import { Loader2 } from "lucide-react"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { storageService, STORAGE_KEYS } from "@/lib/storage"
 
 type CreateBuildingModalProps = {
   open: boolean

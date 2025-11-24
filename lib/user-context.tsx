@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { User } from "@/lib/types"
 import { mockUsers } from "@/lib/mock-data/users"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { storageService, STORAGE_KEYS } from "@/lib/storage"
 
 interface UserContextType {
   user: User | null

@@ -1,21 +1,21 @@
 "use client";
 
-import { mockApplications } from "@/lib/mock-data";
+import { useApplications } from "@/lib/hooks/use-applications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { Send, Building2, Calendar, ChevronRight, Search, User, CheckCircle } from "lucide-react";
+import { Send, Building2, Calendar, ChevronRight, Search, User, CheckCircle, Loader2 } from "lucide-react";
 import { getStatusLabel } from "@/lib/constants/labels";
 import { useState } from "react";
 
 export default function SubmitApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: applications, isLoading, error } = useApplications();
 
   // Filter applications that are ready for submission (100% complete)
-  // TODO: In production, this will be connected to the same data source as Review Applications
-  const readyToSubmitApplications = mockApplications.filter((app) => {
+  const readyToSubmitApplications = (applications || []).filter((app) => {
     const matchesSearch =
       searchQuery === "" ||
       app.people[0]?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -26,6 +26,35 @@ export default function SubmitApplicationsPage() {
 
     return matchesSearch && isReadyToSubmit;
   });
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+            <p className="text-muted-foreground">Loading applications...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Applications</h3>
+            <p className="text-muted-foreground text-center max-w-md mb-4">
+              {error instanceof Error ? error.message : "Failed to load applications. Please try again."}
+            </p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">

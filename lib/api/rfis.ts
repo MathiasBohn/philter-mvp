@@ -141,8 +141,8 @@ export async function getRFIs(applicationId: string): Promise<RFI[]> {
     createdAt: new Date(rfi.created_at),
     resolvedAt: rfi.resolved_at ? new Date(rfi.resolved_at) : undefined,
     messages: (rfi.rfi_messages || [])
-      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((msg: any) => ({
+      .sort((a: { created_at: string }, b: { created_at: string }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .map((msg: { id: string; author_id: string; author_name: string; author_role: string; message: string; created_at: string; attachments?: unknown[] }) => ({
         id: msg.id,
         authorId: msg.author_id,
         authorName: msg.author_name,
@@ -190,8 +190,8 @@ export async function getRFI(id: string): Promise<RFI | null> {
     createdAt: new Date(data.created_at),
     resolvedAt: data.resolved_at ? new Date(data.resolved_at) : undefined,
     messages: (data.rfi_messages || [])
-      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((msg: any) => ({
+      .sort((a: { created_at: string }, b: { created_at: string }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .map((msg: { id: string; author_id: string; author_name: string; author_role: string; message: string; created_at: string; attachments?: unknown[] }) => ({
         id: msg.id,
         authorId: msg.author_id,
         authorName: msg.author_name,
@@ -299,8 +299,8 @@ export async function resolveRFI(id: string): Promise<RFI> {
     createdAt: new Date(data.created_at),
     resolvedAt: data.resolved_at ? new Date(data.resolved_at) : undefined,
     messages: (data.rfi_messages || [])
-      .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((msg: any) => ({
+      .sort((a: { created_at: string }, b: { created_at: string }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .map((msg: { id: string; author_id: string; author_name: string; author_role: string; message: string; created_at: string; attachments?: unknown[] }) => ({
         id: msg.id,
         authorId: msg.author_id,
         authorName: msg.author_name,

@@ -1,9 +1,15 @@
 /**
  * Upload Manager
  *
- * Handles simulated file uploads with pause/resume capability and IndexedDB storage
+ * Handles file uploads to Supabase Storage with progress tracking and retry logic.
+ * Replaces the legacy IndexedDB-based storage system.
  */
 
+import {
+  uploadFile,
+  type StorageBucket,
+  type UploadResult,
+} from "./supabase-storage"
 import {
   saveFileToIndexedDB,
   getFileFromIndexedDB,
@@ -16,84 +22,161 @@ import {
   type StoredFile,
 } from "./indexed-db"
 
-// Upload Manager types are defined inline below
+// Upload Manager types
 
 interface UploadTask {
   fileId: string
-  intervalId: NodeJS.Timeout | null
+  file: File
+  bucket: StorageBucket
+  path: string
   isPaused: boolean
+  isRetrying: boolean
+  retryCount: number
+  abortController: AbortController | null
+}
+
+interface UploadConfig {
+  maxRetries?: number
+  retryDelay?: number
 }
 
 class UploadManager {
   private tasks: Map<string, UploadTask> = new Map()
-  private readonly CHUNK_SIZE = 5 // Simulate 5% progress per interval
-  private readonly INTERVAL_MS = 200 // Simulate upload every 200ms
+  private readonly DEFAULT_MAX_RETRIES = 3
+  private readonly DEFAULT_RETRY_DELAY = 1000 // 1 second
 
   /**
-   * Start uploading a file with simulated progress
+   * Upload a file to Supabase Storage with progress tracking
+   *
+   * @param fileId - Unique identifier for this upload
+   * @param file - The file to upload
+   * @param bucket - The storage bucket
+   * @param path - The storage path within the bucket
+   * @param onProgress - Progress callback (0-100)
+   * @param onComplete - Success callback with upload result
+   * @param onError - Error callback
+   * @param config - Upload configuration
    */
-  startUpload(
+  async startUpload(
     fileId: string,
+    file: File,
+    bucket: StorageBucket,
+    path: string,
     onProgress: (progress: number) => void,
-    onComplete: () => void,
-    onError: (error: string) => void
+    onComplete: (result: UploadResult) => void,
+    onError: (error: string) => void,
+    config?: UploadConfig
   ) {
     // Don't start if already uploading
     if (this.tasks.has(fileId)) {
+      onError("Upload already in progress")
       return
     }
 
-    let currentProgress = 0
+    const maxRetries = config?.maxRetries || this.DEFAULT_MAX_RETRIES
+    const retryDelay = config?.retryDelay || this.DEFAULT_RETRY_DELAY
 
-    const intervalId = setInterval(() => {
-      const task = this.tasks.get(fileId)
-      if (!task || task.isPaused) {
-        return
-      }
-
-      // Simulate random progress variations
-      const progressIncrement = this.CHUNK_SIZE + Math.random() * 3
-
-      currentProgress = Math.min(100, currentProgress + progressIncrement)
-      onProgress(Math.floor(currentProgress))
-
-      // Complete when reaching 100%
-      if (currentProgress >= 100) {
-        this.completeUpload(fileId)
-        onComplete()
-      }
-
-      // Simulate random errors (1% chance)
-      if (Math.random() < 0.01) {
-        this.cancelUpload(fileId)
-        onError("Network error occurred")
-      }
-    }, this.INTERVAL_MS)
-
-    this.tasks.set(fileId, {
+    const task: UploadTask = {
       fileId,
-      intervalId,
+      file,
+      bucket,
+      path,
       isPaused: false,
-    })
+      isRetrying: false,
+      retryCount: 0,
+      abortController: new AbortController(),
+    }
+
+    this.tasks.set(fileId, task)
+
+    try {
+      // Start upload with progress tracking
+      onProgress(0)
+
+      const result = await uploadFile(file, bucket, path, {
+        onProgress: (progress) => {
+          if (!task.isPaused) {
+            onProgress(progress)
+          }
+        },
+        upsert: false,
+      })
+
+      onProgress(100)
+      this.completeUpload(fileId)
+      onComplete(result)
+    } catch (error: unknown) {
+      // Handle upload error with retry logic
+      if (task.retryCount < maxRetries && !task.isPaused) {
+        task.isRetrying = true
+        task.retryCount++
+
+        console.log(
+          `Upload failed for ${fileId}, retrying (${task.retryCount}/${maxRetries})...`
+        )
+
+        // Wait before retrying
+        await new Promise((resolve) => setTimeout(resolve, retryDelay))
+
+        // Retry the upload
+        if (!task.isPaused) {
+          this.startUpload(
+            fileId,
+            file,
+            bucket,
+            path,
+            onProgress,
+            onComplete,
+            onError,
+            config
+          )
+        }
+      } else {
+        // Max retries exceeded or upload cancelled
+        this.cancelUpload(fileId)
+        const errorMessage = error instanceof Error ? error.message : "Upload failed"
+        onError(errorMessage)
+      }
+    }
   }
 
   /**
    * Pause an ongoing upload
+   * Note: Supabase doesn't support native pause/resume, so this cancels the upload
    */
   pauseUpload(fileId: string) {
     const task = this.tasks.get(fileId)
     if (task) {
       task.isPaused = true
+      task.abortController?.abort()
     }
   }
 
   /**
    * Resume a paused upload
+   * Note: This will restart the upload from the beginning
    */
-  resumeUpload(fileId: string) {
+  resumeUpload(
+    fileId: string,
+    onProgress: (progress: number) => void,
+    onComplete: (result: UploadResult) => void,
+    onError: (error: string) => void,
+    config?: UploadConfig
+  ) {
     const task = this.tasks.get(fileId)
     if (task) {
       task.isPaused = false
+      task.abortController = new AbortController()
+      this.startUpload(
+        fileId,
+        task.file,
+        task.bucket,
+        task.path,
+        onProgress,
+        onComplete,
+        onError,
+        config
+      )
     }
   }
 
@@ -102,8 +185,8 @@ class UploadManager {
    */
   cancelUpload(fileId: string) {
     const task = this.tasks.get(fileId)
-    if (task?.intervalId) {
-      clearInterval(task.intervalId)
+    if (task) {
+      task.abortController?.abort()
     }
     this.tasks.delete(fileId)
   }
@@ -112,7 +195,32 @@ class UploadManager {
    * Complete and clean up an upload
    */
   private completeUpload(fileId: string) {
-    this.cancelUpload(fileId)
+    this.tasks.delete(fileId)
+  }
+
+  /**
+   * Check if an upload is in progress
+   */
+  isUploading(fileId: string): boolean {
+    return this.tasks.has(fileId)
+  }
+
+  /**
+   * Get upload status
+   */
+  getUploadStatus(fileId: string): {
+    isPaused: boolean
+    isRetrying: boolean
+    retryCount: number
+  } | null {
+    const task = this.tasks.get(fileId)
+    if (!task) return null
+
+    return {
+      isPaused: task.isPaused,
+      isRetrying: task.isRetrying,
+      retryCount: task.retryCount,
+    }
   }
 
   /**
@@ -120,9 +228,7 @@ class UploadManager {
    */
   cleanup() {
     this.tasks.forEach((task) => {
-      if (task.intervalId) {
-        clearInterval(task.intervalId)
-      }
+      task.abortController?.abort()
     })
     this.tasks.clear()
   }

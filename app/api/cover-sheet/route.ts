@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { mockApplications } from "@/lib/mock-data/applications";
+import { createClient } from "@/lib/supabase/server";
 import { createCoverSheetData } from "@/lib/pdf-utils";
 
 /**
@@ -26,10 +26,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find the application
-    const application = mockApplications.find((app) => app.id === applicationId);
+    // Fetch the application from Supabase
+    const supabase = await createClient();
+    const { data: application, error } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("id", applicationId)
+      .single();
 
-    if (!application) {
+    if (error || !application) {
       return NextResponse.json(
         { error: "Application not found" },
         { status: 404 }

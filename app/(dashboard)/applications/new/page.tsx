@@ -9,14 +9,15 @@ import { TransactionTypeTiles } from "@/components/features/application/transact
 import { ErrorSummary } from "@/components/forms/error-summary"
 import type { TransactionType } from "@/lib/types"
 import { Loader2 } from "lucide-react"
-import { storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { useCreateApplication } from "@/lib/hooks/use-applications"
 
 export default function NewApplicationPage() {
   const router = useRouter()
   const [buildingCode, setBuildingCode] = useState("")
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
   const [errors, setErrors] = useState<{ field: string; message: string; anchor?: string }[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+
+  const createApplication = useCreateApplication()
 
   const validateForm = () => {
     const newErrors: { field: string; message: string; anchor?: string }[] = []
@@ -50,46 +51,23 @@ export default function NewApplicationPage() {
       return
     }
 
-    setIsLoading(true)
+    try {
+      // Create a new application via API
+      const newApplication = await createApplication.mutateAsync({
+        buildingId: buildingCode,
+        transactionType: transactionType || undefined,
+      })
 
-    // Simulate API call to validate building code
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Mock validation - accept any 6-character code
-    // In a real app, this would validate against the database
-    if (buildingCode.length === 6) {
-      // Create a new application ID (mock)
-      const newApplicationId = `app_${Date.now()}`
-
-      // Store application data in localStorage (mock persistence)
-      const applicationData = {
-        id: newApplicationId,
-        buildingCode,
-        transactionType,
-        status: "IN_PROGRESS",
-        createdAt: new Date().toISOString(),
-        sections: {
-          profile: { complete: false },
-          income: { complete: false },
-          financials: { complete: false },
-          documents: { complete: false },
-          disclosures: { complete: false },
-        },
-      }
-
-      storageService.set(STORAGE_KEYS.application(newApplicationId), applicationData)
-
-      // Navigate to the application overview (A1)
-      router.push(`/applications/${newApplicationId}`)
-    } else {
+      // Navigate to the application overview
+      router.push(`/applications/${newApplication.id}`)
+    } catch (error) {
       setErrors([
         {
           field: "buildingCode",
-          message: "Invalid building code. Please check and try again.",
+          message: error instanceof Error ? error.message : "Failed to create application. Please try again.",
           anchor: "building-code",
         },
       ])
-      setIsLoading(false)
     }
   }
 
@@ -131,8 +109,8 @@ export default function NewApplicationPage() {
             />
 
             <div className="flex flex-col gap-4 border-t pt-6">
-              <Button type="submit" size="lg" className="w-full sm:w-auto sm:ml-auto" disabled={isLoading}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" size="lg" className="w-full sm:w-auto sm:ml-auto" disabled={createApplication.isPending}>
+                {createApplication.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Start Application
               </Button>
 

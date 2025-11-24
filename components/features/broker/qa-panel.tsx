@@ -10,7 +10,7 @@ import { Application } from "@/lib/types";
 import { AlertCircle, MessageSquare, Upload } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/lib/hooks/use-toast";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { storageService, STORAGE_KEYS } from "@/lib/storage";
 
 interface QAPanelProps {
   application: Application;

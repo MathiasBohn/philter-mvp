@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       success: true,
       invitation,
       // Include the invitation URL for testing purposes
-      invitation_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/accept-invitation/${token}`,
+      invitation_url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://philter-mvp.vercel.app'}/accept-invitation/${token}`,
       message: 'Invitation created successfully. Email sending will be implemented in the next phase.'
     }, { status: 201 })
 

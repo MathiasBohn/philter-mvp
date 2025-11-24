@@ -30,8 +30,8 @@ export type CreateApplicationInput = {
  * @returns Array of applications the user has access to
  */
 export async function getApplications(
-  userId: string,
-  role: Role
+  _userId: string,
+  _role: Role
 ): Promise<Application[]> {
   const supabase = await createClient()
 

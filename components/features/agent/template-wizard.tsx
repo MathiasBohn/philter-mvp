@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,9 +20,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { mockBuildings } from "@/lib/mock-data";
-import { storageService, STORAGE_KEYS } from "@/lib/persistence";
+import { useCreateTemplate, useUpdateTemplate } from "@/lib/hooks/use-templates";
+import type { Template, DocumentCategory, DisclosureType } from "@/lib/types";
 
 const STEPS: Step[] = [
   { id: "basics", label: "Basics", description: "Building & template info" },
@@ -108,7 +110,13 @@ const DEFAULT_DOCUMENTS: DocumentConfig[] = [
   },
 ];
 
-export function TemplateWizard() {
+interface TemplateWizardProps {
+  mode?: 'create' | 'edit';
+  initialData?: Template;
+}
+
+export function TemplateWizard({ mode = 'create', initialData }: TemplateWizardProps) {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
 
@@ -128,6 +136,23 @@ export function TemplateWizard() {
     localLaw55: false,
     windowGuard: false,
   });
+
+  // React Query mutations
+  const createTemplate = useCreateTemplate();
+  const updateTemplate = useUpdateTemplate(initialData?.id || '');
+
+  // Pre-populate form in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      setBuildingId(initialData.buildingId);
+      setTemplateName(initialData.name);
+      setDescription(initialData.description || '');
+
+      // TODO: Map template data to section/document/compliance configs
+      // For now, keep defaults - this can be enhanced in a future iteration
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const selectedBuilding = mockBuildings.find((b) => b.id === buildingId);
 
@@ -160,31 +185,49 @@ export function TemplateWizard() {
     }
   };
 
-  const handlePublish = () => {
-    // Save to storage
-    const template = {
-      id: `template-${Date.now()}`,
+  const handlePublish = async () => {
+    // Prepare template data
+    const templateData: Partial<Template> = {
       buildingId,
-      buildingName: selectedBuilding?.name || "",
-      templateName,
-      description,
-      sections,
-      documents,
-      compliance,
-      version: "1.0",
-      createdAt: new Date().toISOString(),
+      name: templateName,
+      description: description || undefined,
+      version: mode === 'create' ? 1 : (initialData?.version || 1) + 1,
+      requiredSections: sections.filter(s => s.enabled && s.required).map(s => s.key),
+      optionalSections: sections.filter(s => s.enabled && !s.required).map(s => s.key),
+      requiredDocuments: documents.filter(d => d.enabled && d.required).map(d => d.key as DocumentCategory),
+      optionalDocuments: documents.filter(d => d.enabled && !d.required).map(d => d.key as DocumentCategory),
+      enabledDisclosures: Object.entries(compliance)
+        .filter(([, enabled]) => enabled)
+        .map(([key]) => key as DisclosureType),
+      buildingPolicies: {
+        maxFinancePercent: 75,
+        allowGuarantors: true,
+        allowCorpOwnership: true,
+        allowPiedATerre: true,
+        allowTrustOwnership: true,
+      },
+      isPublished: true,
     };
 
-    const existingTemplatesData = storageService.get(STORAGE_KEYS.TEMPLATES, "[]");
-    const existingTemplates = typeof existingTemplatesData === 'string'
-      ? JSON.parse(existingTemplatesData)
-      : existingTemplatesData;
-    storageService.set(
-      STORAGE_KEYS.TEMPLATES,
-      [...existingTemplates, template]
-    );
+    try {
+      if (mode === 'edit' && initialData) {
+        // Update existing template
+        await updateTemplate.mutateAsync(templateData);
+      } else {
+        // Create new template
+        await createTemplate.mutateAsync(templateData);
+      }
 
-    setIsPublished(true);
+      setIsPublished(true);
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push('/agent/templates');
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to publish template:', error);
+      // Error handling is done in the mutation hooks via toast
+    }
   };
 
   const renderStepContent = () => {
@@ -282,22 +325,30 @@ export function TemplateWizard() {
         );
 
       case 5: // Publish
+        const isSaving = createTemplate.isPending || updateTemplate.isPending;
+        const newVersion = mode === 'create' ? 1 : (initialData?.version || 1) + 1;
+
         return (
           <div className="space-y-6">
             {isPublished ? (
               <Alert className="border-green-600">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <AlertDescription className="text-base">
-                  <strong>Template published successfully!</strong>
+                  <strong>Template {mode === 'edit' ? 'updated' : 'published'} successfully!</strong>
                   <p className="mt-2">
-                    Version 1.0 of &quot;{templateName}&quot; is now active for{" "}
+                    Version {newVersion} of &quot;{templateName}&quot; is now active for{" "}
                     {selectedBuilding?.name}.
+                  </p>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Redirecting to templates page...
                   </p>
                 </AlertDescription>
               </Alert>
             ) : (
               <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Ready to Publish</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  {mode === 'edit' ? 'Ready to Update' : 'Ready to Publish'}
+                </h3>
                 <dl className="space-y-3">
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
@@ -317,7 +368,7 @@ export function TemplateWizard() {
                     <dt className="text-sm font-medium text-muted-foreground">
                       Version
                     </dt>
-                    <dd className="text-base mt-1">1.0</dd>
+                    <dd className="text-base mt-1">{newVersion}</dd>
                   </div>
                   <div>
                     <dt className="text-sm font-medium text-muted-foreground">
@@ -336,8 +387,16 @@ export function TemplateWizard() {
                     </dd>
                   </div>
                 </dl>
-                <Button onClick={handlePublish} className="w-full mt-6">
-                  Publish Template
+                <Button
+                  onClick={handlePublish}
+                  className="w-full mt-6"
+                  disabled={isSaving}
+                >
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSaving
+                    ? (mode === 'edit' ? 'Updating...' : 'Publishing...')
+                    : (mode === 'edit' ? 'Update Template' : 'Publish Template')
+                  }
                 </Button>
               </Card>
             )}

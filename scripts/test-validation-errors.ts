@@ -9,14 +9,10 @@
 
 import { z } from 'zod'
 import {
-  APIError,
   ValidationError,
   AuthenticationError,
   AuthorizationError,
   NotFoundError,
-  ConflictError,
-  RateLimitError,
-  InternalServerError,
   formatErrorResponse,
   assertExists,
   assertAuthenticated,
@@ -24,8 +20,6 @@ import {
 } from '../lib/api/errors'
 
 import {
-  validateRequestBody,
-  validateQueryParams,
   validateRouteParams,
   validatePartial,
   commonSchemas,
@@ -67,7 +61,7 @@ try {
   assert(validationError.statusCode === 400, 'ValidationError has status 400')
   assert(validationError.code === 'VALIDATION_ERROR', 'ValidationError has correct code')
   log('ValidationError works correctly', green)
-} catch (error) {
+} catch (_error) {
   log('ValidationError test failed', red)
 }
 
@@ -75,7 +69,7 @@ try {
   const authError = new AuthenticationError()
   assert(authError.statusCode === 401, 'AuthenticationError has status 401')
   log('AuthenticationError works correctly', green)
-} catch (error) {
+} catch (_error) {
   log('AuthenticationError test failed', red)
 }
 
@@ -83,7 +77,7 @@ try {
   const authzError = new AuthorizationError('Not an admin')
   assert(authzError.statusCode === 403, 'AuthorizationError has status 403')
   log('AuthorizationError works correctly', green)
-} catch (error) {
+} catch (_error) {
   log('AuthorizationError test failed', red)
 }
 
@@ -92,7 +86,7 @@ try {
   assert(notFoundError.statusCode === 404, 'NotFoundError has status 404')
   assert(notFoundError.message.includes('Application'), 'NotFoundError includes resource name')
   log('NotFoundError works correctly', green)
-} catch (error) {
+} catch (_error) {
   log('NotFoundError test failed', red)
 }
 
@@ -108,7 +102,7 @@ try {
   assert(formatted.error.path === '/api/test', 'Error path is correct')
   assert(!!formatted.error.timestamp, 'Error has timestamp')
   log('Error formatting works correctly', green)
-} catch (error) {
+} catch (_error) {
   log('Error formatting test failed', red)
 }
 
@@ -127,7 +121,7 @@ try {
     assert(Array.isArray(formatted.error.details), 'Zod error details is an array')
     log('Zod error formatting works correctly', green)
   }
-} catch (error) {
+} catch (_error) {
   log('Zod error formatting test failed', red)
 }
 
@@ -138,7 +132,7 @@ try {
   const value = 'exists'
   assertExists(value, 'Test value')
   log('assertExists passes for non-null value', green)
-} catch (error) {
+} catch (_error) {
   log('assertExists test failed', red)
 }
 
@@ -154,7 +148,7 @@ try {
   const userId = 'user-123'
   assertAuthenticated(userId)
   log('assertAuthenticated passes for valid userId', green)
-} catch (error) {
+} catch (_error) {
   log('assertAuthenticated test failed', red)
 }
 
@@ -169,7 +163,7 @@ try {
 try {
   assertAuthorized(true, 'User is admin')
   log('assertAuthorized passes for true condition', green)
-} catch (error) {
+} catch (_error) {
   log('assertAuthorized test failed', red)
 }
 
@@ -247,7 +241,7 @@ try {
   const result = commonSchemas.uuidParam.parse(uuidData)
   assert(result.id === uuidData.id, 'UUID validation works')
   log('Common UUID schema works', green)
-} catch (error) {
+} catch (_error) {
   log('UUID schema test failed', red)
 }
 
@@ -259,7 +253,7 @@ try {
   const result = commonSchemas.dateRange.parse(dateRangeData)
   assert(result.startDate instanceof Date, 'Date range validation works')
   log('Common date range schema works', green)
-} catch (error) {
+} catch (_error) {
   log('Date range schema test failed', red)
 }
 
@@ -297,7 +291,7 @@ try {
   assert(!sanitized.includes('<'), 'Sanitization removes < characters')
   assert(!sanitized.includes('>'), 'Sanitization removes > characters')
   log('String sanitization works correctly', green)
-} catch (error) {
+} catch (_error) {
   log('Sanitization test failed', red)
 }
 

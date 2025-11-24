@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { useStorage, STORAGE_KEYS } from "@/lib/persistence";
+import { useStorage, STORAGE_KEYS } from "@/lib/storage";
 
 type Theme = "light" | "dark" | "system";
 

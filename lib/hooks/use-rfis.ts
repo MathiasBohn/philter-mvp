@@ -154,24 +154,17 @@ export function useCreateRFI(
         queryKey: queryKeys.application(applicationId)
       })
 
-      toast({
-        title: 'RFI created',
-        description: 'The request for information has been created.',
-      })
+      toast.success('The request for information has been created.')
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to create RFI',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to create RFI')
     },
   })
 }
 
 interface AddRFIMessageInput {
   message: string
-  attachments?: any[]
+  attachments?: string[]
 }
 
 /**
@@ -220,12 +213,12 @@ export function useAddRFIMessage(
           ...(old || []),
           {
             id: `temp-${Date.now()}`,
-            rfi_id: rfiId,
+            authorId: 'temp-user-id',
+            authorName: 'You',
+            authorRole: 'APPLICANT' as Role, // Will be updated by server
             message: data.message,
+            createdAt: new Date(),
             attachments: data.attachments || [],
-            created_at: new Date().toISOString(),
-            author_name: 'You',
-            author_role: 'APPLICANT', // Will be updated by server
           } as RFIMessage,
         ]
       )
@@ -262,11 +255,7 @@ export function useAddRFIMessage(
         )
       }
 
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to send message',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to send message')
     },
   })
 }
@@ -312,17 +301,10 @@ export function useResolveRFI(
         queryKey: queryKeys.application(applicationId)
       })
 
-      toast({
-        title: 'RFI resolved',
-        description: 'The request for information has been marked as resolved.',
-      })
+      toast.success('The request for information has been marked as resolved.')
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to resolve RFI',
-        variant: 'destructive',
-      })
+      toast.error(error.message || 'Failed to resolve RFI')
     },
   })
 }

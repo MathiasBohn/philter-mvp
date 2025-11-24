@@ -115,7 +115,7 @@ export function formatErrorResponse(
       error: {
         message: 'Validation failed',
         code: 'VALIDATION_ERROR',
-        details: error.issues.map((err: any) => ({
+        details: error.issues.map((err) => ({
           field: err.path.join('.'),
           message: err.message,
         })),
@@ -218,7 +218,7 @@ export function logError(
  * })
  * ```
  */
-export function withErrorHandler<T extends (...args: any[]) => Promise<Response>>(
+export function withErrorHandler<T extends (...args: never[]) => Promise<Response>>(
   handler: T
 ): T {
   return (async (...args: Parameters<T>) => {

@@ -13,13 +13,22 @@ import { Loader2, CheckCircle2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CreateBuildingModal } from "@/components/features/broker/create-building-modal"
 import { Separator } from "@/components/ui/separator"
-import { useStorage, storageService, STORAGE_KEYS } from "@/lib/persistence"
+import { useCreateApplication } from "@/lib/hooks/use-applications"
+
+// TODO: Replace with API call when buildings backend is ready
+const CUSTOM_BUILDINGS_KEY = 'philter_custom_buildings'
 
 export default function BrokerNewApplicationPage() {
   const router = useRouter()
 
-  // Load custom buildings from centralized storage
-  const [customBuildings, setCustomBuildings] = useStorage<Building[]>(STORAGE_KEYS.CUSTOM_BUILDINGS, [])
+  // Load custom buildings from localStorage (temporary until buildings API is ready)
+  const [customBuildings, setCustomBuildings] = useState<Building[]>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem(CUSTOM_BUILDINGS_KEY)
+      return stored ? JSON.parse(stored) : []
+    }
+    return []
+  })
 
   // Merge mock buildings with custom buildings using useMemo
   const buildings = useMemo(() => {
@@ -31,10 +40,11 @@ export default function BrokerNewApplicationPage() {
   const [transactionType, setTransactionType] = useState<TransactionType | "">("")
   const [applicantEmail, setApplicantEmail] = useState("")
   const [applicantName, setApplicantName] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
   const [showCreateBuildingModal, setShowCreateBuildingModal] = useState(false)
   const [createdApplicationId, setCreatedApplicationId] = useState("")
+
+  const createApplication = useCreateApplication()
 
   const handleBuildingChange = (value: string) => {
     if (value === "create-new") {
@@ -46,7 +56,14 @@ export default function BrokerNewApplicationPage() {
 
   const handleSaveBuilding = (newBuilding: Building) => {
     // Add new building to custom buildings list
-    setCustomBuildings([...customBuildings, newBuilding])
+    const updatedBuildings = [...customBuildings, newBuilding]
+    setCustomBuildings(updatedBuildings)
+
+    // Persist to localStorage (TODO: Replace with API call when buildings backend is ready)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(CUSTOM_BUILDINGS_KEY, JSON.stringify(updatedBuildings))
+    }
+
     // Select the new building
     setBuildingId(newBuilding.id)
     // Close modal
@@ -56,41 +73,20 @@ export default function BrokerNewApplicationPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    setIsLoading(true)
+    try {
+      // Create a new application via API
+      const newApplication = await createApplication.mutateAsync({
+        buildingId,
+        unit,
+        transactionType: transactionType || undefined,
+      })
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Create a new application ID
-    const newApplicationId = `app_${Date.now()}`
-
-    // Store application data in localStorage (mock persistence)
-    const selectedBuilding = buildings.find(b => b.id === buildingId)
-    const applicationData = {
-      id: newApplicationId,
-      buildingCode: selectedBuilding?.code || buildingId,
-      buildingId,
-      unit,
-      transactionType,
-      status: "IN_PROGRESS",
-      createdAt: new Date().toISOString(),
-      createdBy: "broker-user-id",
-      applicantEmail,
-      applicantName,
-      sections: {
-        profile: { complete: false },
-        income: { complete: false },
-        financials: { complete: false },
-        documents: { complete: false },
-        disclosures: { complete: false },
-      },
+      setCreatedApplicationId(newApplication.id)
+      setShowSuccessDialog(true)
+    } catch (error) {
+      console.error('Failed to create application:', error)
+      // Error toast is already handled by the mutation
     }
-
-    storageService.set(STORAGE_KEYS.application(newApplicationId), applicationData)
-
-    setCreatedApplicationId(newApplicationId)
-    setIsLoading(false)
-    setShowSuccessDialog(true)
   }
 
   const handleContinue = () => {
@@ -211,12 +207,12 @@ export default function BrokerNewApplicationPage() {
             type="button"
             variant="outline"
             onClick={() => router.push('/broker')}
-            disabled={isLoading}
+            disabled={createApplication.isPending}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" disabled={createApplication.isPending}>
+            {createApplication.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Create Application & Send Invitation
           </Button>
         </div>

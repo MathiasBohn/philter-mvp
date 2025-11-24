@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "https://philter-mvp.vercel.app"
+  ),
   title: {
     template: "%s | philter",
     default: "philter - Transaction Platform for Co-ops & Condos",
@@ -35,7 +38,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://philter.app",
+    url: "https://philter-mvp.vercel.app",
     siteName: "philter",
     title: "philter - Transaction Platform for Co-ops & Condos",
     description:
