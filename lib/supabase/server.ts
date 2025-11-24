@@ -35,16 +35,22 @@ export async function createClient() {
   const cookieStore = await cookies()
 
   // Check if Supabase environment variables are configured
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error(
+  // If not, create a dummy client with placeholders (graceful degradation)
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+
+  // Log warning in development if env vars are missing
+  if ((!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
+      process.env.NODE_ENV === 'development') {
+    console.warn(
       'Supabase environment variables are not configured. ' +
       'Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.'
     )
   }
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {
