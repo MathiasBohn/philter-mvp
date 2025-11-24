@@ -33,8 +33,10 @@ export function useApplications(): UseQueryResult<Application[], Error> {
     queryFn: async () => {
       const response = await fetch('/api/applications')
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to fetch applications')
+        const errorData = await response.json()
+        // API returns errors in format: { error: { message: "..." } }
+        const errorMessage = errorData.error?.message || errorData.message || 'Failed to fetch applications'
+        throw new Error(errorMessage)
       }
       const data = await response.json()
       // API returns { applications: [] }, extract the array
@@ -60,8 +62,10 @@ export function useApplication(
     queryFn: async () => {
       const response = await fetch(`/api/applications/${id}`)
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to fetch application')
+        const errorData = await response.json()
+        // API returns errors in format: { error: { message: "..." } }
+        const errorMessage = errorData.error?.message || errorData.message || 'Failed to fetch application'
+        throw new Error(errorMessage)
       }
       const result = await response.json()
       return result.application
@@ -96,8 +100,9 @@ export function useCreateApplication(): UseMutationResult<
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to create application')
+        const errorData = await response.json()
+        const errorMessage = errorData.error?.message || errorData.message || 'Failed to create application'
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
@@ -144,8 +149,9 @@ export function useUpdateApplication(
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to update application')
+        const errorData = await response.json()
+        const errorMessage = errorData.error?.message || errorData.message || 'Failed to update application'
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()
@@ -218,8 +224,9 @@ export function useDeleteApplication(
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete application')
+        const errorData = await response.json()
+        const errorMessage = errorData.error?.message || errorData.message || 'Failed to delete application'
+        throw new Error(errorMessage)
       }
     },
     onSuccess: () => {
@@ -258,8 +265,9 @@ export function useSubmitApplication(
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to submit application')
+        const errorData = await response.json()
+        const errorMessage = errorData.error?.message || errorData.message || 'Failed to submit application'
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()

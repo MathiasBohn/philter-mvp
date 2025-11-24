@@ -45,14 +45,38 @@ export const GET = withErrorHandler(async (_request: NextRequest) => {
 
   // Get user profile to determine role (use admin client to bypass RLS)
   const adminClient = createAdminClient()
-  const { data: profile } = await adminClient
+  const { data: profile, error: profileError } = await adminClient
     .from('users')
     .select('role')
     .eq('id', user.id)
     .single()
 
-  // Assert profile exists (throws NotFoundError if not)
-  assertExists(profile, 'User profile')
+  // If profile doesn't exist, create it with default APPLICANT role
+  if (!profile || profileError) {
+    console.warn(`User profile not found for user ${user.id}, creating default profile`)
+
+    // Create user profile with APPLICANT role as fallback
+    const { data: newProfile, error: createError } = await adminClient
+      .from('users')
+      .insert({
+        id: user.id,
+        role: 'APPLICANT',
+        first_name: user.user_metadata?.first_name || '',
+        last_name: user.user_metadata?.last_name || '',
+        phone: user.user_metadata?.phone || null,
+      })
+      .select('role')
+      .single()
+
+    if (createError || !newProfile) {
+      console.error('Failed to create user profile:', createError)
+      throw new Error('User profile not found and could not be created')
+    }
+
+    // Use newly created profile
+    const applications = await getApplications(user.id, newProfile.role)
+    return NextResponse.json({ applications }, { status: 200 })
+  }
 
   // Fetch applications using data access layer
   const applications = await getApplications(user.id, profile.role)
