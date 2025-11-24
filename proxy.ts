@@ -7,7 +7,7 @@
  * 3. Redirect logic for auth pages when already logged in
  * 4. Preserves original URL for post-login redirect
  *
- * Protected routes: All routes under /dashboard, /applications, /broker, /agent, /board, /my-applications, /settings
+ * Protected routes: All routes under /applications, /broker, /agent, /board, /my-applications, /settings
  * Public routes: Landing page, auth pages (/sign-in, /sign-up, etc.)
  * Auth routes: /sign-in, /sign-up, /forgot-password, /reset-password, /verify-email
  *
@@ -19,7 +19,6 @@ import { updateSession } from '@/lib/supabase/middleware'
 
 // Define route patterns
 const protectedRoutes = [
-  '/dashboard',
   '/applications',
   '/broker',
   '/agent',
@@ -58,10 +57,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users from auth pages to dashboard (or their intended destination)
+  // Redirect authenticated users from auth pages to home (or their intended destination)
   if (isAuthRoute && user) {
     const redirectTo = request.nextUrl.searchParams.get('redirectTo')
-    const destination = redirectTo || '/dashboard'
+    const destination = redirectTo || '/'
     return NextResponse.redirect(new URL(destination, request.url))
   }
 
