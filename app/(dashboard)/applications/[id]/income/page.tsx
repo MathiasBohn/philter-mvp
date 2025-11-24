@@ -14,6 +14,7 @@ import { ErrorSummary } from "@/components/forms/error-summary"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { PayCadence, type EmploymentRecord, DocumentStatus, DocumentCategory } from "@/lib/types"
 import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
+import { useEmploymentRecords, useUpdateEmploymentRecords } from "@/lib/hooks/use-employment"
 import { notFound } from "next/navigation"
 import {
   uploadManager,
@@ -44,6 +45,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   const router = useRouter()
   const { data: application, isLoading, error } = useApplication(id)
   const updateApplication = useUpdateApplication(id)
+  const { data: employmentRecords, isLoading: employmentLoading } = useEmploymentRecords(id, !!application)
+  const updateEmployment = useUpdateEmploymentRecords(id)
   const [employers, setEmployers] = useState<EmploymentRecord[]>([])
   const [documents, setDocuments] = useState<UploadedFile[]>([])
   const [isSelfEmployed, setIsSelfEmployed] = useState(false)
@@ -339,33 +342,30 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     setIsSaving(true)
 
     try {
-      // Prepare document metadata (keep IndexedDB for actual files)
-      const allDocuments = [
-        ...documents.map(doc => ({ ...doc, category: 'employment-verification' })),
-        ...cpaLetterDocuments.map(doc => ({ ...doc, category: 'cpa-letter' }))
-      ]
+      // Save employment data to database via new employment API
+      const employmentInputs = employers.map(emp => ({
+        id: emp.id,
+        personId: undefined, // Not linking to specific person for now
+        employerName: emp.employerName,
+        jobTitle: emp.jobTitle,
+        employmentStatus: emp.employmentStatus as any, // Map to database enum
+        startDate: emp.startDate,
+        endDate: emp.endDate,
+        isCurrent: emp.isCurrent,
+        annualIncome: emp.annualIncome,
+        payCadence: emp.payCadence as any, // Map to database enum
+        supervisorName: emp.supervisorName,
+        supervisorPhone: emp.supervisorPhone,
+        supervisorEmail: emp.supervisorEmail,
+        address: emp.employerAddress ? {
+          street: emp.employerAddress.street || '',
+          city: emp.employerAddress.city || '',
+          state: emp.employerAddress.state || '',
+          zip: emp.employerAddress.zip || '',
+        } : undefined,
+      }))
 
-      // Save employment data and document metadata via API
-      await updateApplication.mutateAsync({
-        employmentRecords: employers,
-        // Note: isSelfEmployed flag is stored in localStorage for now (Phase 4: add to backend)
-        // Note: Document metadata saved here, but actual files stay in IndexedDB (Phase 4)
-        documents: [
-          ...(application.documents?.filter(
-            (d: { category?: string }) => d.category !== 'employment-verification' && d.category !== 'cpa-letter'
-          ) || []),
-          ...allDocuments.map(doc => ({
-            id: doc.id,
-            filename: doc.file.name,
-            size: doc.file.size,
-            mimeType: doc.file.type,
-            category: doc.category as DocumentCategory,
-            status: mapUploadStatusToDocumentStatus(doc.status),
-            uploadedAt: new Date(),
-            uploadedBy: application.createdBy,
-          }))
-        ]
-      })
+      await updateEmployment.mutateAsync(employmentInputs)
 
       // Save actual files to IndexedDB (will be migrated to Supabase Storage in Phase 4)
       for (const doc of documents) {

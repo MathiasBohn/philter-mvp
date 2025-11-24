@@ -27,33 +27,6 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useUser()
 
-  // Extract application ID from URL or use default
-  const pathParts = pathname.split('/')
-
-  // Determine application ID based on the current route structure
-  let applicationId = "app-1" // default
-
-  // Known broker route segments that are NOT application IDs
-  const brokerRouteSegments = ['qa', 'new', 'prefill-wizard']
-
-  if (pathname.startsWith('/applications/') && pathParts[2]) {
-    // Pattern: /applications/[id]/...
-    applicationId = pathParts[2]
-  } else if (pathname.startsWith('/broker/') && pathParts[2] && !brokerRouteSegments.includes(pathParts[2])) {
-    // Pattern: /broker/[id]/...
-    // Exclude known route segments like 'qa', 'new', 'prefill-wizard'
-    applicationId = pathParts[2]
-  } else if (pathname.startsWith('/agent/review/') && pathParts[3]) {
-    // Pattern: /agent/review/[id]
-    applicationId = pathParts[3]
-  } else if (pathname.startsWith('/board/review/') && pathParts[3]) {
-    // Pattern: /board/review/[id]
-    applicationId = pathParts[3]
-  } else if (pathname.startsWith('/board/summary/') && pathParts[3]) {
-    // Pattern: /board/summary/[id]
-    applicationId = pathParts[3]
-  }
-
   // Define navigation sections based on user role
   const getNavigationForRole = () => {
     if (!user) return []
@@ -62,67 +35,37 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       case Role.APPLICANT:
       case Role.CO_APPLICANT:
       case Role.GUARANTOR:
+        // For applicants, show high-level navigation only
+        // Application sections are handled by ApplicationSidebar
         return [
           {
-            label: "Overview",
-            href: `/applications/${applicationId}`,
+            label: "My Applications",
+            href: `/my-applications`,
             icon: Home,
-            complete: false,
           },
           {
-            label: "Profile",
-            href: `/applications/${applicationId}/profile`,
-            icon: User,
-            complete: false,
-          },
-          {
-            label: "Employment & Income",
-            href: `/applications/${applicationId}/income`,
-            icon: Briefcase,
-            complete: false,
-          },
-          {
-            label: "Financial Summary",
-            href: `/applications/${applicationId}/financials`,
-            icon: DollarSign,
-            complete: false,
-          },
-          {
-            label: "Documents",
-            href: `/applications/${applicationId}/documents`,
-            icon: Upload,
-            complete: false,
-          },
-          {
-            label: "Disclosures",
-            href: `/applications/${applicationId}/disclosures`,
-            icon: FileCheck,
-            complete: false,
-          },
-          {
-            label: "Review & Submit",
-            href: `/applications/${applicationId}/review`,
-            icon: CheckCircle,
-            complete: false,
+            label: "Settings",
+            href: `/settings`,
+            icon: Settings,
           },
         ]
 
       case Role.BROKER:
         return [
           {
+            label: "My Applications",
+            href: `/my-applications`,
+            icon: Home,
+          },
+          {
             label: "Pipeline",
-            href: `/broker`,
+            href: `/broker/pipeline`,
             icon: ClipboardList,
           },
           {
-            label: "Review Applications",
-            href: `/broker/qa`,
-            icon: FileCheck,
-          },
-          {
-            label: "Submit Applications",
-            href: `/broker/submit`,
-            icon: Upload,
+            label: "Settings",
+            href: `/settings`,
+            icon: Settings,
           },
         ]
 
@@ -173,9 +116,9 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       case Role.APPLICANT:
       case Role.CO_APPLICANT:
       case Role.GUARANTOR:
-        return "Application Sections"
+        return "Main Menu"
       case Role.BROKER:
-        return "Broker Tools"
+        return "Main Menu"
       case Role.ADMIN:
         return "Transaction Agent"
       case Role.BOARD:

@@ -215,7 +215,7 @@ export async function updateApplication(
   if (data.isLocked !== undefined) dbData.is_locked = data.isLocked
   if (data.coverLetter !== undefined) dbData.metadata = { coverLetter: data.coverLetter }
 
-  const { data: application, error } = await supabase
+  const { data: applications, error } = await supabase
     .from('applications')
     .update(dbData)
     .eq('id', id)
@@ -233,14 +233,17 @@ export async function updateApplication(
         rfi_messages(*)
       )
     `)
-    .single()
 
   if (error) {
     console.error('Error updating application:', error)
     throw new Error(`Failed to update application: ${error.message}`)
   }
 
-  return application as unknown as Application
+  if (!applications || applications.length === 0) {
+    throw new Error('Application not found after update')
+  }
+
+  return applications[0] as unknown as Application
 }
 
 /**

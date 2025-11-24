@@ -220,43 +220,105 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       "building-policies": "complete", // Review only, always complete
     };
 
-    // Lease Terms - check application data
+    // Lease Terms - check application data (optional section for sublets/leases)
     statuses["lease-terms"] = application.leaseTerms ? "complete" : "not-started";
 
     // Parties - check application data (participants)
     statuses.parties = application.participants && application.participants.length > 0 ? "complete" : "not-started";
 
-    // Profile - check if basic info exists
+    // Profile - check ALL required fields, not just fullName
     if (application.people && application.people.length > 0) {
       const primaryApplicant = application.people[0];
-      statuses.profile = primaryApplicant.fullName ? "complete" : "not-started";
+      // Required: fullName, email, phone, dateOfBirth, ssn, and at least 2 years of address history
+      const hasBasicInfo = primaryApplicant.fullName &&
+                          primaryApplicant.email &&
+                          primaryApplicant.phone &&
+                          primaryApplicant.dateOfBirth &&
+                          primaryApplicant.ssn;
+
+      const hasAddressHistory = primaryApplicant.addressHistory &&
+                               primaryApplicant.addressHistory.length > 0;
+
+      const hasEmergencyContact = primaryApplicant.emergencyContacts &&
+                                 primaryApplicant.emergencyContacts.length > 0;
+
+      if (hasBasicInfo && hasAddressHistory && hasEmergencyContact) {
+        statuses.profile = "complete";
+      } else if (hasBasicInfo || hasAddressHistory) {
+        statuses.profile = "in-progress";
+      } else {
+        statuses.profile = "not-started";
+      }
     } else {
       statuses.profile = "not-started";
     }
 
-    // People - check for additional people
+    // People - check for co-applicants/guarantors (optional section)
     statuses.people = application.people.length > 1 ? "complete" : "not-started";
 
-    // Income & Employment
-    statuses.income = application.employmentRecords && application.employmentRecords.length > 0 ? "complete" : "not-started";
+    // Income & Employment - at least one employment record required
+    if (application.employmentRecords && application.employmentRecords.length > 0) {
+      const hasCompleteRecord = application.employmentRecords.some(
+        (record: { employer?: string; title?: string; annualIncome?: number }) =>
+          record.employer && record.title && record.annualIncome
+      );
+      statuses.income = hasCompleteRecord ? "complete" : "in-progress";
+    } else {
+      statuses.income = "not-started";
+    }
 
-    // Financials
-    statuses.financials = application.financialEntries && application.financialEntries.length > 0 ? "complete" : "not-started";
+    // Financials - should have assets AND liabilities entries
+    if (application.financialEntries && application.financialEntries.length > 0) {
+      const hasAssets = application.financialEntries.some(
+        (entry: { category?: string }) => entry.category && entry.category.includes('ASSET')
+      );
+      const hasLiabilities = application.financialEntries.some(
+        (entry: { category?: string }) => entry.category && entry.category.includes('LIABILITY')
+      );
 
-    // Real Estate
-    statuses["real-estate"] = "not-started"; // Will be updated when data exists
+      if (hasAssets && hasLiabilities) {
+        statuses.financials = "complete";
+      } else if (hasAssets || hasLiabilities) {
+        statuses.financials = "in-progress";
+      } else {
+        statuses.financials = "not-started";
+      }
+    } else {
+      statuses.financials = "not-started";
+    }
 
-    // Documents
-    statuses.documents = application.documents && application.documents.length > 0 ? "complete" : "not-started";
+    // Real Estate - optional section
+    statuses["real-estate"] = application.realEstateProperties &&
+                              application.realEstateProperties.length > 0 ? "complete" : "not-started";
 
-    // Cover Letter
-    statuses["cover-letter"] = application.coverLetter && application.coverLetter.length > 0 ? "complete" : "not-started";
+    // Documents - check for required document categories
+    if (application.documents && application.documents.length > 0) {
+      const requiredCategories = ['GOVERNMENT_ID', 'BANK_STATEMENT', 'TAX_RETURN'];
+      const uploadedCategories = new Set(
+        application.documents.map((doc: { category?: string }) => doc.category)
+      );
+      const hasAllRequired = requiredCategories.every(cat => uploadedCategories.has(cat));
 
-    // Disclosures
+      if (hasAllRequired) {
+        statuses.documents = "complete";
+      } else if (application.documents.length > 0) {
+        statuses.documents = "in-progress";
+      } else {
+        statuses.documents = "not-started";
+      }
+    } else {
+      statuses.documents = "not-started";
+    }
+
+    // Cover Letter - should have meaningful content (at least 100 characters)
+    statuses["cover-letter"] = application.coverLetter && application.coverLetter.length >= 100 ? "complete" :
+                              application.coverLetter && application.coverLetter.length > 0 ? "in-progress" : "not-started";
+
+    // Disclosures - must accept all required disclosures (8 total for NYC)
     statuses.disclosures = application.disclosures && application.disclosures.length >= 8 ? "complete" :
                            application.disclosures && application.disclosures.length > 0 ? "in-progress" : "not-started";
 
-    // Review & Submit - always available but completion depends on submission status
+    // Review & Submit - complete only when actually submitted
     statuses.review = application.status === "SUBMITTED" || application.status === "IN_REVIEW" ||
                       application.status === "RFI" || application.status === "APPROVED" ||
                       application.status === "CONDITIONAL" || application.status === "DENIED" ? "complete" : "not-started";

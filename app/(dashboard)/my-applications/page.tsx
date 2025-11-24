@@ -94,9 +94,9 @@ export default function MyApplicationsPage() {
             View and manage all your applications
           </p>
         </div>
-        {user?.role === Role.BROKER && (
+        {(user?.role === Role.BROKER || user?.role === Role.APPLICANT) && (
           <Button asChild>
-            <Link href="/broker/new">
+            <Link href={user.role === Role.BROKER ? "/broker/new" : "/applications/new"}>
               <FileText className="mr-2 h-4 w-4" />
               New Application
             </Link>
@@ -109,11 +109,21 @@ export default function MyApplicationsPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No applications yet</h3>
-            <p className="text-muted-foreground text-center max-w-md">
+            <p className="text-muted-foreground text-center max-w-md mb-4">
               {user?.role === Role.BROKER
                 ? "Get started by creating a new application for your client."
+                : user?.role === Role.APPLICANT
+                ? "Ready to start your board application? Click the button above to get started."
                 : "You don't have any applications at this time."}
             </p>
+            {(user?.role === Role.BROKER || user?.role === Role.APPLICANT) && (
+              <Button asChild variant="outline">
+                <Link href={user.role === Role.BROKER ? "/broker/new" : "/applications/new"}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  Create Your First Application
+                </Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

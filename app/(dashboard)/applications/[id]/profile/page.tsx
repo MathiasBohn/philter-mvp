@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
 import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
+import { usePeople, useUpsertPerson } from "@/lib/hooks/use-people";
 import { notFound } from "next/navigation";
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -39,6 +40,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
   // React Query hooks
   const { data: application, isLoading, error } = useApplication(id);
   const updateApplication = useUpdateApplication(id);
+  const { data: people, isLoading: peopleLoading } = usePeople(id, !!application);
+  const upsertPerson = useUpsertPerson(id);
 
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -220,63 +223,49 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
     setIsSaving(true);
 
     try {
-      // Build housing history object
-      const housingHistory: HousingHistory | undefined = ownsPrivateHouse !== undefined ? {
-        ownsPrivateHouse,
-        currentLandlord: currentLandlord ? {
-          ...currentLandlord,
-          occupiedFrom: currentLandlord.occupiedFrom,
-          occupiedTo: currentLandlord.occupiedTo,
-        } : undefined,
-        previousLandlord: previousLandlord ? {
-          ...previousLandlord,
-          occupiedFrom: previousLandlord.occupiedFrom,
-          occupiedTo: previousLandlord.occupiedTo,
-        } : undefined,
-        reasonForMoving,
-      } : undefined;
+      // Split full name into first and last name
+      const nameParts = data.fullName.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
 
-      // Update the application with new profile data
-      await updateApplication.mutateAsync({
-        people: [{
-          id: application?.people[0]?.id || crypto.randomUUID(),
-          role: application?.people[0]?.role || Role.APPLICANT,
-          fullName: data.fullName,
-          email: data.email,
-          phone: data.phone,
-          dob: data.dob,
-          ssnFull: data.ssn,
-          ssnLast4: data.ssn.slice(-4),
-          addressHistory: data.addressHistory.map(addr => ({
-            ...addr,
-            id: (addr as { id?: string }).id || crypto.randomUUID(),
-            toDate: addr.toDate || undefined,
-          })),
-          // @ts-expect-error - Person type doesn't include extended properties
-          references: references,
-          housingHistory: housingHistory ? {
-            ...housingHistory,
-            currentLandlord: housingHistory.currentLandlord ? {
-              ...housingHistory.currentLandlord,
-              occupiedFrom: housingHistory.currentLandlord.occupiedFrom,
-              occupiedTo: housingHistory.currentLandlord.occupiedTo,
-            } : undefined,
-            previousLandlord: housingHistory.previousLandlord ? {
-              ...housingHistory.previousLandlord,
-              occupiedFrom: housingHistory.previousLandlord.occupiedFrom,
-              occupiedTo: housingHistory.previousLandlord.occupiedTo,
-            } : undefined,
-          } : undefined,
-          emergencyContacts: emergencyContact.name ? [{
-            ...emergencyContact,
-            keyHolders,
-          }] : [],
-          educationInfo: (educationInfo.educationLevel || educationInfo.lastSchoolAttended) ? {
-            ...educationInfo,
-            fromDate: educationInfo.fromDate,
-            toDate: educationInfo.toDate,
-          } : undefined,
-        }],
+      // Get existing person ID from loaded people data (primary applicant)
+      const existingPerson = people?.find(p => p.role === 'APPLICANT');
+
+      // Prepare person data for API
+      await upsertPerson.mutateAsync({
+        id: existingPerson?.id,
+        role: Role.APPLICANT,
+        firstName,
+        lastName,
+        email: data.email,
+        phone: data.phone,
+        dateOfBirth: data.dob ? data.dob.toISOString().split('T')[0] : undefined,
+        ssn: data.ssn,
+        currentAddress: data.addressHistory.find(a => a.isCurrent)?.address,
+        addressHistory: data.addressHistory.map(addr => ({
+          id: (addr as { id?: string }).id,
+          address: {
+            street: addr.street,
+            unit: addr.unit,
+            city: addr.city,
+            state: addr.state,
+            zip: addr.zip,
+          },
+          moveInDate: addr.fromDate.toISOString().split('T')[0],
+          moveOutDate: addr.toDate ? addr.toDate.toISOString().split('T')[0] : undefined,
+          isCurrent: addr.isCurrent,
+          landlordName: addr.landlordName,
+          landlordPhone: addr.landlordPhone,
+          landlordEmail: addr.landlordEmail,
+          monthlyRent: addr.monthlyRent,
+        })),
+        emergencyContacts: emergencyContact.name ? [{
+          id: undefined,
+          name: emergencyContact.name,
+          relationship: 'Emergency Contact',
+          phone: emergencyContact.cellPhone || emergencyContact.daytimePhone || '',
+          email: emergencyContact.email,
+        }] : [],
       });
 
       setShowSuccess(true);

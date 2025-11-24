@@ -10,6 +10,7 @@ import { TotalsBar } from "@/components/features/application/totals-bar"
 import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
+import { useFinancialEntries, useUpdateFinancialEntries } from "@/lib/hooks/use-financials"
 import { notFound } from "next/navigation"
 import {
   FinancialEntryType,
@@ -68,6 +69,8 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   const router = useRouter()
   const { data: application, isLoading, error } = useApplication(id)
   const updateApplication = useUpdateApplication(id)
+  const { data: financialEntries, isLoading: financialsLoading } = useFinancialEntries(id, !!application)
+  const updateFinancials = useUpdateFinancialEntries(id)
   const [entries, setEntries] = useState<FinancialEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<FinancialEntryType>(
@@ -129,9 +132,20 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
     setIsSaving(true)
 
     try {
-      await updateApplication.mutateAsync({
-        financialEntries: entries,
-      })
+      // Save financial entries to database via new financials API
+      const financialInputs = entries.map(entry => ({
+        id: entry.id,
+        entryType: entry.type as any, // Map to database enum
+        category: entry.category,
+        amount: entry.amount,
+        institution: entry.institution,
+        accountNumberLast4: entry.accountNumber ? entry.accountNumber.slice(-4) : undefined,
+        description: entry.description,
+        isLiquid: entry.type === FinancialEntryType.ASSET ? entry.isLiquid : undefined,
+        monthlyPayment: entry.type === FinancialEntryType.LIABILITY ? entry.monthlyPayment : undefined,
+      }))
+
+      await updateFinancials.mutateAsync(financialInputs)
     } catch (error) {
       console.error('Error saving financials:', error)
       alert('Failed to save. Please try again.')

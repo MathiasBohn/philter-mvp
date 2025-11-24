@@ -109,4 +109,16 @@ export const queryKeys = {
   // Activity Log
   activityLog: (filters?: Record<string, unknown>) => ['activity-log', filters] as const,
   applicationActivityLog: (applicationId: string) => ['activity-log', 'application', applicationId] as const,
+
+  // People
+  people: (applicationId: string) => ['people', applicationId] as const,
+  person: (id: string) => ['person', id] as const,
+
+  // Employment
+  employment: (applicationId: string) => ['employment', applicationId] as const,
+  employmentRecord: (id: string) => ['employment', id] as const,
+
+  // Financials
+  financials: (applicationId: string) => ['financials', applicationId] as const,
+  financialEntry: (id: string) => ['financial', id] as const,
 } as const
