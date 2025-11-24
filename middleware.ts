@@ -1,7 +1,7 @@
 /**
- * Next.js Proxy for Route Protection
+ * Next.js Middleware for Route Protection
  *
- * This proxy handles:
+ * This middleware handles:
  * 1. Session refresh via Supabase Auth
  * 2. Route protection for authenticated routes
  * 3. Redirect logic for auth pages when already logged in
@@ -11,7 +11,7 @@
  * Public routes: Landing page, auth pages (/sign-in, /sign-up, etc.)
  * Auth routes: /sign-in, /sign-up, /forgot-password, /reset-password, /verify-email
  *
- * Note: In Next.js 16, the "middleware" file convention was deprecated in favor of "proxy"
+ * Standard Next.js middleware - runs on every request matching the config matcher
  */
 
 import { type NextRequest, NextResponse } from 'next/server'
@@ -35,7 +35,7 @@ const authRoutes = [
   '/verify-email',
 ]
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // Update session and get user info
   const { response, user } = await updateSession(request)
 
@@ -68,7 +68,7 @@ export async function proxy(request: NextRequest) {
 }
 
 /**
- * Configure which routes proxy runs on
+ * Configure which routes middleware runs on
  *
  * This matcher excludes:
  * - Static files (_next/static)
