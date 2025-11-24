@@ -28,10 +28,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const supabase = createClient()
+
+  // Create Supabase client with error handling
+  let supabase
+  try {
+    supabase = createClient()
+  } catch (error) {
+    console.error('Failed to create Supabase client:', error)
+    // Create a fallback that won't break the app
+    supabase = null
+  }
 
   // Fetch user profile from database
   const fetchUserProfile = async (userId: string) => {
+    if (!supabase) {
+      console.warn('Cannot fetch user profile: Supabase client not available')
+      return null
+    }
+
     try {
       const { data, error } = await supabase
         .from("users")
@@ -66,6 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Load user on mount and subscribe to auth state changes
   useEffect(() => {
+    // If Supabase client creation failed, skip auth initialization
+    if (!supabase) {
+      console.warn('Supabase client not available, skipping auth initialization')
+      setIsLoading(false)
+      return
+    }
+
     // Get initial session
     const initializeAuth = async () => {
       try {
@@ -110,6 +131,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
+    if (!supabase) {
+      console.warn('Cannot sign out: Supabase client not available')
+      return
+    }
+
     try {
       await supabase.auth.signOut()
       setUser(null)
