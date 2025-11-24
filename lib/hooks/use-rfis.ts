@@ -41,7 +41,8 @@ export function useRFIs(
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch RFIs')
       }
-      return response.json()
+      const result = await response.json()
+      return result.rfis || []
     },
     enabled: enabled && !!applicationId,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -137,7 +138,8 @@ export function useCreateRFI(
         throw new Error(error.message || 'Failed to create RFI')
       }
 
-      return response.json()
+      const result = await response.json()
+      return result.rfi
     },
     onSuccess: (newRFI) => {
       // Add to RFIs list

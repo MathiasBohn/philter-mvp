@@ -54,13 +54,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
-        console.error("Error fetching user profile:", error)
+        // Log more details about the error
+        console.error("Error fetching user profile:")
+        console.error("- Error object:", JSON.stringify(error))
+        console.error("- User ID:", userId)
+        console.error("- Error keys:", Object.keys(error))
+        console.error("- Error message:", error?.message || "No message")
+        console.error("- Error code:", error?.code || "No code")
         return null
       }
 
       return data as UserProfile
     } catch (error) {
-      console.error("Error fetching user profile:", error)
+      console.error("Error fetching user profile (caught):", error)
       return null
     }
   }

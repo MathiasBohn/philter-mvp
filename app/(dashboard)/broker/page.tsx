@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useApplications } from "@/lib/hooks/use-applications";
 import { ApplicationTable } from "@/components/features/broker/application-table";
 import { FilterBar } from "@/components/features/broker/filter-bar";
@@ -9,6 +9,7 @@ import { Plus, Download, Send, CheckSquare, FileSpreadsheet, ChevronDown, Loader
 import Link from "next/link";
 import { useApplicationFilters } from "@/lib/hooks/use-application-filters";
 import { ApplicationStatus } from "@/lib/types";
+import { CreateApplicationModal } from "@/components/features/broker/create-application-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +30,8 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function BrokerPipelinePage() {
   const { data: applications, isLoading, error } = useApplications();
+  const [buildings, setBuildings] = useState<Array<{ id: string; name: string; address: string }>>([]);
+  const [loadingBuildings, setLoadingBuildings] = useState(true);
 
   const {
     filteredApplications,
@@ -45,6 +48,24 @@ export default function BrokerPipelinePage() {
   const [bulkAction, setBulkAction] = useState<string>("");
   const [processingProgress, setProcessingProgress] = useState(0);
   const [showProgressDialog, setShowProgressDialog] = useState(false);
+
+  // Fetch buildings for the create application modal
+  useEffect(() => {
+    const fetchBuildings = async () => {
+      try {
+        const response = await fetch('/api/buildings');
+        if (response.ok) {
+          const data = await response.json();
+          setBuildings(data.buildings || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch buildings:', error);
+      } finally {
+        setLoadingBuildings(false);
+      }
+    };
+    fetchBuildings();
+  }, []);
 
   const handleToggleSelection = (appId: string) => {
     setSelectedApplicationIds((prev) =>
@@ -200,12 +221,12 @@ export default function BrokerPipelinePage() {
               Pre-fill Wizard
             </Button>
           </Link>
-          <Link href="/broker/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Start New Application
-            </Button>
-          </Link>
+          {!loadingBuildings && buildings.length > 0 && (
+            <CreateApplicationModal
+              buildings={buildings}
+              onSuccess={() => window.location.reload()}
+            />
+          )}
         </div>
       </div>
 

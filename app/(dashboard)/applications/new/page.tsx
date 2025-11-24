@@ -10,6 +10,7 @@ import { ErrorSummary } from "@/components/forms/error-summary"
 import type { TransactionType } from "@/lib/types"
 import { Loader2 } from "lucide-react"
 import { useCreateApplication } from "@/lib/hooks/use-applications"
+import { createClient } from "@/lib/supabase/client"
 
 export default function NewApplicationPage() {
   const router = useRouter()
@@ -52,9 +53,35 @@ export default function NewApplicationPage() {
     }
 
     try {
-      // Create a new application via API
+      // Look up building by code
+      console.log('[Form] Looking up building with code:', buildingCode.toUpperCase())
+      const supabase = createClient()
+      const { data: building, error: lookupError } = await supabase
+        .from('buildings')
+        .select('id, name, code')
+        .eq('code', buildingCode.toUpperCase())
+        .single()
+
+      console.log('[Form] Building lookup result:', { building, lookupError })
+
+      if (lookupError || !building) {
+        console.error('[Form] Building lookup failed:', lookupError)
+        setErrors([
+          {
+            field: "buildingCode",
+            message: `Invalid building code. ${lookupError ? `Error: ${lookupError.message}` : 'Building not found.'}`,
+            anchor: "building-code",
+          },
+        ])
+        return
+      }
+
+      console.log('[Form] Found building:', building.name, 'with ID:', building.id)
+
+      // Create a new application via API with the building UUID
+      console.log('[Form] Creating application with buildingId:', building.id, 'type:', typeof building.id)
       const newApplication = await createApplication.mutateAsync({
-        buildingId: buildingCode,
+        buildingId: building.id,
         transactionType: transactionType || undefined,
       })
 

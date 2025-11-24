@@ -430,6 +430,11 @@ export type Application = {
   submittedAt?: Date;
   lastActivityAt: Date;
 
+  // Broker-initiated workflow fields
+  brokerOwned: boolean; // TRUE if created by broker for an applicant
+  primaryApplicantEmail?: string; // Email of invited applicant
+  primaryApplicantId?: string; // User ID once applicant accepts invitation
+
   // Application sections
   people: Person[];
   employmentRecords: EmploymentRecord[];

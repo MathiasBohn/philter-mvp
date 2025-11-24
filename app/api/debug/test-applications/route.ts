@@ -50,10 +50,12 @@ export async function GET() {
       error: appsError?.message || null,
       rawError: appsError,
     })
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorStack = error instanceof Error ? error.stack : undefined
     return NextResponse.json({
-      error: error.message,
-      stack: error.stack,
+      error: errorMessage,
+      stack: errorStack,
     }, { status: 500 })
   }
 }

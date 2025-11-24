@@ -124,12 +124,12 @@ export default function MyApplicationsPage() {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-lg">
-                      {application.people[0]?.fullName || "Unknown Applicant"}
+                      {application.building?.name || "Unknown Building"}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <Building2 className="h-3.5 w-3.5" />
-                        {application.building?.name || "Unknown Building"}
+                        {application.building?.address?.street || "Address not available"}
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3.5 w-3.5" />
@@ -155,7 +155,7 @@ export default function MyApplicationsPage() {
                     Application ID: {application.id}
                   </div>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/applications/${application.id}/overview`}>
+                    <Link href={`/applications/${application.id}`}>
                       View Details
                       <ChevronRight className="ml-1 h-4 w-4" />
                     </Link>

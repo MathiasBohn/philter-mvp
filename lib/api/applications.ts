@@ -86,10 +86,7 @@ export async function getApplication(id: string): Promise<Application | null> {
         *,
         rfi_messages(*)
       ),
-      application_participants(
-        *,
-        user:users(*)
-      )
+      application_participants(*)
     `)
     .eq('id', id)
     .single()
@@ -103,7 +100,21 @@ export async function getApplication(id: string): Promise<Application | null> {
     throw new Error(`Failed to fetch application: ${error.message}`)
   }
 
-  return data as unknown as Application
+  // Ensure all arrays exist (for backward compatibility with old data)
+  const enrichedApplication = {
+    ...data,
+    people: data.people || [],
+    employment_records: data.employment_records || [],
+    financial_entries: data.financial_entries || [],
+    real_estate_properties: data.real_estate_properties || [],
+    documents: data.documents || [],
+    disclosures: data.disclosures || [],
+    rfis: data.rfis || [],
+    application_participants: data.application_participants || [],
+    sections: data.sections || [],
+  }
+
+  return enrichedApplication as unknown as Application
 }
 
 /**
@@ -146,7 +157,21 @@ export async function createApplication(
     throw new Error(`Failed to create application: ${error.message}`)
   }
 
-  return application as unknown as Application
+  // Add empty arrays for related entities that weren't fetched
+  const enrichedApplication = {
+    ...application,
+    people: [],
+    employment_records: [],
+    financial_entries: [],
+    real_estate_properties: [],
+    documents: [],
+    disclosures: [],
+    rfis: [],
+    application_participants: [],
+    sections: [],
+  }
+
+  return enrichedApplication as unknown as Application
 }
 
 /**
@@ -230,6 +255,12 @@ export async function deleteApplication(id: string): Promise<void> {
 export async function submitApplication(id: string): Promise<Application> {
   const supabase = await createClient()
 
+  // Get current user
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    throw new Error('User not authenticated')
+  }
+
   // First, verify the application is complete
   const application = await getApplication(id)
   if (!application) {
@@ -242,6 +273,16 @@ export async function submitApplication(id: string): Promise<Application> {
 
   if (application.status === 'SUBMITTED' || application.status === 'IN_REVIEW') {
     throw new Error('Application has already been submitted')
+  }
+
+  // Check if user has permission to submit
+  // For broker-owned applications, only the broker (creator) can submit
+  // For applicant-owned applications, the applicant (creator) can submit
+  const { data: canSubmitData } = await supabase
+    .rpc('can_submit_application', { app_id: id })
+
+  if (!canSubmitData) {
+    throw new Error('You do not have permission to submit this application')
   }
 
   const { data, error } = await supabase

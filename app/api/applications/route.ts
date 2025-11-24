@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import {
   getApplications,
   createApplication,
@@ -23,7 +23,7 @@ import { validateRequestBody } from '@/lib/api/validate'
 
 // Validation schema for creating an application
 const createApplicationSchema = z.object({
-  buildingId: z.string().uuid('Invalid building ID'),
+  buildingId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid building ID'),
   unit: z.string().optional(),
   transactionType: z.nativeEnum(TransactionType),
 })
@@ -43,8 +43,9 @@ export const GET = withErrorHandler(async (_request: NextRequest) => {
   // Assert user is authenticated (throws AuthenticationError if not)
   assertAuthenticated(user?.id)
 
-  // Get user profile to determine role
-  const { data: profile } = await supabase
+  // Get user profile to determine role (use admin client to bypass RLS)
+  const adminClient = createAdminClient()
+  const { data: profile } = await adminClient
     .from('users')
     .select('role')
     .eq('id', user.id)

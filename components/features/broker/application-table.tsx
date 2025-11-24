@@ -15,6 +15,7 @@ import { DataTable, Column } from "@/components/ui/data-table";
 import { ApplicationMobileCard } from "./mobile-cards/application-mobile-card";
 import { StatusTag } from "./status-tag";
 import { InviteApplicantModal } from "./invite-applicant-modal";
+import { InvitationStatusBadge, getInvitationStatus } from "./invitation-status-badge";
 import { Application } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { MoreHorizontal, FileText, UserPlus, Eye } from "lucide-react";
@@ -115,7 +116,15 @@ const columns: Column<Application>[] = [
     key: "status",
     label: "Status",
     sortable: true,
-    render: (value) => <StatusTag status={value as Application["status"]} />,
+    render: (value, application) => (
+      <div className="flex flex-col gap-1.5">
+        <StatusTag status={value as Application["status"]} />
+        <InvitationStatusBadge
+          status={getInvitationStatus(application)}
+          email={application.primaryApplicantEmail}
+        />
+      </div>
+    ),
   },
 ];
 

@@ -85,14 +85,14 @@ export async function updateSession(request: NextRequest) {
   // Refreshing the auth token is important for keeping the user's session alive
   // This should be called before any auth-dependent operations
   // Add timeout to prevent hanging on invalid credentials
-  let user = null
+  let user: { id: string } | null = null
   try {
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Auth timeout')), 5000)
     )
     const authPromise = supabase.auth.getUser()
 
-    const result = await Promise.race([authPromise, timeoutPromise]) as { data: { user: any } }
+    const result = await Promise.race([authPromise, timeoutPromise]) as { data: { user: { id: string } | null } }
     user = result.data.user
   } catch (error) {
     console.error('Error getting user in middleware:', error)

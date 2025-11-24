@@ -13,6 +13,22 @@ import {
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+
+  // Only render after client-side hydration to avoid mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    // Return a placeholder that matches the button size
+    return (
+      <Button variant="outline" size="icon" className="h-9 w-9" disabled>
+        <Sun className="h-[1.2rem] w-[1.2rem]" />
+        <span className="sr-only">Toggle theme</span>
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>

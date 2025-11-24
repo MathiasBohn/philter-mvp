@@ -63,7 +63,8 @@ export function useApplication(
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch application')
       }
-      return response.json()
+      const result = await response.json()
+      return result.application
     },
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -99,7 +100,8 @@ export function useCreateApplication(): UseMutationResult<
         throw new Error(error.message || 'Failed to create application')
       }
 
-      return response.json()
+      const result = await response.json()
+      return result.application
     },
     onSuccess: (newApplication) => {
       // Add to applications list
@@ -146,7 +148,8 @@ export function useUpdateApplication(
         throw new Error(error.message || 'Failed to update application')
       }
 
-      return response.json()
+      const result = await response.json()
+      return result.application
     },
     onMutate: async (updatedData) => {
       // Cancel outgoing refetches
@@ -259,7 +262,8 @@ export function useSubmitApplication(
         throw new Error(error.message || 'Failed to submit application')
       }
 
-      return response.json()
+      const result = await response.json()
+      return result.application
     },
     onSuccess: (updatedApplication) => {
       // Update individual application cache

@@ -201,27 +201,6 @@ function SidebarContent({ applicationId, pathname, sectionStatuses, setIsOpen, h
           );
         })}
       </nav>
-
-      <Separator />
-
-      {/* Status Legend */}
-      <div className="p-4 space-y-2">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</p>
-        <div className="space-y-1 text-xs">
-          <div className="flex items-center gap-2">
-            <Circle className="h-3 w-3 text-gray-300" />
-            <span className="text-muted-foreground">Not Started</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-3 w-3 text-yellow-600" />
-            <span className="text-muted-foreground">In Progress</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-3 w-3 text-green-600" />
-            <span className="text-muted-foreground">Complete</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

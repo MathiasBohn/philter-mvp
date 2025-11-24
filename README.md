@@ -1,80 +1,70 @@
 # philter
 
-A purpose-built transaction platform for residential co-ops and condos in professionally managed buildings.
+A modern transaction platform for residential co-op and condo board applications. philter digitizes the entire workflow from application creation through board review and decision-making, supporting multiple transaction types and stakeholder roles.
 
 ## Overview
 
-philter digitizes and streamlines the board package and application workflow, enabling brokers and their clients to assemble and submit error-free, complete applications with guided checklists, smart document upload, secure role-based collaboration, transparent process tracking, and comprehensive application review capabilities.
+philter streamlines the residential real estate application process for NYC co-op and condo transactions. The platform handles the complete lifecycle of board applications, from initial submission through review, decision-making, and documentation assembly.
 
-**Key Benefits:**
-- Less manual work for all stakeholders
-- Faster approvals through streamlined workflows
-- Significantly higher application quality
-- Transparent process tracking from submission to decision
+### Transaction Types
 
-## Project Status
+- Co-op Purchase
+- Condo Purchase
+- Co-op Sublet (with tenant-specific disclosures)
+- Condo Lease (with tenant-specific disclosures)
 
-This is an MVP (Minimum Viable Product) currently in **beta testing**. The application provides complete UI workflows with client-side functionality and browser-based data persistence.
+### User Roles
 
-**Current Capabilities:**
-- Complete workflows for all user roles (Applicant, Broker, Transaction Agent, Board Member)
-- Client-side form validation with Zod schemas
-- **IndexedDB-based file storage** with 50MB-1GB+ capacity (browser-dependent)
-- **Optimized file persistence** using Blob storage instead of base64 encoding
-- **Automatic migration system** from legacy localStorage to IndexedDB
-- **Storage quota monitoring** with real-time capacity alerts
-- **Data integrity validation** with automated cleanup utilities
-- Browser-based file upload interface with PDF preview and progress tracking
-- PDF viewing and generation capabilities
-- Mock authentication system for testing user flows
-- Hybrid storage architecture (IndexedDB for files, localStorage for metadata)
-- Responsive design (mobile, tablet, desktop)
-- WCAG 2.2 AA accessibility compliance
-- Dark mode support
-- Comprehensive application sections (profile, income, financials, documents, etc.)
-- Reference letter collection system
-- NYC-specific legal compliance (Lead Paint, Flood Zone disclosures, Local Laws)
-- Consumer report authorization (FCRA compliant)
-- Lease terms and housing history tracking
-- Emergency contact management
-- Party information capture (buyers, sellers, attorneys, brokers)
-- Template management for building-specific requirements
-- Application review and decision workflows
-
-**Known Limitations:**
-- No back-end server or API integration
-- Data stored in browser only (not persistent across devices or browsers)
-- Mock authentication (no real user accounts or security)
-- File storage limited by browser IndexedDB quota (typically 50MB-1GB+)
-- No database persistence or server-side storage
-- No email notifications or real-time updates
-- No production deployment configuration
+- **Applicants** - Complete and submit applications through a guided 13-section workflow
+- **Brokers** - Manage application pipeline, perform quality assurance, and track submissions
+- **Transaction Agents** - Review applications, manage templates, and coordinate RFIs (Requests for Information)
+- **Board Members** - Review applications with private notes and make approval decisions
 
 ## Technology Stack
 
-- **Framework:** Next.js 16 with App Router
-- **React:** Version 19
-- **UI Library:** shadcn/ui + Radix UI primitives
-- **Styling:** Tailwind CSS v4 (PostCSS-based)
-- **Language:** TypeScript 5
-- **Validation:** Zod v4 (client-side schemas)
-- **Forms:** React Hook Form with @hookform/resolvers
-- **PDF:** PDF.js (viewing) + pdf-lib + jsPDF (generation)
-- **Icons:** Lucide React
-- **Date Handling:** date-fns + react-day-picker
-- **Theming:** next-themes (dark mode support)
-- **Notifications:** Sonner (toast notifications)
-- **State Management:** React hooks + IndexedDB + localStorage
-- **File Storage:** IndexedDB with Blob objects (binary storage)
-- **Metadata Storage:** localStorage with lz-string compression and chunking
-- **Storage Management:** Centralized StorageService with caching and observability
+### Core Framework
+- **Next.js 16.0.3** with App Router architecture
+- **React 19.2.0** with Server Components
+- **TypeScript 5** (strict mode enabled)
+- **Node.js 18.17+** required
+
+### UI & Styling
+- **Tailwind CSS v4** (PostCSS-based) with dark mode support
+- **shadcn/ui** component library (37 components, "new-york" style)
+- **Radix UI** primitives for accessibility
+- **Lucide React** icon library
+- **next-themes** for theme management
+
+### Forms & Validation
+- **React Hook Form** for form state management
+- **Zod** for schema validation and type inference
+
+### Data & Storage
+- **Supabase** for authentication, database, and file storage
+  - `@supabase/supabase-js` (2.84.0)
+  - `@supabase/ssr` (0.7.0)
+  - Supabase Storage with three buckets (documents, profile-photos, building-assets)
+- **localStorage** for application metadata and form data
+- **lz-string** for data compression
+- **crypto-js** for encryption utilities
+
+### PDF Handling
+- **pdfjs-dist** (5.4.394) for viewing and rendering
+- **pdf-lib** (1.17.1) for PDF manipulation and assembly
+- **jsPDF** (3.0.3) for PDF generation
+
+### Development Tools
+- **ESLint** with Next.js configuration
+- **TypeScript** strict mode
+- **Tailwind CSS** IntelliSense support
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18.17 or later
-- npm, yarn, pnpm, or bun package manager
+- Node.js 18.17 or higher
+- npm or yarn package manager
+- Modern web browser (Chrome 90+, Firefox 88+, Safari 14+, or Edge 90+)
 
 ### Installation
 
@@ -89,735 +79,425 @@ cd philter-mvp
 npm install
 ```
 
-### Development
+3. Set up environment variables (optional but recommended for authentication):
+```bash
+# Create .env.local file
+cp .env.example .env.local
 
-Run the development server:
+# Add your Supabase credentials
+NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
+**Note:** The application will run without Supabase credentials using mock data, but authentication features will be disabled.
+
+### Running the Application
+
+Start the development server:
 ```bash
 npm run dev
 ```
 
-The application will start at [http://localhost:3000](http://localhost:3000).
-
-The page auto-updates as you edit files. Changes are reflected immediately without needing to restart the server.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Building for Production
 
-Build the optimized production bundle:
-
+Create an optimized production build:
 ```bash
 npm run build
 ```
 
-This creates an optimized build in the `.next` folder.
-
-### Running Production Build
-
-After building, start the production server:
-
+Start the production server:
 ```bash
 npm start
 ```
 
-Note: You must run `npm run build` before starting the production server.
-
 ### Linting
 
 Run ESLint to check code quality:
-
 ```bash
 npm run lint
 ```
-
-Fix any issues reported before committing code.
 
 ## Project Structure
 
 ```
 philter-mvp/
 ├── app/                          # Next.js App Router
-│   ├── (auth)/                   # Authentication route group
-│   │   └── sign-in/              # Sign-in page
-│   ├── (dashboard)/              # Protected dashboard routes
-│   │   ├── applications/         # Applicant workflow
-│   │   │   ├── [id]/             # Dynamic application routes
-│   │   │   │   ├── page.tsx      # Application overview
-│   │   │   │   ├── profile/      # Personal information
-│   │   │   │   ├── parties/      # Co-applicants, guarantors
-│   │   │   │   ├── people/       # Unit owners, attorneys
-│   │   │   │   ├── income/       # Employment & income
-│   │   │   │   ├── financials/   # Assets & liabilities
-│   │   │   │   ├── real-estate/  # Housing history
-│   │   │   │   ├── lease-terms/  # Move-in preferences
-│   │   │   │   ├── building-policies/  # Pet, smoking rules
-│   │   │   │   ├── documents/    # Document uploads
-│   │   │   │   ├── disclosures/  # Legal acknowledgments
-│   │   │   │   ├── cover-letter/ # Board introduction
-│   │   │   │   └── review/       # Final review & submit
-│   │   │   └── new/              # New application creation
-│   │   ├── broker/               # Broker workflow
-│   │   │   ├── page.tsx          # Application pipeline
-│   │   │   ├── [id]/qa/          # Quality assurance
-│   │   │   ├── [id]/submit/      # Submission interface
-│   │   │   └── prefill-wizard/   # Pre-fill workflow
-│   │   ├── agent/                # Transaction Agent workflow
-│   │   │   ├── inbox/            # Submitted applications
-│   │   │   ├── templates/        # Template management
-│   │   │   ├── review/[id]/      # Application review
-│   │   │   └── submit/           # Decision submission
-│   │   ├── board/                # Board Member workflow
-│   │   │   ├── page.tsx          # Board dashboard
-│   │   │   ├── review/[id]/      # Application review
-│   │   │   ├── summary/[id]/     # Application summary
-│   │   │   └── decisions/        # Decision tracking
-│   │   ├── my-applications/      # User's applications
-│   │   ├── settings/             # User settings
-│   │   └── help-support/         # Help & support
+│   ├── (auth)/                   # Authentication routes
+│   │   ├── sign-in/
+│   │   ├── sign-up/
+│   │   ├── verify-email/
+│   │   └── accept-invitation/
+│   ├── (dashboard)/              # Main application routes
+│   │   ├── applications/         # Applicant workflow (13 sections)
+│   │   ├── broker/               # Broker pipeline and QA
+│   │   ├── agent/                # Transaction agent tools
+│   │   ├── board/                # Board member review
+│   │   ├── my-applications/
+│   │   └── settings/
+│   ├── api/                      # API routes
+│   │   ├── applications/
+│   │   ├── buildings/
+│   │   ├── invitations/
+│   │   └── auth/callback/
 │   ├── layout.tsx                # Root layout
 │   ├── page.tsx                  # Landing page
-│   └── globals.css               # Global styles
-├── components/                   # React components
-│   ├── ui/                       # shadcn/ui base components
-│   ├── forms/                    # Form components
-│   ├── layout/                   # Layout components (header, sidebar, nav)
+│   └── globals.css               # Global styles and theme
+├── components/
+│   ├── ui/                       # Base UI components (37 shadcn components)
+│   ├── forms/                    # Form components (11 specialized inputs)
+│   ├── layout/                   # Layout components (sidebar, app-shell, etc.)
 │   ├── features/                 # Feature-specific components
-│   │   ├── application/          # Applicant flow components
-│   │   ├── applications/         # Application list components
-│   │   ├── broker/               # Broker flow components
-│   │   ├── agent/                # Transaction Agent components
-│   │   ├── board/                # Board Member components
-│   │   └── storage/              # Storage management components
-│   │       ├── migration-checker.tsx  # Auto-migration from localStorage
-│   │       └── storage-monitor.tsx    # Quota monitoring and alerts
-│   ├── shared/                   # Shared utility components
-│   └── providers/                # React context providers
-├── lib/                          # Utilities and helpers
-│   ├── mock-data/                # Mock data fixtures
-│   ├── data/                     # Static data files
-│   ├── constants/                # Application constants
-│   ├── hooks/                    # Custom React hooks
-│   ├── types.ts                  # TypeScript type definitions
+│   │   ├── application/          # Applicant UI
+│   │   ├── broker/               # Broker workflow
+│   │   ├── agent/                # Transaction agent
+│   │   ├── board/                # Board member
+│   │   └── storage/              # Storage management
+│   ├── shared/                   # Shared components (PDF viewer, etc.)
+│   ├── providers/                # Context providers
+│   └── auth/                     # Authentication components
+├── lib/
+│   ├── types.ts                  # TypeScript type definitions (521 lines)
+│   ├── validators.ts             # Zod validation schemas (314 lines)
 │   ├── utils.ts                  # Utility functions
-│   ├── validators.ts             # Zod validation schemas
-│   ├── indexed-db.ts             # IndexedDB file storage (primary)
-│   ├── storage.ts                # Centralized localStorage service
-│   ├── persistence.ts            # localStorage compression/chunking
-│   ├── upload-manager.ts         # File upload with progress tracking
-│   ├── data-integrity.ts         # Data validation and cleanup
-│   ├── pdf-utils.ts              # PDF handling utilities
-│   └── user-context.tsx          # User authentication context
+│   ├── storage.ts                # localStorage service for form state
+│   ├── supabase-storage.ts       # Supabase Storage file operations
+│   ├── supabase/                 # Supabase client utilities (server/client)
+│   ├── api/
+│   │   └── documents.ts          # Document metadata management
+│   ├── contexts/                 # React contexts (auth, theme)
+│   ├── hooks/                    # Custom React hooks
+│   ├── constants/                # Application constants
+│   ├── mock-data/                # Development mock data
+│   └── pdf-utils.ts              # PDF generation utilities
+├── supabase/
+│   └── migrations/               # Database migration files
 ├── public/                       # Static assets
-│   └── samples/                  # Sample PDF files for testing
-├── docs/                         # Documentation
-│   └── development/              # Development documentation
-├── package.json                  # Project dependencies
-├── tsconfig.json                 # TypeScript configuration
-├── tailwind.config.ts            # Tailwind CSS configuration
-├── postcss.config.mjs            # PostCSS configuration
-└── CLAUDE.md                     # Claude Code project instructions
+├── documents/                    # Project documentation
+├── CLAUDE.md                     # Comprehensive development guide
+├── package.json
+├── tsconfig.json
+└── tailwind.config.js
 ```
-
-## User Roles
-
-The platform supports four distinct user roles, each with specific workflows and capabilities:
-
-### 1. Applicant
-The primary individual applying for purchase or lease of a unit.
-
-**Capabilities:**
-- Start new application by entering building code and selecting transaction type
-- Complete comprehensive application sections (profile, income, financials, real estate history, etc.)
-- Upload required documents with PDF preview
-- Add and manage parties (co-applicants, guarantors, attorneys, sellers)
-- Collect and manage reference letters with contact information
-- Track application progress through guided workflow
-- Review and submit completed application
-- Acknowledge legal disclosures and building policies
-
-### 2. Broker
-Real estate professionals managing client applications.
-
-**Capabilities:**
-- View and manage pipeline of applications
-- Initiate new applications for clients
-- Pre-fill building-specific information
-- Upload documents on behalf of clients
-- Perform quality assurance (QA) review before submission
-- Request information from applicants
-- Submit applications to buildings
-- Track application status and history
-
-### 3. Transaction Agent
-Building management professionals who review and process applications.
-
-**Capabilities:**
-- Create and manage building-specific application templates
-- Configure required sections and legal compliance requirements
-- Review submitted applications in inbox
-- View complete application packages with PDF viewer
-- Request additional information (RFI) from applicants or brokers
-- Make approval decisions (approve, conditional approval, deny)
-- Issue adverse action notices when required
-- Toggle jurisdiction-specific requirements (NYC Local Laws, etc.)
-
-### 4. Board Member
-Board members who review applications and make final decisions.
-
-**Capabilities:**
-- View read-only compiled application packages
-- Review all submitted documents and information
-- Add private notes (not visible to applicants)
-- Mark applications as reviewed
-- Download complete packages
-- View SSN-redacted versions for privacy
-- Track review status across multiple applications
-
-## Transaction Types
-
-philter supports four transaction types, each with specific requirements and workflows:
-
-1. **Co-op Purchase** - Purchase of cooperative apartment shares
-2. **Condo Purchase** - Purchase of condominium unit
-3. **Co-op Sublet** - Sublease of cooperative apartment (includes tenant-specific disclosures)
-4. **Condo Lease** - Lease of condominium unit (includes tenant-specific disclosures)
-
-**Note:** Lease and sublet transactions include additional disclosure requirements such as Local Law 55 (Right to Counsel), Window Guard notices, and tenant-specific acknowledgments.
-
-## Application Sections
-
-The applicant workflow is organized into distinct sections, each capturing specific information required for board review:
-
-1. **Overview** - Application dashboard with progress tracking and quick navigation
-2. **Profile** - Personal information, contact details, SSN (masked), emergency contacts
-3. **Parties** - Co-applicants, guarantors, and their roles
-4. **People** - Unit owners, seller's broker, attorneys (buyer and seller)
-5. **Income** - Employment history, current job, income sources, self-employment details
-6. **Financials** - Assets (bank accounts, investments, retirement), liabilities, net worth
-7. **Real Estate** - Current residence, previous residences, landlord references, housing timeline
-8. **Lease Terms** - Preferred move-in date, rent budget range, lease duration, special requirements
-9. **Building Policies** - Pet acknowledgment, smoking policy, renovation guidelines
-10. **Documents** - Document uploads organized by category (ID, bank statements, tax returns, etc.)
-11. **Disclosures** - Legal acknowledgments (Lead Paint, Flood Zone, Local Laws, consumer reports)
-12. **Cover Letter** - Personal introduction and message to the board
-13. **Review** - Final application review, validation checks, and submission
-
-Each section includes:
-- Form validation with real-time error checking
-- Progress indicators
-- Save functionality (localStorage persistence)
-- Conditional fields based on transaction type
-- Helpful tooltips and guidance
-
-## Storage System
-
-philter uses an optimized hybrid storage architecture combining IndexedDB for files and localStorage for metadata.
-
-### IndexedDB File Storage
-
-**Architecture:**
-- Database: `philter_file_storage` (version 1)
-- Object store: `files` (keyPath: "id")
-- Indexes: `category`, `uploadedAt`
-- Storage capacity: 50MB-1GB+ (browser-dependent)
-
-**Key Benefits:**
-- **33% space savings** - Files stored as Blobs instead of base64
-- **Higher capacity** - 10-100x more storage than localStorage
-- **Better performance** - Binary storage optimized for large files
-- **Structured queries** - Index-based file retrieval
-
-**File Record Schema:**
-```typescript
-{
-  id: string           // Unique file identifier
-  filename: string     // Original filename
-  size: number         // File size in bytes
-  type: string         // MIME type
-  blob: Blob          // Binary file data
-  uploadedAt: Date    // Upload timestamp
-  category: string    // File category (e.g., "documents", "income")
-}
-```
-
-### Automatic Migration
-
-The application automatically detects and migrates legacy base64 files from localStorage to IndexedDB:
-
-- **Detection:** Runs on dashboard load, checks for `philter_uploaded_files` key
-- **Migration:** Converts base64 strings to Blobs, saves to IndexedDB
-- **Cleanup:** Removes legacy data after successful migration
-- **User feedback:** Shows progress indicator and success/error messages
-- **Error handling:** Graceful fallback if migration fails
-
-### Storage Monitoring
-
-Real-time storage quota monitoring with user alerts:
-
-- **Automatic checks** every 5 minutes
-- **Warning alert** at 80% capacity
-- **Critical alert** at 90% capacity
-- **Quota information** displayed in alerts
-- **Browser compatibility** checks
-
-### Data Integrity
-
-Built-in validation and cleanup utilities:
-
-- **Orphaned file detection** - Find files not referenced by any application
-- **Reference validation** - Verify all file references exist in storage
-- **Auto-repair** - Automatically fix inconsistencies
-- **Cleanup tools** - Remove orphaned files (dry-run and actual deletion)
-
-**Integrity Check Functions:**
-- `checkDataIntegrity(applicationId)` - Validate application file references
-- `findOrphanedFiles()` - Identify unreferenced files
-- `cleanupOrphanedFiles(dryRun)` - Remove orphaned files
-- `repairDataIntegrity(applicationId, autoFix)` - Auto-repair issues
-
-### Upload Manager
-
-Centralized file upload management with progress tracking:
-
-- **Upload simulation** with realistic progress updates
-- **Progress callbacks** for UI feedback
-- **Automatic persistence** to IndexedDB after upload
-- **File restoration** on page load
-- **Memory management** with blob URL cleanup
-
-**Key Functions:**
-```typescript
-// Start upload with progress tracking
-uploadManager.startUpload(fileId, onProgress, onComplete, onError)
-
-// Save file to IndexedDB
-await saveFileToStorage(file, fileId, category)
-
-// Retrieve stored files
-const files = await getStoredFiles()
-const file = await getStoredFile(fileId)
-
-// Delete from storage
-await deleteStoredFile(fileId)
-
-// Convert stored file back to File object
-const fileObject = getFileObject(storedFile)
-```
-
-### localStorage Metadata
-
-Application metadata and form data stored in localStorage with optimization:
-
-- **Compression:** lz-string for large data sets
-- **Chunking:** Automatic splitting for data over size limits
-- **Caching:** In-memory cache to reduce localStorage reads
-- **Observability:** Event-based reactivity for storage updates
-- **Centralized service:** Single StorageService interface
 
 ## Key Features
 
 ### Applicant Workflow
-**Application Initiation:**
-- Building code entry with validation
-- Transaction type selection (purchase or lease/sublet)
-- Application overview dashboard with progress tracking
 
-**Personal Information:**
-- Comprehensive profile with contact information
-- PII masking for sensitive data (SSN, phone numbers)
-- Emergency contact management
+A guided 13-section application process:
 
-**Parties & People:**
-- Add co-applicants, guarantors, and attorneys
-- Capture unit owner/seller information
-- Owner's broker and attorney details
-- Role-based party management
+1. **Overview** - Dashboard with progress tracking
+2. **Profile** - Personal information with SSN masking
+3. **Parties** - Co-applicants and guarantors
+4. **People** - Unit owners, brokers, attorneys
+5. **Income** - Employment history and self-employment
+6. **Financials** - Assets, liabilities, net worth (REBNY-aligned)
+7. **Real Estate** - Housing history with landlord references
+8. **Lease Terms** - Move-in preferences and rent budget
+9. **Building Policies** - Pet, smoking, renovation acknowledgments
+10. **Documents** - File upload with categorization and PDF preview
+11. **Disclosures** - Legal acknowledgments (Lead Paint, FCRA, etc.)
+12. **Cover Letter** - Personal introduction to the board
+13. **Review** - Final validation and submission
 
-**Employment & Income:**
-- Current and previous employment history
-- Income documentation and verification
-- Self-employment details
-- Additional income sources
+### File Storage System
 
-**Financial Information:**
-- Assets summary (REBNY-aligned format)
-- Liabilities and monthly obligations
-- Net worth calculations
-- Bank account details
+- **Supabase Storage** for all file uploads
+- Three storage buckets:
+  - `documents` - Application documents (private, user-specific)
+  - `profile-photos` - User profile photos (private)
+  - `building-assets` - Building logos and images (public)
+- File size limits: 25MB for documents, 5MB for profile photos
+- Signed URLs for secure file access
+- Public URLs for public assets
+- Storage quota tracking (1GB free tier)
+- Document metadata tracked in Supabase database
 
-**Real Estate History:**
-- Current residence information
-- Previous residence history
-- Landlord references and contact information
-- Housing timeline tracking
+### Form Management
 
-**Lease Terms:**
-- Preferred move-in date selection
-- Rent budget range (min/max)
-- Lease duration preferences
-- Special requirements or conditions
+- Real-time validation with Zod schemas
+- Automatic form data persistence
+- Progressive disclosure of errors
+- Field-level and form-level validation
+- Error summary components
+- Specialized input components (masked SSN, currency, date pickers)
 
-**Building Policies:**
-- Pet acknowledgment (with pet details)
-- Smoking policy acceptance
-- Renovation guidelines awareness
-- Building-specific rules compliance
+### PDF Features
 
-**Documents:**
-- Document upload with category assignment and drag-and-drop
-- IndexedDB-based file storage with Blob objects
-- PDF preview and management
-- File organization by type
-- Real-time upload progress tracking
-- Automatic file persistence and restoration
-- Memory-efficient blob URL management
+- Client-side and server-side PDF viewing
+- PDF document assembly
+- Cover sheet generation with jsPDF
+- PDF manipulation with pdf-lib
+- Document preview and download
 
-**Legal Disclosures:**
-- NYC-specific requirements (Lead Paint, Flood Zone)
-- Local Law acknowledgments (LL38, LL55)
-- Window Guard and safety notices
-- Consumer report authorization (FCRA compliant)
-- Background check consent
+### Authentication & Authorization
 
-**Cover Letter:**
-- Personal introduction to board
-- Motivation and background
-- Custom message composition
+- Supabase-based authentication (email/password)
+- User profile management
+- Role-based access control (5 roles)
+- Session management with automatic refresh
+- Invitation system for broker-initiated applications
+- Email verification workflow
 
-**Review & Submit:**
-- Complete application review
-- Validation and completeness checks
-- Final submission confirmation
+### Broker Tools
 
-### Broker Workflow
-**Application Management:**
-- Pipeline dashboard with application tracking
-- Multi-application view with status indicators
-- Search and filter capabilities
+- Application pipeline management (table/card views)
+- Quality assurance checklists
+- Building submission tracking
+- Mobile-responsive interfaces
 
-**Pre-fill Wizard:**
-- Building-specific information entry
-- Bulk data entry for efficiency
-- Template-based pre-population
+### Transaction Agent Features
 
-**Quality Assurance:**
-- Comprehensive QA checklist
-- Document completeness verification
-- Data accuracy validation
-- Missing information identification
+- Template management system for building-specific configurations
+- RFI (Request for Information) management
+- Decision panel with approval workflows
+- Custom disclosure configuration
 
-**Submission:**
-- Review before submission
-- Submit to building management
-- Track submission status and history
+### Board Member Interface
 
-### Transaction Agent Workflow
-**Template Management:**
-- Create building-specific templates
-- Configure required vs. optional sections
-- Set legal compliance requirements
-- Manage jurisdiction-specific rules
+- Application review with SSN-redacted views
+- Private notes system
+- Decision tracking
+- Document review tools
 
-**Application Inbox:**
-- View all submitted applications
-- Filter by status, building, date
-- Quick access to application details
-- Priority queue management
+### Developer Experience
 
-**Application Review:**
-- Complete package viewer with PDF support
-- Side-by-side document comparison
-- Applicant information summary
-- Financial analysis tools
+- Hot module reloading in development
+- TypeScript strict mode with comprehensive types
+- Path aliases for clean imports (`@/components`, `@/lib`, etc.)
+- Mock data system for development
+- Comprehensive error handling
+- Storage debugging tools
 
-**Request for Information (RFI):**
-- Create RFI requests for applicants or brokers
-- Track RFI status and responses
-- Automated follow-up reminders
-- RFI resolution workflow
+## Storage Architecture
 
-**Decision Management:**
-- Approval decision interface (approve, conditional, deny)
-- Adverse action notice generation
-- Decision documentation and rationale
-- Notification to applicants and brokers
+### File Storage (Supabase Storage)
 
-### Board Member Workflow
-**Application Review:**
-- Read-only compiled application packages
-- Complete document access
-- SSN-redacted views for privacy
-- Searchable application content
+Cloud-based file storage using Supabase:
+- **Three storage buckets:**
+  - `documents` - Private application documents with RLS policies
+  - `profile-photos` - Private user profile photos
+  - `building-assets` - Public building images and logos
+- **Storage path structure:** `{userId}/{applicationId}/{filename}`
+- **Access control:** Row Level Security (RLS) policies ensure users only access their own files
+- **File limits:** 25MB for documents, 5MB for profile photos
+- **URL types:** Signed URLs for private files, public URLs for public assets
+- **Quota:** 1GB on free tier, 100GB on pro tier
 
-**Private Notes:**
-- Add confidential notes (not shared with applicants)
-- Note history and timestamps
-- Collaborative board member notes
+### Database Storage (Supabase PostgreSQL)
 
-**Decision Tracking:**
-- Mark applications as reviewed
-- View board member review status
-- Decision history and audit trail
+Document metadata and application data:
+- **Documents table** - Tracks file metadata (filename, size, category, storage path, status)
+- **Applications table** - Application form data and status
+- **Users table** - User profiles and authentication data
+- **RLS policies** - Row-level security for data access control
+- Soft delete for documents (deleted_at timestamp)
 
-**Package Download:**
-- Download complete application packages
-- Expiration notices for downloaded files
-- Secure download links
+### Application Storage (localStorage)
 
-## Development Guidelines
+Form state and UI preferences:
+- Centralized through `storageService` class
+- In-memory caching for performance
+- Observer pattern for reactive updates
+- Compression for large data (threshold: 1KB)
+- Temporary form data before submission
 
-### Component Organization
-- **UI Components** (`/components/ui`): Base shadcn/ui components
-- **Form Components** (`/components/forms`): Reusable form elements
-- **Layout Components** (`/components/layout`): App shell, navigation, headers
-- **Feature Components** (`/components/features`): Role-specific components
+## Authentication Setup
 
-### TypeScript
-- Strict mode enabled
-- All components use TypeScript (.tsx extension)
-- Type definitions in `lib/types.ts`
-- No `any` types (use proper typing)
+### With Supabase (Recommended)
 
-### Styling
-- Utility-first approach with Tailwind CSS v4
-- Custom properties for theming in `globals.css`
-- Dark mode support via `prefers-color-scheme`
-- Responsive breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Run database migrations:
+```bash
+supabase db push --linked
+```
+3. Add environment variables to `.env.local`
+4. Restart the development server
 
-### Storage Architecture
-- **IndexedDB** for file storage (50MB-1GB+ capacity)
-  - Files stored as Blobs (binary) instead of base64
-  - Saves ~33% space compared to base64 encoding
-  - Database: `philter_file_storage`
-  - Object store: `files` with category and uploadedAt indexes
-- **localStorage** for application metadata and form data
-  - Compression with lz-string
-  - Automatic chunking for large data
-  - Centralized StorageService with caching
-- **Automatic migration** from legacy base64 localStorage to IndexedDB
-- **Storage monitoring** with quota usage alerts
-- **Data integrity** validation and cleanup utilities
-- React hooks for component state
-- Mock data fixtures in `lib/mock-data/`
+### Without Supabase
 
-### Storage Best Practices
+**Note:** Supabase is now required for the application to function properly, as it provides:
+- Authentication and user management
+- Database for application data
+- File storage for document uploads
 
-**File Storage:**
-- Always persist files to IndexedDB after upload completes
-- Use `saveFileToStorage(file, id, category)` from `@/lib/upload-manager`
-- Restore files on page load using `getStoredFiles()`
-- Clean up blob URLs with `URL.revokeObjectURL()` to prevent memory leaks
-- Handle storage quota errors gracefully
+Without Supabase credentials, the application will have limited functionality. For local development without Supabase, consider using Supabase Local Development with Docker.
 
-**Example Pattern:**
+## Browser Compatibility
+
+### Supported Browsers
+
+- Chrome 90+ (recommended)
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+### Required Features
+
+- Modern JavaScript (ES2017+)
+- CSS Grid and Flexbox
+- Local Storage support
+- Fetch API for HTTP requests
+
+## Development Workflow
+
+### Adding a New Page
+
+1. Create page file in appropriate route group
+2. Add navigation link to sidebar
+3. Implement page component with proper layouts
+
+### Adding a New Form Section
+
+1. Create form component with React Hook Form
+2. Define Zod validation schema
+3. Add page route with proper layout
+4. Implement form persistence
+
+### Adding File Upload
+
+1. Use `UploadDropzone` component for file selection
+2. Upload files to Supabase Storage using `uploadFile()` from `lib/supabase-storage.ts`
+3. Create document metadata record using `createDocument()` from `lib/api/documents.ts`
+4. Display uploaded files with signed URLs
+5. Handle RLS policies for secure access
+
+Example:
 ```typescript
-// After upload completes
-if (document.status === 'complete') {
-  await saveFileToStorage(document.file, document.id, 'documents')
-}
+import { uploadFile, STORAGE_BUCKETS } from '@/lib/supabase-storage'
+import { createDocument } from '@/lib/api/documents'
 
-// Restore on mount
-useEffect(() => {
-  const loadFiles = async () => {
-    const storedFiles = await getStoredFiles()
-    // Merge with metadata and restore to state
-  }
-  loadFiles()
-}, [])
+// Upload file to Supabase Storage
+const result = await uploadFile(
+  file,
+  STORAGE_BUCKETS.DOCUMENTS,
+  `${userId}/${applicationId}/${file.name}`
+)
 
-// Cleanup on unmount
-useEffect(() => {
-  return () => {
-    documents.forEach(doc => {
-      if (doc.preview) URL.revokeObjectURL(doc.preview)
-    })
-  }
-}, [documents])
+// Create metadata record
+await createDocument({
+  applicationId,
+  filename: file.name,
+  category: 'BANK_STATEMENT',
+  size: file.size,
+  mimeType: file.type,
+  storagePath: result.path
+})
 ```
 
-**Metadata Storage:**
-- Use centralized `storageService` from `@/lib/storage`
-- Define storage keys in `STORAGE_KEYS` constant
-- Leverage caching to reduce localStorage reads
-- Use observers for reactive updates
+See `CLAUDE.md` for detailed development patterns and examples.
 
-### Accessibility
-- WCAG 2.2 AA compliant
-- Keyboard navigation support
-- Screen reader compatible
-- Proper ARIA labels and roles
-- Focus management
-- Color contrast ratios met
+## Code Style & Conventions
 
-## Testing
+### File Naming
 
-### Manual Testing Approach
-This MVP uses manual testing to verify functionality across all workflows and user roles.
+- **Components:** kebab-case files (`upload-dropzone.tsx`), PascalCase names (`UploadDropzone`)
+- **Utilities:** kebab-case (`supabase-storage.ts`, `pdf-utils.ts`)
+- **Types:** `types.ts` for main definitions, collocated types for component-specific
 
-**User Flow Testing:**
-Navigate through complete workflows to verify end-to-end functionality:
-- **Applicant:** Create application → Complete all sections → Submit
-- **Broker:** View pipeline → Initiate application → QA review → Submit
-- **Transaction Agent:** Create template → Review applications → Make decisions
-- **Board Member:** Review packages → Add notes → Download
+### Import Order
+1. External dependencies
+2. Internal components
+3. Internal utilities
+4. Types
 
-**Storage and Persistence Testing:**
-- Verify IndexedDB file storage and retrieval
-- Test automatic migration from localStorage to IndexedDB
-- Validate Blob storage and File object conversion
-- Test data persistence across page refreshes
-- Verify storage quota monitoring and alerts
-- Validate data integrity checks and cleanup
-- Test localStorage compression with lz-string
-- Check metadata storage and caching
+### TypeScript
+- Explicit types for function parameters and return values
+- Type inference for local variables
+- Prefer interfaces for object shapes
+- Use enums for fixed sets of values
 
-**Cross-Browser Testing:**
-Test on multiple browsers to ensure compatibility:
-- Chrome/Edge (Chromium-based)
-- Safari (WebKit)
-- Firefox (Gecko)
-- Verify IndexedDB support and quota limits per browser
-- Test file upload and storage across different browsers
-
-**Responsive Testing:**
-Verify layouts at different breakpoints:
-- Mobile: 320px - 639px (phones)
-- Tablet: 640px - 1023px (tablets)
-- Desktop: 1024px+ (laptops, monitors)
-
-**Form Validation Testing:**
-- Test Zod schema validation
-- Verify error messages display correctly
-- Check required field enforcement
-- Test conditional validation logic
-
-**Accessibility Testing:**
-- Keyboard navigation (Tab, Enter, Escape, Arrow keys)
-- Screen reader testing (NVDA, JAWS, VoiceOver)
-- Browser DevTools accessibility audit
-- WCAG 2.2 AA compliance verification
-- Color contrast ratio testing
-- Focus indicator visibility
-
-### Testing Documentation
-Detailed testing procedures available in:
-- `docs/development/integration-testing-checklist.md` - Comprehensive testing checklist
-- `docs/development/testing-execution-guide.md` - Step-by-step testing procedures
-- `docs/development/indexeddb-integration-tests.md` - IndexedDB storage testing checklist
+### React
+- Function components over class components
+- Server Components by default
+- `"use client"` directive only when needed
+- Custom hooks for reusable stateful logic
 
 ## Documentation
 
-Additional documentation is available in the `docs/` directory:
+### Project Documentation
 
-### General Documentation
-- `docs/development/requirements.md` - Project requirements and specifications
-- `docs/development/design-system.md` - Design tokens and component patterns
-- `docs/development/component-guide.md` - Component usage guide
-- `docs/development/user-guide.md` - User walkthrough guide
+- **CLAUDE.md** - Comprehensive development guide (primary reference)
+- **README.md** - This file, project overview and setup
+- **documents/development/** - Additional development documentation
 
-### Storage & Persistence Documentation
-- `docs/development/indexeddb-integration-plan.md` - IndexedDB architecture and implementation
-- `docs/development/indexeddb-integration-tests.md` - Storage testing procedures
+### Key Documentation Sections in CLAUDE.md
 
-### Testing Documentation
-- `docs/development/integration-testing-checklist.md` - Comprehensive testing checklist
-- `docs/development/testing-execution-guide.md` - Step-by-step testing procedures
+- Architecture overview
+- Component organization
+- Data models and type system
+- Validation system
+- File storage and persistence
+- Utility functions and custom hooks
+- Common development tasks
+- Troubleshooting guides
 
-## Future Enhancements
+## Troubleshooting
 
-Potential enhancements for production release:
+### File upload failures
+- Verify Supabase Storage buckets are created
+- Check RLS policies allow authenticated users to upload
+- Ensure file size is within limits (25MB for documents, 5MB for profile photos)
+- Review browser console for Supabase Storage errors
+- Check storage path follows format: `{userId}/{applicationId}/{filename}`
 
-**Infrastructure:**
-- Back-end API integration (Supabase, PostgreSQL, or similar)
-- Real authentication system with user accounts and security
-- Database persistence with row-level security (RLS)
-- Production deployment configuration and hosting
-- Content Delivery Network (CDN) for static assets
-- Server-side rendering optimization
+### File access denied
+- Verify RLS policies are properly configured
+- Ensure user is authenticated
+- Check that storage path includes correct user ID
+- Review Supabase dashboard for policy errors
 
-**File Management:**
-- Cloud storage integration (S3, Azure Blob, etc.)
-- Resumable file uploads (TUS protocol)
-- File virus scanning and validation
-- Document versioning and history
-- Automated document expiration
+### Storage quota exceeded
+- Use `getStorageQuota()` to check usage
+- Free tier includes 1GB storage
+- Consider upgrading to Pro tier (100GB)
+- Clean up old or unused files
 
-**Communication:**
-- Email notification system (submission confirmations, RFI alerts, decisions)
-- In-app messaging between applicants, brokers, and agents
-- SMS notifications for critical updates
-- Push notifications for mobile
+### Authentication issues
+- Verify Supabase environment variables are set in `.env.local`
+- Check Supabase project URL and keys are correct
+- Ensure database migrations have been applied: `supabase db push --linked`
+- Review browser console for auth errors
+- Verify RLS policies are not blocking access
 
-**Security & Compliance:**
-- Server-side validation (in addition to client-side)
-- Data encryption at rest and in transit
-- Audit logging for all actions
-- GDPR and privacy law compliance tools
-- Two-factor authentication (2FA)
-- Session management and timeout
+### Database connection errors
+- Check Supabase project status in dashboard
+- Verify database migrations are up to date
+- Check network connectivity to Supabase
+- Review API logs in Supabase dashboard
 
-**Testing & Quality:**
-- Automated unit testing (Jest, Vitest)
-- Integration testing (Playwright, Cypress)
-- End-to-end testing
-- Continuous Integration/Continuous Deployment (CI/CD)
-- Performance monitoring and optimization
-
-**Analytics & Insights:**
-- Application analytics (completion rates, time-to-submit)
-- User behavior tracking
-- Performance metrics dashboards
-- A/B testing framework
-
-**Advanced Features:**
-- E-signature integration (DocuSign, Adobe Sign)
-- Payment processing for application fees
-- Automated credit and background check integration
-- OCR for automatic document data extraction
-- Multi-language support (i18n)
-- Mobile native apps (iOS/Android)
-- Bulk operations for brokers and agents
-- Advanced search and filtering
-- Data export and reporting tools
+### Build errors
+- Clear `.next` directory: `rm -rf .next`
+- Reinstall dependencies: `rm -rf node_modules && npm install`
+- Check Node.js version (18.17+ required)
+- Verify TypeScript compilation succeeds: `npx tsc --noEmit`
 
 ## Contributing
 
-This is an MVP in beta testing. When contributing to the project:
-
-### Before Starting
-1. Review the project documentation in `docs/development/`
-2. Understand the established code structure and patterns
-3. Check the CLAUDE.md file for AI coding assistant guidelines
-
-### Code Quality Standards
-- **TypeScript:** Use strict typing, no `any` types
-- **Components:** Follow the established component organization
-- **Styling:** Use Tailwind utility classes, maintain responsive design
-- **Accessibility:** Ensure WCAG 2.2 AA compliance
-- **Forms:** Use React Hook Form with Zod validation schemas
-
-### Development Workflow
-1. Create feature branch from `main`
-2. Write code following existing patterns
-3. Test across different screen sizes (mobile, tablet, desktop)
-4. Run `npm run lint` and fix all issues
-5. Test with keyboard navigation and screen readers
-6. Commit with descriptive messages
-7. Submit pull request with detailed description
-
-### Testing
-- Manually test all affected user workflows
-- Verify localStorage persistence works correctly
-- Test in multiple browsers (Chrome, Safari, Firefox)
-- Check dark mode appearance if UI changes were made
+1. Follow the code style and conventions outlined in `CLAUDE.md`
+2. Write TypeScript with strict mode
+3. Test changes across multiple browsers
+4. Ensure accessibility guidelines are met (WCAG 2.2 AA)
+5. Document complex logic with comments
 
 ## License
 
-[Add your license information here]
+[Add license information]
 
-## Contact
+## Support
 
-[Add contact information or support details here]
+For questions or issues:
+- Check `CLAUDE.md` for detailed development guidance
+- Review project documentation in `/documents`
+- Check browser console for error messages
+- Verify environment setup and dependencies
 
 ---
 
-**philter** - Transaction Platform MVP | Built with Next.js 16, React 19, and TypeScript 5 | Currently in Beta Testing
+**Version:** 0.1.0
+**Last Updated:** 2025-11-24
+**Node.js:** 18.17+ required
+**Next.js:** 16.0.3
+**React:** 19.2.0
