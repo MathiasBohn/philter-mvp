@@ -43,7 +43,8 @@ export default function SignInPage() {
           setError('Please verify your email before signing in.')
           await supabase.auth.signOut()
         } else {
-          router.push('/applications')
+          // Redirect to my applications page after successful login
+          router.push('/my-applications')
           router.refresh()
         }
       }
