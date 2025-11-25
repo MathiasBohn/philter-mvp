@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
     // Get all buildings (RLS policies will handle access control)
     const { data: buildings, error } = await supabase
       .from('buildings')
-      .select('id, name, address, city, state, zip, building_type')
+      .select('id, name, code, address, building_type')
       .order('name', { ascending: true })
 
     if (error) {
@@ -42,13 +42,17 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    // Format address for display
-    const formattedBuildings = buildings.map(building => ({
-      id: building.id,
-      name: building.name,
-      address: `${building.address}, ${building.city}, ${building.state} ${building.zip}`,
-      buildingType: building.building_type,
-    }))
+    // Format address for display (address is a JSONB column)
+    const formattedBuildings = buildings.map(building => {
+      const addr = building.address as { street?: string; city?: string; state?: string; zip?: string } | null
+      return {
+        id: building.id,
+        name: building.name,
+        code: building.code,
+        address: addr ? `${addr.street || ''}, ${addr.city || ''}, ${addr.state || ''} ${addr.zip || ''}` : '',
+        buildingType: building.building_type,
+      }
+    })
 
     return NextResponse.json({ buildings: formattedBuildings }, { status: 200 })
   } catch (error) {
