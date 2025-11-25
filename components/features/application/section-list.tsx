@@ -14,17 +14,10 @@ export interface SectionDefinition {
 
 const sectionDefinitions: SectionDefinition[] = [
   {
-    key: "building-policies",
-    title: "Building Policies",
-    description: "Review building-specific policies and requirements",
-    href: "/building-policies",
-    isRequired: true,
-  },
-  {
-    key: "lease-terms",
-    title: "Lease Terms",
-    description: "Proposed lease terms and financial details",
-    href: "/lease-terms",
+    key: "profile",
+    title: "Profile",
+    description: "Personal information and address history",
+    href: "/profile",
     isRequired: true,
   },
   {
@@ -42,13 +35,6 @@ const sectionDefinitions: SectionDefinition[] = [
     isRequired: false,
   },
   {
-    key: "profile",
-    title: "Profile",
-    description: "Personal information and address history",
-    href: "/profile",
-    isRequired: true,
-  },
-  {
     key: "income",
     title: "Employment & Income",
     description: "Employment history and income documentation",
@@ -63,11 +49,40 @@ const sectionDefinitions: SectionDefinition[] = [
     isRequired: true,
   },
   {
+    key: "real-estate",
+    title: "Real Estate Holdings",
+    description: "Properties you own or have an interest in",
+    href: "/real-estate",
+    isRequired: false,
+  },
+  {
+    key: "lease-terms",
+    title: "Lease Terms",
+    description: "Proposed lease terms and financial details",
+    href: "/lease-terms",
+    isRequired: true,
+    showForTransactions: [TransactionType.CONDO_LEASE, TransactionType.COOP_SUBLET],
+  },
+  {
+    key: "building-policies",
+    title: "Building Policies",
+    description: "Review building-specific policies and requirements",
+    href: "/building-policies",
+    isRequired: true,
+  },
+  {
     key: "documents",
     title: "Documents",
     description: "Upload required supporting documents",
     href: "/documents",
     isRequired: true,
+  },
+  {
+    key: "cover-letter",
+    title: "Cover Letter",
+    description: "Personal introduction to the board",
+    href: "/cover-letter",
+    isRequired: false,
   },
   {
     key: "disclosures",

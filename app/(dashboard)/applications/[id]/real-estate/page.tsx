@@ -14,7 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
 import { RealEstateProperty, PropertyType, Address } from "@/lib/types";
 import { FormSkeleton } from "@/components/loading/form-skeleton";
-import { useApplication } from "@/lib/hooks/use-applications";
+import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications";
 import { notFound } from "next/navigation";
 
 const PROPERTY_TYPE_LABELS: Record<PropertyType, string> = {
@@ -30,8 +30,10 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const router = useRouter();
   const { data: application, isLoading, error } = useApplication(id);
+  const updateApplication = useUpdateApplication(id);
   const [properties, setProperties] = useState<RealEstateProperty[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const initialized = useRef(false);
   const [newProperty, setNewProperty] = useState<Partial<RealEstateProperty>>({
     propertyType: PropertyType.CONDO,
@@ -50,19 +52,36 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
   });
 
   // Load existing properties from application (only once on mount)
-  // We need to sync from async loaded application data while maintaining local state
-  // for user edits. This is a valid use case for setState in effect.
+  // Check both metadata and database table for properties
   useEffect(() => {
-    if (application?.realEstateProperties && !initialized.current) {
-      // eslint-disable-next-line
-      setProperties(application.realEstateProperties);
+    if (application && !initialized.current) {
+      // First check metadata (where we save), then fall back to database table
+      const metadata = (application as { metadata?: { realEstateProperties?: RealEstateProperty[] } }).metadata;
+      const metadataProperties = metadata?.realEstateProperties;
+      const dbProperties = application.realEstateProperties;
+
+      if (metadataProperties && metadataProperties.length > 0) {
+        setProperties(metadataProperties);
+      } else if (dbProperties && dbProperties.length > 0) {
+        setProperties(dbProperties);
+      }
       initialized.current = true;
     }
   }, [application]);
 
   const handleSave = async () => {
-    // TODO: Implement save with API call
-    console.log("Saving real estate properties:", properties);
+    setIsSaving(true);
+    try {
+      // Save real estate properties (stored in metadata on the server)
+      await updateApplication.mutateAsync({
+        realEstateProperties: properties,
+      });
+    } catch (error) {
+      console.error("Error saving real estate properties:", error);
+      alert("Failed to save. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddProperty = () => {

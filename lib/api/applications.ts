@@ -106,15 +106,34 @@ export async function getApplication(id: string): Promise<Application | null> {
   // Extract metadata fields to top level for easy access
   const metadata = (data.metadata as Record<string, unknown>) || {}
 
+  // Get people - prefer metadata (for co-applicants/guarantors) over database table
+  // Database table is used by Profile page, metadata is used by People page
+  const metadataPeople = metadata.people as Array<Record<string, unknown>> | undefined
+  const databasePeople = data.people || []
+
+  // Merge: database people (primary applicant from Profile) + metadata people (co-applicants from People page)
+  const allPeople = metadataPeople && metadataPeople.length > 0
+    ? [...databasePeople, ...metadataPeople.filter(mp => !databasePeople.some((dp: { id?: string }) => dp.id === mp.id))]
+    : databasePeople
+
+  // Get disclosures - prefer metadata (with acknowledgments) over database table
+  // Metadata disclosures have signatures, acknowledgment status, etc.
+  const metadataDisclosures = metadata.disclosures as Array<Record<string, unknown>> | undefined
+
   // Ensure all arrays exist (for backward compatibility with old data)
   const enrichedApplication = {
     ...data,
-    people: data.people || [],
+    people: allPeople,
+    employmentRecords: data.employment_records || [],
     employment_records: data.employment_records || [],
+    financialEntries: data.financial_entries || [],
     financial_entries: data.financial_entries || [],
-    real_estate_properties: data.real_estate_properties || [],
+    // Use metadata realEstateProperties if available, otherwise use database table
+    realEstateProperties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || data.real_estate_properties || [],
+    real_estate_properties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || data.real_estate_properties || [],
     documents: data.documents || [],
-    disclosures: data.disclosures || [],
+    // Use metadata disclosures if available (they have acknowledgment data)
+    disclosures: metadataDisclosures || data.disclosures || [],
     rfis: data.rfis || [],
     application_participants: data.application_participants || [],
     sections: data.sections || [],
@@ -122,6 +141,8 @@ export async function getApplication(id: string): Promise<Application | null> {
     leaseTerms: metadata.leaseTerms || null,
     buildingPolicies: metadata.buildingPolicies || null,
     coverLetter: metadata.coverLetter || null,
+    // Deal parties (unit owner, attorneys, brokers)
+    participants: metadata.participants || [],
   }
 
   return enrichedApplication as unknown as Application
@@ -217,6 +238,14 @@ type UpdateApplicationData = {
   coverLetter?: string
   leaseTerms?: Record<string, unknown>
   buildingPolicies?: Record<string, unknown>
+  // Deal parties (unit owner, attorneys, brokers)
+  participants?: Array<Record<string, unknown>>
+  // Disclosure acknowledgments with signatures and extra data
+  disclosures?: Array<Record<string, unknown>>
+  // Co-applicants/guarantors added via People page (stored in metadata)
+  people?: Array<Record<string, unknown>>
+  // Real estate properties
+  realEstateProperties?: Array<Record<string, unknown>>
   metadata?: Record<string, unknown>
 }
 
@@ -263,6 +292,22 @@ export async function updateApplication(
   if (data.buildingPolicies !== undefined) {
     newMetadata.buildingPolicies = data.buildingPolicies
   }
+  // Store deal parties (unit owner, attorneys, brokers) in metadata
+  if (data.participants !== undefined) {
+    newMetadata.participants = data.participants
+  }
+  // Store disclosure acknowledgments (with signatures, etc.) in metadata
+  if (data.disclosures !== undefined) {
+    newMetadata.disclosures = data.disclosures
+  }
+  // Store co-applicants/guarantors from People page in metadata
+  if (data.people !== undefined) {
+    newMetadata.people = data.people
+  }
+  // Store real estate properties in metadata
+  if (data.realEstateProperties !== undefined) {
+    newMetadata.realEstateProperties = data.realEstateProperties
+  }
   if (data.metadata !== undefined) {
     Object.assign(newMetadata, data.metadata)
   }
@@ -305,19 +350,36 @@ export async function updateApplication(
   // Extract metadata fields to top level for consistency with getApplication
   const metadata = (app.metadata as Record<string, unknown>) || {}
 
+  // Get people - prefer metadata (for co-applicants/guarantors) over database table
+  const metadataPeople = metadata.people as Array<Record<string, unknown>> | undefined
+  const databasePeople = app.people || []
+  const allPeople = metadataPeople && metadataPeople.length > 0
+    ? [...databasePeople, ...metadataPeople.filter(mp => !databasePeople.some((dp: { id?: string }) => dp.id === mp.id))]
+    : databasePeople
+
+  // Get disclosures - prefer metadata (with acknowledgments) over database table
+  const metadataDisclosures = metadata.disclosures as Array<Record<string, unknown>> | undefined
+
   const enrichedApplication = {
     ...app,
-    people: app.people || [],
+    people: allPeople,
+    employmentRecords: app.employment_records || [],
     employment_records: app.employment_records || [],
+    financialEntries: app.financial_entries || [],
     financial_entries: app.financial_entries || [],
-    real_estate_properties: app.real_estate_properties || [],
+    // Use metadata realEstateProperties if available, otherwise use database table
+    realEstateProperties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || app.real_estate_properties || [],
+    real_estate_properties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || app.real_estate_properties || [],
     documents: app.documents || [],
-    disclosures: app.disclosures || [],
+    // Use metadata disclosures if available (they have acknowledgment data)
+    disclosures: metadataDisclosures || app.disclosures || [],
     rfis: app.rfis || [],
     // Extract commonly used metadata fields to top level
     leaseTerms: metadata.leaseTerms || null,
     buildingPolicies: metadata.buildingPolicies || null,
     coverLetter: metadata.coverLetter || null,
+    // Deal parties (unit owner, attorneys, brokers)
+    participants: metadata.participants || [],
   }
 
   return enrichedApplication as unknown as Application

@@ -43,6 +43,63 @@ const buildingPoliciesSchema = z.object({
   acknowledgedAt: z.union([z.string(), z.date()]).optional(),
 }).optional()
 
+// Participant schema for deal parties (unit owner, attorneys, brokers)
+const participantSchema = z.object({
+  id: z.string().optional(),
+  role: z.string(),
+  name: z.string().optional(),
+  company: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+})
+
+// Disclosure acknowledgment schema
+const disclosureAcknowledgmentSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  pdfUrl: z.string().optional(),
+  acknowledged: z.boolean(),
+  requiresUpload: z.boolean().optional(),
+  requiresSignature: z.boolean().optional(),
+  signature: z.string().optional(),
+  floodOptions: z.array(z.string()).optional(),
+  hasPets: z.boolean().optional(),
+  pets: z.array(z.record(z.string(), z.unknown())).optional(),
+  consumerReportData: z.record(z.string(), z.unknown()).optional(),
+  signedDocument: z.record(z.string(), z.unknown()).optional(),
+})
+
+// People schema for co-applicants/guarantors saved via updateApplication
+const personSchema = z.object({
+  id: z.string().optional(),
+  fullName: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  role: z.string().optional(),
+  ssnLast4: z.string().optional(),
+})
+
+// Real estate property schema
+const realEstatePropertySchema = z.object({
+  id: z.string().optional(),
+  propertyType: z.string().optional(),
+  marketValue: z.number().optional(),
+  mortgageBalance: z.number().optional(),
+  monthlyMortgagePayment: z.number().optional(),
+  monthlyMaintenanceHOA: z.number().optional(),
+  monthlyRealEstateTaxes: z.number().optional(),
+  monthlyInsurance: z.number().optional(),
+  address: z.object({
+    street: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    zip: z.string().optional(),
+  }).optional(),
+})
+
 // Validation schema for updating an application
 const updateApplicationSchema = z.object({
   unit: z.string().optional(),
@@ -54,6 +111,14 @@ const updateApplicationSchema = z.object({
   // Additional metadata fields
   leaseTerms: leaseTermsSchema,
   buildingPolicies: buildingPoliciesSchema,
+  // Deal parties (unit owner, attorneys, brokers)
+  participants: z.array(participantSchema).optional(),
+  // Disclosure acknowledgments with signatures and extra data
+  disclosures: z.array(disclosureAcknowledgmentSchema).optional(),
+  // Co-applicants/guarantors added via People page
+  people: z.array(personSchema).optional(),
+  // Real estate properties
+  realEstateProperties: z.array(realEstatePropertySchema).optional(),
   // Allow arbitrary metadata for flexibility
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
