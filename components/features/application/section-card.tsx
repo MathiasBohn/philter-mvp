@@ -21,25 +21,25 @@ export function SectionCard({ title, description, status, href, applicationId, h
   const statusConfig = {
     complete: {
       icon: CheckCircle2,
-      color: "text-green-600",
-      bgColor: "bg-green-50 dark:bg-green-950",
-      borderColor: "border-green-200 dark:border-green-800",
+      color: "text-primary",
+      bgColor: "bg-primary/5 dark:bg-primary/10",
+      borderColor: "border-primary/20 dark:border-primary/30",
       badge: "Complete",
       badgeVariant: "default" as const,
     },
     incomplete: {
       icon: Circle,
-      color: "text-gray-400",
-      bgColor: "bg-white dark:bg-gray-950",
-      borderColor: "border-gray-200 dark:border-gray-800",
+      color: "text-muted-foreground",
+      bgColor: "bg-card",
+      borderColor: "border-border",
       badge: "Incomplete",
       badgeVariant: "secondary" as const,
     },
     error: {
       icon: AlertCircle,
-      color: "text-red-600",
-      bgColor: "bg-red-50 dark:bg-red-950",
-      borderColor: "border-red-200 dark:border-red-800",
+      color: "text-destructive",
+      bgColor: "bg-destructive/5 dark:bg-destructive/10",
+      borderColor: "border-destructive/20 dark:border-destructive/30",
       badge: "Needs Attention",
       badgeVariant: "destructive" as const,
     },
@@ -62,7 +62,7 @@ export function SectionCard({ title, description, status, href, applicationId, h
           <div className="flex flex-col gap-1.5">
             <Badge variant={config.badgeVariant} className="text-xs">{config.badge}</Badge>
             {hasRFI && (
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 text-xs">
+              <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs">
                 RFI
               </Badge>
             )}

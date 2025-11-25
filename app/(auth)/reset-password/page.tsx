@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, CheckCircle2 } from 'lucide-react'
+import { PhilterLogo } from '@/components/brand/philter-logo'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -72,7 +73,7 @@ export default function ResetPasswordPage() {
 
   if (isValidSession === null) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
@@ -80,13 +81,18 @@ export default function ResetPasswordPage() {
 
   if (!isValidSession) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+        <div className="fixed top-4 left-4 z-50">
+          <Link href="/">
+            <PhilterLogo size="sm" />
+          </Link>
+        </div>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
-        <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+        <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
           <div className="space-y-2 text-center">
-            <h1 className="text-2xl font-bold">Invalid or expired link</h1>
+            <h1 className="text-2xl font-bold text-foreground">Invalid or expired link</h1>
             <p className="text-muted-foreground">
               This password reset link is invalid or has expired. Please request a new one.
             </p>
@@ -106,16 +112,21 @@ export default function ResetPasswordPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+        <div className="fixed top-4 left-4 z-50">
+          <Link href="/">
+            <PhilterLogo size="sm" />
+          </Link>
+        </div>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
-        <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+        <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
           <div className="space-y-2 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
-              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <CheckCircle2 className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Password reset successful</h1>
+            <h1 className="text-2xl font-bold text-foreground">Password reset successful</h1>
             <p className="text-muted-foreground">
               Your password has been successfully reset. Redirecting to sign in...
             </p>
@@ -134,14 +145,19 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+      <div className="fixed top-4 left-4 z-50">
+        <Link href="/">
+          <PhilterLogo size="sm" />
+        </Link>
+      </div>
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+      <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Reset your password</h1>
+          <h1 className="text-3xl font-bold text-foreground">Reset your password</h1>
           <p className="text-muted-foreground">
             Enter your new password below.
           </p>

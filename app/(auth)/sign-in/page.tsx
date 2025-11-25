@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Mail } from 'lucide-react'
+import { PhilterLogo } from '@/components/brand/philter-logo'
 
 export default function SignInPage() {
   const router = useRouter()
@@ -84,18 +85,23 @@ export default function SignInPage() {
 
   if (magicLinkSent) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+        <div className="fixed top-4 left-4 z-50">
+          <Link href="/">
+            <PhilterLogo size="sm" />
+          </Link>
+        </div>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
-        <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+        <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
           <div className="space-y-2 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Mail className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Check your email</h1>
+            <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
             <p className="text-muted-foreground">
-              We&apos;ve sent a magic link to <strong>{email}</strong>
+              We&apos;ve sent a magic link to <strong className="text-foreground">{email}</strong>
             </p>
             <p className="text-sm text-muted-foreground">
               Click the link in the email to sign in to your account.
@@ -114,14 +120,19 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+      <div className="fixed top-4 left-4 z-50">
+        <Link href="/">
+          <PhilterLogo size="sm" />
+        </Link>
+      </div>
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+      <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">Welcome back</h1>
+          <h1 className="text-3xl font-bold text-foreground">Welcome back</h1>
           <p className="text-muted-foreground">
             Sign in to your philter account
           </p>
@@ -195,7 +206,7 @@ export default function SignInPage() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
+            <span className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
             <span className="bg-card px-2 text-muted-foreground">Or</span>

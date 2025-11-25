@@ -23,7 +23,19 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* Colors */
+  /* ========================================
+   * PHILTER BRAND COLORS
+   * These create bg-philter-green, text-philter-navy, etc.
+   * ======================================== */
+  --color-philter-green: var(--philter-green);
+  --color-philter-green-light: var(--philter-green-light);
+  --color-philter-green-dark: var(--philter-green-dark);
+  --color-philter-navy: var(--philter-navy);
+  --color-philter-navy-light: var(--philter-navy-light);
+  --color-philter-mint: var(--philter-mint);
+  --color-philter-sage: var(--philter-sage);
+
+  /* Semantic Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -91,93 +103,130 @@
   --font-size-2xl: 1.5rem; /* 24px */
   --font-size-3xl: 1.875rem; /* 30px */
 
-  /* Color Tokens */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  /* ========================================
+   * PHILTER BRAND COLOR SYSTEM
+   * Based on pitch deck brand identity
+   * ======================================== */
+
+  /* Core Brand Colors */
+  --philter-green: oklch(0.52 0.14 155); /* Primary brand green #2D8B4E */
+  --philter-green-light: oklch(0.62 0.12 155); /* Lighter green for hover */
+  --philter-green-dark: oklch(0.42 0.14 155); /* Darker green for active states */
+  --philter-navy: oklch(0.30 0.05 250); /* Dark navy #1E3A5F */
+  --philter-navy-light: oklch(0.40 0.05 250); /* Lighter navy */
+  --philter-mint: oklch(0.96 0.02 155); /* Light mint background #E8F5E9 */
+  --philter-sage: oklch(0.94 0.03 155); /* Sage for cards */
+
+  /* Color Tokens - Light Mode */
+  --background: oklch(0.99 0.005 155); /* Very subtle mint tint */
+  --foreground: oklch(0.20 0.02 250); /* Navy-tinted dark text */
+  --card: oklch(1 0 0); /* Pure white cards */
+  --card-foreground: oklch(0.20 0.02 250);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.20 0.02 250);
+
+  /* Primary = Philter Green */
+  --primary: oklch(0.52 0.14 155);
+  --primary-foreground: oklch(0.99 0 0);
+
+  /* Secondary = Light sage/mint */
+  --secondary: oklch(0.96 0.02 155);
+  --secondary-foreground: oklch(0.35 0.10 155);
+
+  /* Muted = Soft gray with green tint */
+  --muted: oklch(0.96 0.01 155);
+  --muted-foreground: oklch(0.50 0.02 250);
+
+  /* Accent = Philter green tint */
+  --accent: oklch(0.94 0.04 155);
+  --accent-foreground: oklch(0.35 0.12 155);
+
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.91 0.02 155); /* Subtle green-tinted border */
+  --input: oklch(0.93 0.01 155);
+  --ring: oklch(0.52 0.14 155); /* Match primary green */
 
   /* Semantic Success/Warning Colors */
-  --success: oklch(0.6 0.15 145); /* Green for approvals */
+  --success: oklch(0.55 0.15 145); /* Slightly deeper green for contrast */
   --success-foreground: oklch(0.98 0 0);
-  --warning: oklch(0.75 0.15 85); /* Yellow/orange for RFIs */
-  --warning-foreground: oklch(0.145 0 0);
+  --warning: oklch(0.75 0.15 85);
+  --warning-foreground: oklch(0.20 0 0);
 
-  /* Chart Colors */
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
+  /* Chart Colors - Green-themed palette */
+  --chart-1: oklch(0.52 0.14 155); /* Primary green */
+  --chart-2: oklch(0.45 0.10 180); /* Teal */
+  --chart-3: oklch(0.35 0.08 250); /* Navy */
+  --chart-4: oklch(0.65 0.12 140); /* Light green */
+  --chart-5: oklch(0.55 0.08 200); /* Blue-green */
 
   /* Sidebar Colors */
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.99 0.005 155);
+  --sidebar-foreground: oklch(0.20 0.02 250);
+  --sidebar-primary: oklch(0.52 0.14 155);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.94 0.04 155);
+  --sidebar-accent-foreground: oklch(0.35 0.12 155);
+  --sidebar-border: oklch(0.91 0.02 155);
+  --sidebar-ring: oklch(0.52 0.14 155);
 }
 
 .dark {
-  /* Color Tokens */
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* ========================================
+   * PHILTER BRAND COLOR SYSTEM - DARK MODE
+   * Navy-based dark theme with green accents
+   * ======================================== */
+
+  /* Color Tokens - Dark Mode */
+  --background: oklch(0.18 0.02 250); /* Deep navy background */
+  --foreground: oklch(0.95 0.01 155); /* Light text with subtle green */
+  --card: oklch(0.22 0.02 250); /* Slightly lighter navy for cards */
+  --card-foreground: oklch(0.95 0.01 155);
+  --popover: oklch(0.22 0.02 250);
+  --popover-foreground: oklch(0.95 0.01 155);
+
+  /* Primary = Brighter green for dark mode visibility */
+  --primary: oklch(0.62 0.14 155);
+  --primary-foreground: oklch(0.15 0.02 250);
+
+  /* Secondary = Dark navy-green blend */
+  --secondary: oklch(0.28 0.03 200);
+  --secondary-foreground: oklch(0.90 0.02 155);
+
+  /* Muted = Subtle navy */
+  --muted: oklch(0.28 0.02 250);
+  --muted-foreground: oklch(0.65 0.02 200);
+
+  /* Accent = Green-tinted dark */
+  --accent: oklch(0.30 0.04 180);
+  --accent-foreground: oklch(0.90 0.02 155);
+
+  --destructive: oklch(0.65 0.20 25);
+  --border: oklch(0.35 0.02 200);
+  --input: oklch(0.30 0.02 200);
+  --ring: oklch(0.62 0.14 155);
 
   /* Semantic Success/Warning Colors (Dark Mode) */
-  --success: oklch(0.7 0.15 145); /* Lighter green for dark mode */
-  --success-foreground: oklch(0.145 0 0);
-  --warning: oklch(0.8 0.15 85); /* Lighter yellow/orange for dark mode */
-  --warning-foreground: oklch(0.145 0 0);
+  --success: oklch(0.65 0.14 145);
+  --success-foreground: oklch(0.15 0.02 155);
+  --warning: oklch(0.75 0.14 85);
+  --warning-foreground: oklch(0.15 0 0);
 
-  /* Chart Colors */
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
+  /* Chart Colors - Adjusted for dark mode */
+  --chart-1: oklch(0.62 0.14 155); /* Primary green */
+  --chart-2: oklch(0.55 0.10 180); /* Teal */
+  --chart-3: oklch(0.70 0.08 200); /* Light blue-green */
+  --chart-4: oklch(0.75 0.12 140); /* Light green */
+  --chart-5: oklch(0.60 0.08 220); /* Blue */
 
-  /* Sidebar Colors */
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* Sidebar Colors - Dark Mode */
+  --sidebar: oklch(0.20 0.02 250);
+  --sidebar-foreground: oklch(0.95 0.01 155);
+  --sidebar-primary: oklch(0.62 0.14 155);
+  --sidebar-primary-foreground: oklch(0.15 0.02 250);
+  --sidebar-accent: oklch(0.30 0.04 180);
+  --sidebar-accent-foreground: oklch(0.90 0.02 155);
+  --sidebar-border: oklch(0.35 0.02 200);
+  --sidebar-ring: oklch(0.62 0.14 155);
 }
 
 @layer base {

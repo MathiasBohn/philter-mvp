@@ -89,9 +89,9 @@ export default function ApplicationOverviewPage({ params }: { params: Promise<{ 
       case "RFI":
         return <Badge variant="destructive">RFI Required</Badge>;
       case "APPROVED":
-        return <Badge className="bg-green-600 dark:bg-green-700">Approved</Badge>;
+        return <Badge className="bg-primary text-primary-foreground">Approved</Badge>;
       case "CONDITIONAL":
-        return <Badge className="bg-yellow-600 dark:bg-yellow-700">Conditional Approval</Badge>;
+        return <Badge className="bg-warning text-warning-foreground">Conditional Approval</Badge>;
       case "DENIED":
         return <Badge variant="destructive">Denied</Badge>;
       default:

@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Mail, ArrowLeft } from 'lucide-react'
+import { PhilterLogo } from '@/components/brand/philter-logo'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -43,18 +44,23 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+        <div className="fixed top-4 left-4 z-50">
+          <Link href="/">
+            <PhilterLogo size="sm" />
+          </Link>
+        </div>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
-        <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+        <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
           <div className="space-y-2 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Mail className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Check your email</h1>
+            <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
             <p className="text-muted-foreground">
-              We&apos;ve sent a password reset link to <strong>{email}</strong>
+              We&apos;ve sent a password reset link to <strong className="text-foreground">{email}</strong>
             </p>
             <p className="text-sm text-muted-foreground">
               Click the link in the email to reset your password. The link will expire in 1 hour.
@@ -85,14 +91,19 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+      <div className="fixed top-4 left-4 z-50">
+        <Link href="/">
+          <PhilterLogo size="sm" />
+        </Link>
+      </div>
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+      <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold">Forgot password?</h1>
+          <h1 className="text-3xl font-bold text-foreground">Forgot password?</h1>
           <p className="text-muted-foreground">
             Enter your email address and we&apos;ll send you a link to reset your password.
           </p>

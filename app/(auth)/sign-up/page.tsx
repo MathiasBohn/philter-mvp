@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { createClient } from '@/lib/supabase/client'
 import { Loader2, Mail } from 'lucide-react'
+import { PhilterLogo } from '@/components/brand/philter-logo'
 
 type Role = 'APPLICANT' | 'BROKER' | 'ADMIN' | 'BOARD'
 
@@ -148,18 +149,23 @@ function SignUpForm() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+        <div className="fixed top-4 left-4 z-50">
+          <Link href="/">
+            <PhilterLogo size="sm" />
+          </Link>
+        </div>
         <div className="fixed top-4 right-4 z-50">
           <ThemeToggle />
         </div>
-        <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+        <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
           <div className="space-y-2 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Mail className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold">Check your email</h1>
+            <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
             <p className="text-muted-foreground">
-              We&apos;ve sent a confirmation email to <strong>{email}</strong>
+              We&apos;ve sent a confirmation email to <strong className="text-foreground">{email}</strong>
             </p>
             <p className="text-sm text-muted-foreground">
               Click the link in the email to verify your account and complete your registration.
@@ -178,14 +184,19 @@ function SignUpForm() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-philter-mint/30 to-philter-sage/20 dark:from-background dark:via-philter-navy/20 dark:to-background p-4">
+      <div className="fixed top-4 left-4 z-50">
+        <Link href="/">
+          <PhilterLogo size="sm" />
+        </Link>
+      </div>
       <div className="fixed top-4 right-4 z-50">
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md space-y-6 rounded-lg border bg-card p-8 shadow-lg">
+      <div className="w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-8 shadow-lg">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">Create an account</h1>
+          <h1 className="text-3xl font-bold text-foreground">Create an account</h1>
           <p className="text-muted-foreground">
             Sign up for philter to get started
           </p>
@@ -322,8 +333,8 @@ function SignUpForm() {
 export default function SignUpPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center text-muted-foreground">Loading...</div>
       </div>
     }>
       <SignUpForm />

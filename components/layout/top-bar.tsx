@@ -16,6 +16,7 @@ import {
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { getRoleLabel } from "@/lib/constants/labels"
+import { PhilterLogo } from "@/components/brand/philter-logo"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -31,7 +32,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Left: Logo + Mobile Menu Button */}
         <div className="flex items-center gap-4">
@@ -45,11 +46,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             <Menu className="h-6 w-6" />
           </Button>
 
-          <div className="flex items-center gap-2">
-            <Link href="/" className="hover:opacity-80 transition-opacity">
-              <h1 className="text-xl font-semibold tracking-tight">philter</h1>
-            </Link>
-          </div>
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <PhilterLogo size="sm" />
+          </Link>
         </div>
 
         {/* Right: Role Badge + Theme Toggle + User Menu */}

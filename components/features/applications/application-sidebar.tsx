@@ -133,13 +133,13 @@ const SECTIONS: ApplicationSection[] = [
 const getStatusIcon = (status: SectionStatus) => {
   switch (status) {
     case "complete":
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
+      return <CheckCircle className="h-4 w-4 text-primary" />;
     case "in-progress":
-      return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+      return <AlertCircle className="h-4 w-4 text-warning" />;
     case "error":
-      return <XCircle className="h-4 w-4 text-red-600" />;
+      return <XCircle className="h-4 w-4 text-destructive" />;
     default:
-      return <Circle className="h-4 w-4 text-gray-300" />;
+      return <Circle className="h-4 w-4 text-muted-foreground/50" />;
   }
 };
 
@@ -347,7 +347,7 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
         </Button>
 
         {/* Sidebar - Desktop Loading */}
-        <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white dark:bg-gray-950 dark:border-gray-800 overflow-hidden" aria-label="Application navigation">
+        <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:border-border lg:bg-sidebar overflow-hidden" aria-label="Application navigation">
           <div className="p-4 space-y-4">
             <Skeleton className="h-6 w-32" />
             <Skeleton className="h-10 w-full" />
@@ -383,7 +383,7 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       {/* Sidebar - Mobile Drawer */}
       <aside
         className={cn(
-          "fixed top-0 left-0 h-screen w-64 bg-white dark:bg-gray-950 border-r dark:border-gray-800 z-50 transition-transform lg:hidden",
+          "fixed top-0 left-0 h-screen w-64 bg-sidebar border-r border-border z-50 transition-transform lg:hidden",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -397,7 +397,7 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
       </aside>
 
       {/* Sidebar - Desktop */}
-      <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:bg-white dark:bg-gray-950 dark:border-gray-800 overflow-hidden" aria-label="Application navigation">
+      <aside className="hidden lg:block lg:fixed lg:left-0 lg:top-16 lg:h-[calc(100vh-4rem)] lg:w-64 lg:border-r lg:border-border lg:bg-sidebar overflow-hidden" aria-label="Application navigation">
         <SidebarContent
           applicationId={applicationId}
           pathname={pathname}
