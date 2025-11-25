@@ -1,50 +1,52 @@
-import { createClient } from '@/lib/supabase/server'
+/**
+ * Supabase Auth Callback Route
+ *
+ * This route handles the callback from Supabase Auth flows:
+ * - Magic link sign-in
+ * - Email verification
+ * - OAuth providers (if configured)
+ * - Password reset
+ *
+ * It exchanges the authorization code for a user session and sets
+ * the appropriate cookies before redirecting the user.
+ */
+
 import { NextResponse } from 'next/server'
-import { NextRequest } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') || '/my-applications'
-  const error = requestUrl.searchParams.get('error')
-  const errorDescription = requestUrl.searchParams.get('error_description')
+export async function GET(request: Request) {
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
 
-  // Handle OAuth errors
-  if (error) {
-    console.error('Auth callback error:', error, errorDescription)
-    return NextResponse.redirect(
-      new URL(`/sign-in?error=${encodeURIComponent(errorDescription || error)}`, requestUrl.origin)
-    )
+  // If "next" is in param, use it as the redirect URL
+  let next = searchParams.get('next') ?? '/my-applications'
+  if (!next.startsWith('/')) {
+    // If "next" is not a relative URL, use the default
+    next = '/my-applications'
   }
 
-  // Exchange code for session
   if (code) {
     const supabase = await createClient()
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (exchangeError) {
-      console.error('Error exchanging code for session:', exchangeError)
-      return NextResponse.redirect(
-        new URL(`/sign-in?error=${encodeURIComponent(exchangeError.message)}`, requestUrl.origin)
-      )
-    }
+    if (!error) {
+      const forwardedHost = request.headers.get('x-forwarded-host')
+      const isLocalEnv = process.env.NODE_ENV === 'development'
 
-    // Get the user to check verification status
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (user) {
-      // If email is not confirmed, redirect to verify-email page
-      if (!user.email_confirmed_at) {
-        return NextResponse.redirect(new URL('/verify-email', requestUrl.origin))
+      if (isLocalEnv) {
+        // In local dev, no load balancer, so use origin directly
+        return NextResponse.redirect(`${origin}${next}`)
+      } else if (forwardedHost) {
+        // In production with load balancer, use forwarded host
+        return NextResponse.redirect(`https://${forwardedHost}${next}`)
+      } else {
+        return NextResponse.redirect(`${origin}${next}`)
       }
-
-      // Successful authentication - redirect to next page
-      return NextResponse.redirect(new URL(next, requestUrl.origin))
     }
+
+    console.error('Auth callback error:', error)
   }
 
-  // If no code or other issues, redirect to sign in
-  return NextResponse.redirect(
-    new URL('/sign-in?error=Invalid authentication callback', requestUrl.origin)
-  )
+  // Return the user to sign-in page with error indication
+  return NextResponse.redirect(`${origin}/sign-in?error=auth_callback_failed`)
 }
