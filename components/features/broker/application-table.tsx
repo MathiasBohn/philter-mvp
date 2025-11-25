@@ -164,18 +164,12 @@ export function ApplicationTable({
         <DropdownMenuItem asChild>
           <Link href={`/broker/${application.id}/qa`}>
             <Eye className="mr-2 h-4 w-4" />
-            Open Application Workspace
+            Review Application
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setShowInviteModal(true)}>
           <UserPlus className="mr-2 h-4 w-4" />
           Invite Applicant
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href={`/applications/${application.id}`}>
-            <FileText className="mr-2 h-4 w-4" />
-            View Details
-          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

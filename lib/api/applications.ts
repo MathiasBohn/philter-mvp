@@ -9,9 +9,112 @@ import { createClient } from '@/lib/supabase/server'
 import type {
   Application,
   ApplicationStatus,
+  ApplicationSection,
   Role,
   TransactionType,
 } from '@/lib/types'
+
+/**
+ * Default sections for applications
+ * These are computed dynamically based on application data
+ */
+const DEFAULT_SECTIONS = [
+  { key: 'profile', label: 'Profile' },
+  { key: 'parties', label: 'Deal Parties' },
+  { key: 'people', label: 'People' },
+  { key: 'income', label: 'Employment & Income' },
+  { key: 'financials', label: 'Financial Summary' },
+  { key: 'real-estate', label: 'Real Estate Holdings' },
+  { key: 'lease-terms', label: 'Lease Terms' },
+  { key: 'building-policies', label: 'Building Policies' },
+  { key: 'documents', label: 'Documents' },
+  { key: 'cover-letter', label: 'Cover Letter' },
+  { key: 'disclosures', label: 'Disclosures' },
+  { key: 'review', label: 'Review & Submit' },
+]
+
+/**
+ * Compute section completion status from application data
+ */
+function computeSections(app: Record<string, unknown>): ApplicationSection[] {
+  const people = (app.people as Array<Record<string, unknown>>) || []
+  const employmentRecords = (app.employment_records as Array<Record<string, unknown>>) || []
+  const financialEntries = (app.financial_entries as Array<Record<string, unknown>>) || []
+  const realEstateProperties = (app.real_estate_properties as Array<Record<string, unknown>>) || []
+  const documents = (app.documents as Array<Record<string, unknown>>) || []
+  const disclosures = (app.disclosures as Array<Record<string, unknown>>) || []
+  const metadata = (app.metadata as Record<string, unknown>) || {}
+  const participants = (metadata.participants as Array<Record<string, unknown>>) || []
+  const metadataDisclosures = (metadata.disclosures as Array<Record<string, unknown>>) || []
+  const coverLetter = (metadata.coverLetter as string) || ''
+  const leaseTerms = metadata.leaseTerms as Record<string, unknown> | undefined
+  const buildingPolicies = metadata.buildingPolicies as Record<string, unknown> | undefined
+  const status = app.status as string
+
+  return DEFAULT_SECTIONS.map(section => {
+    let isComplete = false
+
+    switch (section.key) {
+      case 'profile':
+        if (people.length > 0) {
+          const primary = people[0]
+          isComplete = !!(primary.fullName && primary.email && primary.phone)
+        }
+        break
+      case 'parties':
+        isComplete = participants.length > 0
+        break
+      case 'people':
+        // Optional section - complete if at least one co-applicant/guarantor exists
+        isComplete = people.length > 1
+        break
+      case 'income':
+        isComplete = employmentRecords.some(
+          (r: Record<string, unknown>) => r.employer && r.title && r.annualIncome
+        )
+        break
+      case 'financials':
+        isComplete = financialEntries.length > 0
+        break
+      case 'real-estate':
+        // Optional section
+        isComplete = realEstateProperties.length > 0
+        break
+      case 'lease-terms':
+        isComplete = !!(leaseTerms && Object.keys(leaseTerms).length > 0)
+        break
+      case 'building-policies':
+        isComplete = !!(buildingPolicies && buildingPolicies.acknowledgedAt)
+        break
+      case 'documents':
+        // Check for required document categories
+        const requiredCategories = ['GOVERNMENT_ID', 'BANK_STATEMENT', 'TAX_RETURN']
+        const uploadedCategories = new Set(
+          documents.map((doc: Record<string, unknown>) => doc.category)
+        )
+        isComplete = requiredCategories.every(cat => uploadedCategories.has(cat))
+        break
+      case 'cover-letter':
+        // Optional section - complete if there's meaningful content
+        isComplete = coverLetter.length >= 100
+        break
+      case 'disclosures':
+        // Must have acknowledged all required disclosures
+        const allDisclosures = metadataDisclosures.length > 0 ? metadataDisclosures : disclosures
+        isComplete = allDisclosures.length >= 8
+        break
+      case 'review':
+        isComplete = ['SUBMITTED', 'IN_REVIEW', 'RFI', 'APPROVED', 'CONDITIONAL', 'DENIED'].includes(status)
+        break
+    }
+
+    return {
+      key: section.key,
+      label: section.label,
+      isComplete,
+    }
+  })
+}
 
 /**
  * Input type for creating a new application
@@ -43,6 +146,7 @@ export async function getApplications(
   const { data, error } = await supabase
     .from('applications')
     .select('*, building:buildings(*)')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -92,6 +196,7 @@ export async function getApplication(id: string): Promise<Application | null> {
       application_participants(*)
     `)
     .eq('id', id)
+    .is('deleted_at', null)
     .single()
 
   if (error) {
@@ -120,6 +225,9 @@ export async function getApplication(id: string): Promise<Application | null> {
   // Metadata disclosures have signatures, acknowledgment status, etc.
   const metadataDisclosures = metadata.disclosures as Array<Record<string, unknown>> | undefined
 
+  // Compute sections dynamically from application data
+  const computedSections = computeSections(data)
+
   // Ensure all arrays exist (for backward compatibility with old data)
   const enrichedApplication = {
     ...data,
@@ -136,7 +244,8 @@ export async function getApplication(id: string): Promise<Application | null> {
     disclosures: metadataDisclosures || data.disclosures || [],
     rfis: data.rfis || [],
     application_participants: data.application_participants || [],
-    sections: data.sections || [],
+    // Always use computed sections for accurate completion status
+    sections: computedSections,
     // Extract commonly used metadata fields to top level
     leaseTerms: metadata.leaseTerms || null,
     buildingPolicies: metadata.buildingPolicies || null,
@@ -360,6 +469,9 @@ export async function updateApplication(
   // Get disclosures - prefer metadata (with acknowledgments) over database table
   const metadataDisclosures = metadata.disclosures as Array<Record<string, unknown>> | undefined
 
+  // Compute sections dynamically from application data
+  const computedSections = computeSections(app)
+
   const enrichedApplication = {
     ...app,
     people: allPeople,
@@ -374,6 +486,8 @@ export async function updateApplication(
     // Use metadata disclosures if available (they have acknowledgment data)
     disclosures: metadataDisclosures || app.disclosures || [],
     rfis: app.rfis || [],
+    // Always use computed sections for accurate completion status
+    sections: computedSections,
     // Extract commonly used metadata fields to top level
     leaseTerms: metadata.leaseTerms || null,
     buildingPolicies: metadata.buildingPolicies || null,

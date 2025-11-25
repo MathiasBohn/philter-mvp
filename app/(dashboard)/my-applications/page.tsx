@@ -246,8 +246,12 @@ export default function MyApplicationsPage() {
                   <div className="flex items-center gap-1">
                     <DeleteApplicationButton application={application} />
                     <Button variant="ghost" size="sm" asChild>
-                      <Link href={`/applications/${application.id}`}>
-                        View Details
+                      <Link href={
+                        user?.role === Role.BROKER
+                          ? `/broker/${application.id}/qa`
+                          : `/applications/${application.id}`
+                      }>
+                        {user?.role === Role.BROKER ? "Review" : "View Details"}
                         <ChevronRight className="ml-1 h-4 w-4" />
                       </Link>
                     </Button>
