@@ -34,7 +34,7 @@ export function usePeople(
   enabled: boolean = true
 ): UseQueryResult<PersonRecord[], Error> {
   return useQuery({
-    queryKey: queryKeys.people(applicationId),
+    queryKey: queryKeys.people.byApplication(applicationId),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/people`)
       if (!response.ok) {
@@ -81,7 +81,7 @@ export function useUpsertPerson(
     onSuccess: (updatedPerson) => {
       // Update people list
       queryClient.setQueryData<PersonRecord[]>(
-        queryKeys.people(applicationId),
+        queryKeys.people.byApplication(applicationId),
         (old) => {
           if (!old) return [updatedPerson]
           const index = old.findIndex(p => p.id === updatedPerson.id)
@@ -99,7 +99,7 @@ export function useUpsertPerson(
 
       // Invalidate application query to update completion percentage
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('Profile information saved successfully.')
@@ -139,13 +139,13 @@ export function useUpdatePeople(
     onSuccess: (updatedPeople) => {
       // Replace entire people list
       queryClient.setQueryData<PersonRecord[]>(
-        queryKeys.people(applicationId),
+        queryKeys.people.byApplication(applicationId),
         updatedPeople
       )
 
       // Invalidate application query to update completion percentage
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('All profile information saved successfully.')

@@ -37,7 +37,7 @@ export function useDocuments(
   enabled: boolean = true
 ): UseQueryResult<Document[], Error> {
   return useQuery({
-    queryKey: queryKeys.documents(applicationId),
+    queryKey: queryKeys.documents.byApplication(applicationId),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/documents`)
       if (!response.ok) {
@@ -63,7 +63,7 @@ export function useDocument(
   enabled: boolean = true
 ): UseQueryResult<{ url: string; document: Document }, Error> {
   return useQuery({
-    queryKey: queryKeys.document(id),
+    queryKey: queryKeys.documents.detail(id),
     queryFn: async () => {
       const response = await fetch(`/api/documents/${id}`)
       if (!response.ok) {
@@ -121,13 +121,13 @@ export function useCreateDocument(
     onSuccess: (newDocument) => {
       // Add to documents list
       queryClient.setQueryData<Document[]>(
-        queryKeys.documents(applicationId),
+        queryKeys.documents.byApplication(applicationId),
         (old) => (old ? [...old, newDocument] : [newDocument])
       )
 
       // Invalidate application query to update document count
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success(`${newDocument.filename} has been uploaded successfully.`)
@@ -201,17 +201,17 @@ export function useDeleteDocument(
     onMutate: async () => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: queryKeys.documents(applicationId)
+        queryKey: queryKeys.documents.byApplication(applicationId)
       })
 
       // Snapshot previous value
       const previousDocuments = queryClient.getQueryData<Document[]>(
-        queryKeys.documents(applicationId)
+        queryKeys.documents.byApplication(applicationId)
       )
 
       // Optimistically remove document
       queryClient.setQueryData<Document[]>(
-        queryKeys.documents(applicationId),
+        queryKeys.documents.byApplication(applicationId),
         (old) => old?.filter((doc) => doc.id !== id) || []
       )
 
@@ -220,7 +220,7 @@ export function useDeleteDocument(
     onSuccess: () => {
       // Invalidate application query to update document count
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('The document has been deleted successfully.')
@@ -229,7 +229,7 @@ export function useDeleteDocument(
       // Rollback on error
       if (context?.previousDocuments) {
         queryClient.setQueryData(
-          queryKeys.documents(applicationId),
+          queryKeys.documents.byApplication(applicationId),
           context.previousDocuments
         )
       }
@@ -267,17 +267,17 @@ export function useDeleteDocumentMutation(
     onMutate: async (documentId: string) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: queryKeys.documents(applicationId)
+        queryKey: queryKeys.documents.byApplication(applicationId)
       })
 
       // Snapshot previous value
       const previousDocuments = queryClient.getQueryData<Document[]>(
-        queryKeys.documents(applicationId)
+        queryKeys.documents.byApplication(applicationId)
       )
 
       // Optimistically remove document
       queryClient.setQueryData<Document[]>(
-        queryKeys.documents(applicationId),
+        queryKeys.documents.byApplication(applicationId),
         (old) => old?.filter((doc) => doc.id !== documentId) || []
       )
 
@@ -286,7 +286,7 @@ export function useDeleteDocumentMutation(
     onSuccess: () => {
       // Invalidate application query to update document count
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('The document has been deleted successfully.')
@@ -295,7 +295,7 @@ export function useDeleteDocumentMutation(
       // Rollback on error
       if (context?.previousDocuments) {
         queryClient.setQueryData(
-          queryKeys.documents(applicationId),
+          queryKeys.documents.byApplication(applicationId),
           context.previousDocuments
         )
       }

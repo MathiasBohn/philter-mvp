@@ -34,7 +34,7 @@ export function useEmploymentRecords(
   enabled: boolean = true
 ): UseQueryResult<EmploymentRecord[], Error> {
   return useQuery({
-    queryKey: queryKeys.employment(applicationId),
+    queryKey: queryKeys.employment.byApplication(applicationId),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/employment`)
       if (!response.ok) {
@@ -81,7 +81,7 @@ export function useUpsertEmploymentRecord(
     onSuccess: (updatedRecord) => {
       // Update employment records list
       queryClient.setQueryData<EmploymentRecord[]>(
-        queryKeys.employment(applicationId),
+        queryKeys.employment.byApplication(applicationId),
         (old) => {
           if (!old) return [updatedRecord]
           const index = old.findIndex(e => e.id === updatedRecord.id)
@@ -99,7 +99,7 @@ export function useUpsertEmploymentRecord(
 
       // Invalidate application query to update completion percentage
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('Employment information saved successfully.')
@@ -139,13 +139,13 @@ export function useUpdateEmploymentRecords(
     onSuccess: (updatedRecords) => {
       // Replace entire employment records list
       queryClient.setQueryData<EmploymentRecord[]>(
-        queryKeys.employment(applicationId),
+        queryKeys.employment.byApplication(applicationId),
         updatedRecords
       )
 
       // Invalidate application query to update completion percentage
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('All employment information saved successfully.')

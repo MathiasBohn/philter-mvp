@@ -29,7 +29,7 @@ import { toast } from '@/lib/hooks/use-toast'
  */
 export function useTemplates(): UseQueryResult<Template[], Error> {
   return useQuery({
-    queryKey: queryKeys.templates,
+    queryKey: queryKeys.templates.all,
     queryFn: async () => {
       const response = await fetch('/api/templates')
       if (!response.ok) {
@@ -54,7 +54,7 @@ export function useTemplate(
   enabled: boolean = true
 ): UseQueryResult<Template, Error> {
   return useQuery({
-    queryKey: queryKeys.template(id),
+    queryKey: queryKeys.templates.detail(id),
     queryFn: async () => {
       const response = await fetch(`/api/templates/${id}`)
       if (!response.ok) {
@@ -101,7 +101,7 @@ export function useCreateTemplate(): UseMutationResult<
     },
     onSuccess: (newTemplate) => {
       // Invalidate templates list to refetch
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates.all })
 
       toast.success(`"${newTemplate.name}" has been created successfully.`)
     },
@@ -139,16 +139,16 @@ export function useUpdateTemplate(
     },
     onMutate: async (updatedData) => {
       // Cancel ongoing queries for this template
-      await queryClient.cancelQueries({ queryKey: queryKeys.template(id) })
+      await queryClient.cancelQueries({ queryKey: queryKeys.templates.detail(id) })
 
       // Snapshot current value
       const previousTemplate = queryClient.getQueryData<Template>(
-        queryKeys.template(id)
+        queryKeys.templates.detail(id)
       )
 
       // Optimistically update the cache
       if (previousTemplate) {
-        queryClient.setQueryData<Template>(queryKeys.template(id), {
+        queryClient.setQueryData<Template>(queryKeys.templates.detail(id), {
           ...previousTemplate,
           ...updatedData,
         })
@@ -159,15 +159,15 @@ export function useUpdateTemplate(
     onError: (error, _newData, context) => {
       // Revert to previous value on error
       if (context?.previousTemplate) {
-        queryClient.setQueryData(queryKeys.template(id), context.previousTemplate)
+        queryClient.setQueryData(queryKeys.templates.detail(id), context.previousTemplate)
       }
 
       toast.error(error.message || 'Failed to update template')
     },
     onSuccess: (updatedTemplate) => {
       // Invalidate queries to refetch latest data
-      queryClient.invalidateQueries({ queryKey: queryKeys.template(id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates.detail(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates.all })
 
       toast.success(`"${updatedTemplate.name}" has been updated successfully.`)
     },
@@ -198,9 +198,9 @@ export function useDeleteTemplate(
     },
     onSuccess: () => {
       // Remove from cache
-      queryClient.removeQueries({ queryKey: queryKeys.template(id) })
+      queryClient.removeQueries({ queryKey: queryKeys.templates.detail(id) })
       // Invalidate templates list
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates.all })
 
       toast.success('The template has been deleted successfully.')
     },
@@ -236,8 +236,8 @@ export function usePublishTemplate(
     },
     onSuccess: (publishedTemplate) => {
       // Invalidate queries to refetch latest data
-      queryClient.invalidateQueries({ queryKey: queryKeys.template(id) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.templates })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates.detail(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.templates.all })
 
       toast.success(`"${publishedTemplate.name}" is now live and can be used for applications.`)
     },

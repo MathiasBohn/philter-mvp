@@ -34,7 +34,7 @@ export function useDecision(
   enabled: boolean = true
 ): UseQueryResult<DecisionRecord, Error> {
   return useQuery({
-    queryKey: queryKeys.decision(applicationId),
+    queryKey: queryKeys.decisions.byApplication(applicationId),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/decision`)
       if (!response.ok) {
@@ -80,11 +80,11 @@ export function useCreateDecision(
     },
     onSuccess: (decision) => {
       // Invalidate decision query
-      queryClient.invalidateQueries({ queryKey: queryKeys.decision(applicationId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.decisions.byApplication(applicationId) })
       // Invalidate application query since status may have changed
-      queryClient.invalidateQueries({ queryKey: queryKeys.application(applicationId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.detail(applicationId) })
       // Invalidate applications list
-      queryClient.invalidateQueries({ queryKey: queryKeys.applications })
+      queryClient.invalidateQueries({ queryKey: queryKeys.applications.all })
 
       const decisionText = decision.decision === 'APPROVE' ? 'approved' :
                           decision.decision === 'CONDITIONAL' ? 'conditionally approved' : 'denied'

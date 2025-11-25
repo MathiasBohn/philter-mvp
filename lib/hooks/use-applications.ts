@@ -29,7 +29,7 @@ import { toast } from '@/lib/hooks/use-toast'
  */
 export function useApplications(): UseQueryResult<Application[], Error> {
   return useQuery({
-    queryKey: queryKeys.applications,
+    queryKey: queryKeys.applications.all,
     queryFn: async () => {
       const response = await fetch('/api/applications')
       if (!response.ok) {
@@ -58,7 +58,7 @@ export function useApplication(
   enabled: boolean = true
 ): UseQueryResult<Application, Error> {
   return useQuery({
-    queryKey: queryKeys.application(id),
+    queryKey: queryKeys.applications.detail(id),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${id}`)
       if (!response.ok) {
@@ -111,13 +111,13 @@ export function useCreateApplication(): UseMutationResult<
     onSuccess: (newApplication) => {
       // Add to applications list
       queryClient.setQueryData<Application[]>(
-        queryKeys.applications,
+        queryKeys.applications.all,
         (old) => (old ? [...old, newApplication] : [newApplication])
       )
 
       // Add to individual application cache
       queryClient.setQueryData(
-        queryKeys.application(newApplication.id),
+        queryKeys.applications.detail(newApplication.id),
         newApplication
       )
 
@@ -159,16 +159,16 @@ export function useUpdateApplication(
     },
     onMutate: async (updatedData) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.application(id) })
+      await queryClient.cancelQueries({ queryKey: queryKeys.applications.detail(id) })
 
       // Snapshot previous value
       const previousApplication = queryClient.getQueryData<Application>(
-        queryKeys.application(id)
+        queryKeys.applications.detail(id)
       )
 
       // Optimistically update
       if (previousApplication) {
-        queryClient.setQueryData<Application>(queryKeys.application(id), {
+        queryClient.setQueryData<Application>(queryKeys.applications.detail(id), {
           ...previousApplication,
           ...updatedData,
         })
@@ -179,13 +179,13 @@ export function useUpdateApplication(
     onSuccess: (updatedApplication) => {
       // Update individual application cache
       queryClient.setQueryData(
-        queryKeys.application(id),
+        queryKeys.applications.detail(id),
         updatedApplication
       )
 
       // Update applications list
       queryClient.setQueryData<Application[]>(
-        queryKeys.applications,
+        queryKeys.applications.all,
         (old) =>
           old?.map((app) => (app.id === id ? updatedApplication : app)) || []
       )
@@ -196,7 +196,7 @@ export function useUpdateApplication(
       // Rollback on error
       if (context?.previousApplication) {
         queryClient.setQueryData(
-          queryKeys.application(id),
+          queryKeys.applications.detail(id),
           context.previousApplication
         )
       }
@@ -232,12 +232,12 @@ export function useDeleteApplication(
     onSuccess: () => {
       // Remove from applications list
       queryClient.setQueryData<Application[]>(
-        queryKeys.applications,
+        queryKeys.applications.all,
         (old) => old?.filter((app) => app.id !== id) || []
       )
 
       // Remove individual application cache
-      queryClient.removeQueries({ queryKey: queryKeys.application(id) })
+      queryClient.removeQueries({ queryKey: queryKeys.applications.detail(id) })
 
       toast.success('The application has been deleted successfully.')
     },
@@ -276,13 +276,13 @@ export function useSubmitApplication(
     onSuccess: (updatedApplication) => {
       // Update individual application cache
       queryClient.setQueryData(
-        queryKeys.application(id),
+        queryKeys.applications.detail(id),
         updatedApplication
       )
 
       // Update applications list
       queryClient.setQueryData<Application[]>(
-        queryKeys.applications,
+        queryKeys.applications.all,
         (old) =>
           old?.map((app) => (app.id === id ? updatedApplication : app)) || []
       )

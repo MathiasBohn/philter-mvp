@@ -34,7 +34,7 @@ export function useRFIs(
   enabled: boolean = true
 ): UseQueryResult<RFI[], Error> {
   return useQuery({
-    queryKey: queryKeys.rfis(applicationId),
+    queryKey: queryKeys.rfis.byApplication(applicationId),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/rfis`)
       if (!response.ok) {
@@ -62,7 +62,7 @@ export function useRFI(
   enabled: boolean = true
 ): UseQueryResult<RFI, Error> {
   return useQuery({
-    queryKey: queryKeys.rfi(id),
+    queryKey: queryKeys.rfis.detail(id),
     queryFn: async () => {
       const response = await fetch(`/api/rfis/${id}`)
       if (!response.ok) {
@@ -88,7 +88,7 @@ export function useRFIMessages(
   enabled: boolean = true
 ): UseQueryResult<RFIMessage[], Error> {
   return useQuery({
-    queryKey: queryKeys.rfiMessages(rfiId),
+    queryKey: queryKeys.rfis.messages(rfiId),
     queryFn: async () => {
       const response = await fetch(`/api/rfis/${rfiId}/messages`)
       if (!response.ok) {
@@ -144,16 +144,16 @@ export function useCreateRFI(
     onSuccess: (newRFI) => {
       // Add to RFIs list
       queryClient.setQueryData<RFI[]>(
-        queryKeys.rfis(applicationId),
+        queryKeys.rfis.byApplication(applicationId),
         (old) => (old ? [...old, newRFI] : [newRFI])
       )
 
       // Add to individual RFI cache
-      queryClient.setQueryData(queryKeys.rfi(newRFI.id), newRFI)
+      queryClient.setQueryData(queryKeys.rfis.detail(newRFI.id), newRFI)
 
       // Invalidate application query to update status
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('The request for information has been created.')
@@ -200,17 +200,17 @@ export function useAddRFIMessage(
     onMutate: async (data) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: queryKeys.rfiMessages(rfiId)
+        queryKey: queryKeys.rfis.messages(rfiId)
       })
 
       // Snapshot previous value
       const previousMessages = queryClient.getQueryData<RFIMessage[]>(
-        queryKeys.rfiMessages(rfiId)
+        queryKeys.rfis.messages(rfiId)
       )
 
       // Optimistically add message
       queryClient.setQueryData<RFIMessage[]>(
-        queryKeys.rfiMessages(rfiId),
+        queryKeys.rfis.messages(rfiId),
         (old) => [
           ...(old || []),
           {
@@ -230,7 +230,7 @@ export function useAddRFIMessage(
     onSuccess: (newMessage) => {
       // Update messages list with actual data from server
       queryClient.setQueryData<RFIMessage[]>(
-        queryKeys.rfiMessages(rfiId),
+        queryKeys.rfis.messages(rfiId),
         (old) => {
           // Remove temp message and add real one
           const withoutTemp = old?.filter((msg) => !msg.id.startsWith('temp-')) || []
@@ -240,19 +240,19 @@ export function useAddRFIMessage(
 
       // Invalidate RFI to update message count
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rfi(rfiId)
+        queryKey: queryKeys.rfis.detail(rfiId)
       })
 
       // Invalidate RFIs list to show updated status
       queryClient.invalidateQueries({
-        queryKey: queryKeys.rfis(applicationId)
+        queryKey: queryKeys.rfis.byApplication(applicationId)
       })
     },
     onError: (error, _variables, context) => {
       // Rollback on error
       if (context?.previousMessages) {
         queryClient.setQueryData(
-          queryKeys.rfiMessages(rfiId),
+          queryKeys.rfis.messages(rfiId),
           context.previousMessages
         )
       }
@@ -290,17 +290,17 @@ export function useResolveRFI(
     },
     onSuccess: (updatedRFI) => {
       // Update individual RFI cache
-      queryClient.setQueryData(queryKeys.rfi(rfiId), updatedRFI)
+      queryClient.setQueryData(queryKeys.rfis.detail(rfiId), updatedRFI)
 
       // Update RFIs list
       queryClient.setQueryData<RFI[]>(
-        queryKeys.rfis(applicationId),
+        queryKeys.rfis.byApplication(applicationId),
         (old) => old?.map((rfi) => (rfi.id === rfiId ? updatedRFI : rfi)) || []
       )
 
       // Invalidate application query to update status
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       toast.success('The request for information has been marked as resolved.')

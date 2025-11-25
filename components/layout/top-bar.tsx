@@ -17,6 +17,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { getRoleLabel } from "@/lib/constants/labels"
 import { PhilterLogo } from "@/components/brand/philter-logo"
+import { NotificationBell } from "@/components/layout/notification-bell"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -51,13 +52,15 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </Link>
         </div>
 
-        {/* Right: Role Badge + Theme Toggle + User Menu */}
+        {/* Right: Role Badge + Notifications + Theme Toggle + User Menu */}
         <div className="flex items-center gap-4">
           {user && (
             <Badge variant="secondary" className="hidden sm:flex">
               {getRoleLabel(user.role)}
             </Badge>
           )}
+
+          {user && <NotificationBell />}
 
           <ThemeToggle />
 

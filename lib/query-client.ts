@@ -76,49 +76,79 @@ export function getQueryClient(): QueryClient {
  */
 export const queryKeys = {
   // Applications
-  applications: ['applications'] as const,
-  application: (id: string) => ['applications', id] as const,
-  applicationParticipants: (id: string) => ['applications', id, 'participants'] as const,
+  applications: {
+    all: ['applications'] as const,
+    detail: (id: string) => ['applications', id] as const,
+    participants: (id: string) => ['applications', id, 'participants'] as const,
+  },
 
   // Documents
-  documents: (applicationId: string) => ['documents', applicationId] as const,
-  document: (id: string) => ['document', id] as const,
+  documents: {
+    byApplication: (applicationId: string) => ['documents', applicationId] as const,
+    detail: (id: string) => ['document', id] as const,
+  },
 
   // RFIs
-  rfis: (applicationId: string) => ['rfis', applicationId] as const,
-  rfi: (id: string) => ['rfi', id] as const,
-  rfiMessages: (rfiId: string) => ['rfi', rfiId, 'messages'] as const,
+  rfis: {
+    all: ['rfis'] as const,
+    byApplication: (applicationId: string) => ['rfis', applicationId] as const,
+    detail: (id: string) => ['rfi', id] as const,
+    messages: (rfiId: string) => ['rfi', rfiId, 'messages'] as const,
+  },
 
   // Templates
-  templates: ['templates'] as const,
-  template: (id: string) => ['templates', id] as const,
-  buildingTemplate: (buildingId: string) => ['templates', 'building', buildingId] as const,
+  templates: {
+    all: ['templates'] as const,
+    detail: (id: string) => ['templates', id] as const,
+    byBuilding: (buildingId: string) => ['templates', 'building', buildingId] as const,
+  },
 
   // Decisions
-  decision: (applicationId: string) => ['decision', applicationId] as const,
+  decisions: {
+    byApplication: (applicationId: string) => ['decision', applicationId] as const,
+  },
 
   // Users
-  currentUser: ['user', 'me'] as const,
-  userProfile: (userId: string) => ['user', userId] as const,
-  userSearch: (query: string, role?: string) => ['users', 'search', query, role] as const,
+  users: {
+    current: ['user', 'me'] as const,
+    profile: (userId: string) => ['user', userId] as const,
+    search: (query: string, role?: string) => ['users', 'search', query, role] as const,
+  },
 
   // Buildings
-  buildings: ['buildings'] as const,
-  building: (id: string) => ['buildings', id] as const,
+  buildings: {
+    all: ['buildings'] as const,
+    detail: (id: string) => ['buildings', id] as const,
+  },
 
   // Activity Log
-  activityLog: (filters?: Record<string, unknown>) => ['activity-log', filters] as const,
-  applicationActivityLog: (applicationId: string) => ['activity-log', 'application', applicationId] as const,
+  activityLog: {
+    all: (filters?: Record<string, unknown>) => ['activity-log', filters] as const,
+    byApplication: (applicationId: string) => ['activity-log', 'application', applicationId] as const,
+  },
 
   // People
-  people: (applicationId: string) => ['people', applicationId] as const,
-  person: (id: string) => ['person', id] as const,
+  people: {
+    byApplication: (applicationId: string) => ['people', applicationId] as const,
+    detail: (id: string) => ['person', id] as const,
+  },
 
   // Employment
-  employment: (applicationId: string) => ['employment', applicationId] as const,
-  employmentRecord: (id: string) => ['employment', id] as const,
+  employment: {
+    byApplication: (applicationId: string) => ['employment', applicationId] as const,
+    detail: (id: string) => ['employment', id] as const,
+  },
 
   // Financials
-  financials: (applicationId: string) => ['financials', applicationId] as const,
-  financialEntry: (id: string) => ['financial', id] as const,
+  financials: {
+    byApplication: (applicationId: string) => ['financials', applicationId] as const,
+    detail: (id: string) => ['financial', id] as const,
+  },
+
+  // Notifications
+  notifications: {
+    all: ['notifications'] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
+    byId: (id: string) => ['notifications', id] as const,
+  },
 } as const

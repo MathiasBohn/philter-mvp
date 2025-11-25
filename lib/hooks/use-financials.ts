@@ -47,7 +47,7 @@ export function useFinancialEntries(
   enabled: boolean = true
 ): UseQueryResult<FinancialEntryRecord[], Error> {
   return useQuery({
-    queryKey: queryKeys.financials(applicationId),
+    queryKey: queryKeys.financials.byApplication(applicationId),
     queryFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/financials`)
       if (!response.ok) {
@@ -73,7 +73,7 @@ export function useFinancialSummary(
   enabled: boolean = true
 ): UseQueryResult<{ entries: FinancialEntryRecord[]; summary: FinancialSummary }, Error> {
   return useQuery({
-    queryKey: [...queryKeys.financials(applicationId), 'summary'] as const,
+    queryKey: [...queryKeys.financials.byApplication(applicationId), 'summary'] as const,
     queryFn: async () => {
       const response = await fetch(
         `/api/applications/${applicationId}/financials?includeSummary=true`
@@ -122,7 +122,7 @@ export function useUpsertFinancialEntry(
     onSuccess: (updatedEntry) => {
       // Update financial entries list
       queryClient.setQueryData<FinancialEntryRecord[]>(
-        queryKeys.financials(applicationId),
+        queryKeys.financials.byApplication(applicationId),
         (old) => {
           if (!old) return [updatedEntry]
           const index = old.findIndex(e => e.id === updatedEntry.id)
@@ -140,12 +140,12 @@ export function useUpsertFinancialEntry(
 
       // Invalidate application query to update completion percentage
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       // Invalidate summary query
       queryClient.invalidateQueries({
-        queryKey: [...queryKeys.financials(applicationId), 'summary']
+        queryKey: [...queryKeys.financials.byApplication(applicationId), 'summary']
       })
 
       toast.success('Financial information saved successfully.')
@@ -185,18 +185,18 @@ export function useUpdateFinancialEntries(
     onSuccess: (updatedEntries) => {
       // Replace entire financial entries list
       queryClient.setQueryData<FinancialEntryRecord[]>(
-        queryKeys.financials(applicationId),
+        queryKeys.financials.byApplication(applicationId),
         updatedEntries
       )
 
       // Invalidate application query to update completion percentage
       queryClient.invalidateQueries({
-        queryKey: queryKeys.application(applicationId)
+        queryKey: queryKeys.applications.detail(applicationId)
       })
 
       // Invalidate summary query
       queryClient.invalidateQueries({
-        queryKey: [...queryKeys.financials(applicationId), 'summary']
+        queryKey: [...queryKeys.financials.byApplication(applicationId), 'summary']
       })
 
       toast.success('All financial information saved successfully.')
