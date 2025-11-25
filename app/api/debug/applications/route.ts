@@ -56,7 +56,7 @@ export const GET = async (_request: NextRequest) => {
       .order('created_at', { ascending: false })
 
     // Step 5: Check if broker_owned column exists
-    const { data: columnTest, error: columnError } = await supabase
+    const { data: _columnTest, error: columnError } = await supabase
       .from('applications')
       .select('id, broker_owned')
       .limit(1)

@@ -12,9 +12,10 @@ import { DocumentCard } from "@/components/features/application/document-card"
 import { FormActions } from "@/components/forms/form-actions"
 import { ErrorSummary } from "@/components/forms/error-summary"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
-import { PayCadence, type EmploymentRecord, DocumentStatus, DocumentCategory } from "@/lib/types"
+import { PayCadence, type EmploymentRecord, DocumentStatus } from "@/lib/types"
 import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
 import { useEmploymentRecords, useUpdateEmploymentRecords } from "@/lib/hooks/use-employment"
+import type { EmploymentStatus as APIEmploymentStatus, PayCadence as APIPayCadence } from "@/lib/api/employment"
 import { notFound } from "next/navigation"
 import {
   uploadManager,
@@ -26,7 +27,7 @@ import {
 import { useFilePreview } from "@/lib/hooks/use-file-preview"
 
 // Helper function to map upload status to DocumentStatus enum
-const mapUploadStatusToDocumentStatus = (status: string): DocumentStatus => {
+const _mapUploadStatusToDocumentStatus = (status: string): DocumentStatus => {
   switch (status) {
     case 'complete':
       return DocumentStatus.UPLOADED
@@ -44,8 +45,8 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const router = useRouter()
   const { data: application, isLoading, error } = useApplication(id)
-  const updateApplication = useUpdateApplication(id)
-  const { data: employmentRecords, isLoading: employmentLoading } = useEmploymentRecords(id, !!application)
+  const _updateApplication = useUpdateApplication(id)
+  const { data: _employmentRecords, isLoading: _employmentLoading } = useEmploymentRecords(id, !!application)
   const updateEmployment = useUpdateEmploymentRecords(id)
   const [employers, setEmployers] = useState<EmploymentRecord[]>([])
   const [documents, setDocuments] = useState<UploadedFile[]>([])
@@ -350,21 +351,21 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
     try {
       // Save employment data to database via new employment API
       const employmentInputs = employers.map(emp => {
-        const empAny = emp as any // Type assertion for fields not matching exactly
+        const empAny = emp as Record<string, unknown> // Type assertion for fields not matching exactly
         return {
           id: emp.id,
           personId: undefined, // Not linking to specific person for now
-          employerName: empAny.employerName || emp.employer,
-          jobTitle: empAny.jobTitle || emp.title,
-          employmentStatus: emp.employmentStatus as any, // Map to database enum
+          employerName: (empAny.employerName as string | undefined) || emp.employer,
+          jobTitle: (empAny.jobTitle as string | undefined) || emp.title,
+          employmentStatus: String(emp.employmentStatus) as APIEmploymentStatus, // Convert enum to string type for API
           startDate: emp.startDate instanceof Date ? emp.startDate.toISOString() : emp.startDate,
           endDate: emp.endDate ? (emp.endDate instanceof Date ? emp.endDate.toISOString() : emp.endDate) : undefined,
           isCurrent: emp.isCurrent,
           annualIncome: emp.annualIncome,
-          payCadence: emp.payCadence as any, // Map to database enum
+          payCadence: emp.payCadence ? String(emp.payCadence) as APIPayCadence : undefined, // Convert enum to string type for API
           supervisorName: emp.supervisorName,
           supervisorPhone: emp.supervisorPhone,
-          supervisorEmail: empAny.supervisorEmail,
+          supervisorEmail: empAny.supervisorEmail as string | undefined,
           address: emp.employerAddress ? {
             street: emp.employerAddress.street || '',
             city: emp.employerAddress.city || '',

@@ -20,7 +20,7 @@ import { DateInput } from "@/components/forms/date-input";
 import { MonthYearInput } from "@/components/forms/month-year-input";
 import { StateSelect } from "@/components/ui/state-select";
 import { profileSchema } from "@/lib/validators";
-import { AddressHistoryEntry, ReferenceLetterEntry, HousingHistory, LandlordInfo, EmergencyContact, KeyHolder, EducationInfo, EducationLevel, Role } from "@/lib/types";
+import { AddressHistoryEntry, ReferenceLetterEntry, LandlordInfo, EmergencyContact, KeyHolder, EducationInfo, EducationLevel, Role } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -39,8 +39,8 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
 
   // React Query hooks
   const { data: application, isLoading, error } = useApplication(id);
-  const updateApplication = useUpdateApplication(id);
-  const { data: people, isLoading: peopleLoading } = usePeople(id, !!application);
+  const _updateApplication = useUpdateApplication(id);
+  const { data: people, isLoading: _peopleLoading } = usePeople(id, !!application);
   const upsertPerson = useUpsertPerson(id);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -252,7 +252,7 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
           } : undefined;
         })(),
         addressHistory: data.addressHistory.map(addr => {
-          const addrAny = addr as any; // Type assertion for optional fields
+          const addrRecord = addr as Record<string, unknown>; // Type assertion for optional fields
           return {
             id: (addr as { id?: string }).id,
             address: {
@@ -265,10 +265,10 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
             moveInDate: addr.fromDate.toISOString().split('T')[0],
             moveOutDate: addr.toDate ? addr.toDate.toISOString().split('T')[0] : undefined,
             isCurrent: addr.isCurrent,
-            landlordName: addrAny.landlordName,
-            landlordPhone: addrAny.landlordPhone,
-            landlordEmail: addrAny.landlordEmail,
-            monthlyRent: addrAny.monthlyRent,
+            landlordName: addrRecord.landlordName as string | undefined,
+            landlordPhone: addrRecord.landlordPhone as string | undefined,
+            landlordEmail: addrRecord.landlordEmail as string | undefined,
+            monthlyRent: addrRecord.monthlyRent as number | undefined,
           };
         }),
         emergencyContacts: emergencyContact.name ? [{

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { TransactionType, Building } from "@/lib/types"
+import { TransactionType, Building, Application } from "@/lib/types"
 import { mockBuildings } from "@/lib/mock-data"
 import { Loader2, CheckCircle2, Plus } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -82,7 +82,7 @@ export default function BrokerNewApplicationPage() {
         primaryApplicantEmail: applicantEmail,
         // Note: primaryApplicantName is not a valid property on Application type
         // Name will be set when the applicant completes their profile
-      } as any)
+      } as Partial<Application>)
 
       setCreatedApplicationId(newApplication.id)
       setShowSuccessDialog(true)

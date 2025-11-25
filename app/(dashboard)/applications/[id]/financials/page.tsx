@@ -11,6 +11,7 @@ import { FormActions } from "@/components/forms/form-actions"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { useApplication, useUpdateApplication } from "@/lib/hooks/use-applications"
 import { useFinancialEntries, useUpdateFinancialEntries } from "@/lib/hooks/use-financials"
+import type { FinancialEntryType as APIFinancialEntryType } from "@/lib/api/financials"
 import { notFound } from "next/navigation"
 import {
   FinancialEntryType,
@@ -68,8 +69,8 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const router = useRouter()
   const { data: application, isLoading, error } = useApplication(id)
-  const updateApplication = useUpdateApplication(id)
-  const { data: financialEntries, isLoading: financialsLoading } = useFinancialEntries(id, !!application)
+  const _updateApplication = useUpdateApplication(id)
+  const { data: _financialEntries, isLoading: _financialsLoading } = useFinancialEntries(id, !!application)
   const updateFinancials = useUpdateFinancialEntries(id)
   const [entries, setEntries] = useState<FinancialEntry[]>([])
   const [isSaving, setIsSaving] = useState(false)
@@ -134,17 +135,18 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
     try {
       // Save financial entries to database via new financials API
       const financialInputs = entries.map(entry => {
-        const entryAny = entry as any // Type assertion for fields not in FinancialEntry type
+        const entryAny = entry as Record<string, unknown> // Type assertion for fields not in FinancialEntry type
+        const accountNumber = entryAny.accountNumber as string | undefined
         return {
           id: entry.id,
-          entryType: entry.entryType as any, // Map to database enum
+          entryType: String(entry.entryType) as APIFinancialEntryType, // Convert enum to string type for API
           category: entry.category,
           amount: entry.amount,
           institution: entry.institution,
-          accountNumberLast4: entryAny.accountNumber ? entryAny.accountNumber.slice(-4) : undefined,
+          accountNumberLast4: accountNumber ? accountNumber.slice(-4) : undefined,
           description: entry.description,
-          isLiquid: entry.entryType === FinancialEntryType.ASSET ? entryAny.isLiquid : undefined,
-          monthlyPayment: entry.entryType === FinancialEntryType.LIABILITY ? entryAny.monthlyPayment : undefined,
+          isLiquid: entry.entryType === FinancialEntryType.ASSET ? (entryAny.isLiquid as boolean | undefined) : undefined,
+          monthlyPayment: entry.entryType === FinancialEntryType.LIABILITY ? (entryAny.monthlyPayment as number | undefined) : undefined,
         }
       })
 

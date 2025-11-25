@@ -3,12 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  User,
-  Briefcase,
-  DollarSign,
   Upload,
-  FileCheck,
-  CheckCircle,
   Home,
   Inbox,
   Settings,

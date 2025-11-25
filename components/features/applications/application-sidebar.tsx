@@ -229,19 +229,19 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
     // Profile - check ALL required fields, not just fullName
     if (application.people && application.people.length > 0) {
       const primaryApplicant = application.people[0];
-      const applicantAny = primaryApplicant as any; // Type assertion for optional fields
+      const applicantRecord = primaryApplicant as Record<string, unknown>; // Type assertion for optional fields
       // Required: fullName, email, phone, dateOfBirth, ssn, and at least 2 years of address history
       const hasBasicInfo = primaryApplicant.fullName &&
                           primaryApplicant.email &&
                           primaryApplicant.phone &&
-                          (applicantAny.dateOfBirth || primaryApplicant.dob) &&
-                          (applicantAny.ssn || primaryApplicant.ssnFull);
+                          (applicantRecord.dateOfBirth || primaryApplicant.dob) &&
+                          (applicantRecord.ssn || primaryApplicant.ssnFull);
 
       const hasAddressHistory = primaryApplicant.addressHistory &&
                                primaryApplicant.addressHistory.length > 0;
 
-      const hasEmergencyContact = applicantAny.emergencyContacts &&
-                                 applicantAny.emergencyContacts.length > 0;
+      const hasEmergencyContact = Array.isArray(applicantRecord.emergencyContacts) &&
+                                 (applicantRecord.emergencyContacts as unknown[]).length > 0;
 
       if (hasBasicInfo && hasAddressHistory && hasEmergencyContact) {
         statuses.profile = "complete";

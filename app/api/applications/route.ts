@@ -17,7 +17,6 @@ import { TransactionType } from '@/lib/types'
 import {
   withErrorHandler,
   assertAuthenticated,
-  assertExists,
 } from '@/lib/api/errors'
 import { validateRequestBody } from '@/lib/api/validate'
 

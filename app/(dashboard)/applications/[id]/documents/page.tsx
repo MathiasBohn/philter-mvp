@@ -13,7 +13,7 @@ import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { useApplication } from "@/lib/hooks/use-applications"
-import { useDocuments, useUploadDocument, useDeleteDocument, useDocumentSignedURLs } from "@/lib/hooks/use-documents"
+import { useDocuments, useUploadDocument, useDocumentSignedURLs } from "@/lib/hooks/use-documents"
 import type { Document } from "@/lib/types"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
@@ -72,7 +72,7 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   const [categories, setCategories] = useState<DocumentCategory[]>(INITIAL_CATEGORIES)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
-  const [uploadingFiles, setUploadingFiles] = useState<Map<string, { progress: number; categoryId: string }>>(new Map())
+  const [_uploadingFiles, setUploadingFiles] = useState<Map<string, { progress: number; categoryId: string }>>(new Map())
   const [documentsLoaded, setDocumentsLoaded] = useState(false)
 
   // Convert Document from database to UploadedFile format for display
@@ -258,7 +258,7 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   }
 
   // Handle refreshing expired signed URLs
-  const handleRefreshSignedURL = async (fileId: string) => {
+  const _handleRefreshSignedURL = async (fileId: string) => {
     await refreshURL(fileId)
 
     // Update the preview URL in categories state
@@ -279,7 +279,7 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
 
   const handleFileRemoved = async (categoryId: string, fileId: string) => {
     // Find the document in the database
-    const dbDocument = dbDocuments?.find(doc => doc.id === fileId)
+    const _dbDocument = dbDocuments?.find(doc => doc.id === fileId)
 
     // Remove from UI state immediately (optimistic update)
     setCategories((prev) =>
