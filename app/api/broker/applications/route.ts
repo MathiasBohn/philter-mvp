@@ -15,8 +15,9 @@ const createBrokerApplicationSchema = z.object({
   buildingId: z.string().uuid('Invalid building ID'),
   unit: z.string().optional(),
   transactionType: z.nativeEnum(TransactionType),
-  applicantEmail: z.string().email('Invalid email address'),
-  applicantName: z.string().min(1, 'Applicant name is required'),
+  // Applicant details are optional - broker can create app first and invite later
+  applicantEmail: z.string().email('Invalid email address').optional().nullable(),
+  applicantName: z.string().optional().nullable(),
 })
 
 /**
@@ -71,12 +72,19 @@ export async function POST(request: NextRequest) {
     const { buildingId, unit, transactionType, applicantEmail, applicantName } =
       validation.data
 
-    // Check if applicant already has a user account
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', applicantEmail)
-      .single()
+    // Check if we should send an invitation (only if valid applicant email is provided)
+    const shouldSendInvitation = applicantEmail && applicantEmail !== 'placeholder@temp.local'
+
+    // Check if applicant already has a user account (only if email provided)
+    let existingUser = null
+    if (shouldSendInvitation) {
+      const { data } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', applicantEmail)
+        .single()
+      existingUser = data
+    }
 
     // Create the broker-owned application
     const { data: application, error: appError } = await supabase
@@ -88,7 +96,7 @@ export async function POST(request: NextRequest) {
         status: 'IN_PROGRESS',
         broker_owned: true,
         created_by: user.id,
-        primary_applicant_email: applicantEmail,
+        primary_applicant_email: shouldSendInvitation ? applicantEmail : null,
         primary_applicant_id: existingUser?.id || null,
         current_section: 'profile',
         completion_percentage: 0,
@@ -108,63 +116,74 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // If user already exists, link them to the application
-    if (existingUser) {
-      await supabase.from('application_participants').insert({
-        application_id: application.id,
-        user_id: existingUser.id,
-        role: 'APPLICANT',
-        invited_at: new Date().toISOString(),
-        accepted_at: new Date().toISOString(),
-      })
-    } else {
-      // Create invitation for new user
-      const { data: invitation, error: inviteError } = await supabase
-        .from('application_invitations')
-        .insert({
+    // Only handle invitation if applicant email was provided
+    if (shouldSendInvitation) {
+      // If user already exists, link them to the application
+      if (existingUser) {
+        await supabase.from('application_participants').insert({
           application_id: application.id,
-          email: applicantEmail,
-          invited_by: user.id,
-          status: 'PENDING',
+          user_id: existingUser.id,
+          role: 'APPLICANT',
+          invited_at: new Date().toISOString(),
+          accepted_at: new Date().toISOString(),
         })
-        .select()
-        .single()
-
-      if (inviteError) {
-        console.error('Error creating invitation:', inviteError)
-        // Application was created, so we don't fail - just log the error
-        // TODO: Implement retry mechanism or queue
-      }
-
-      // Send invitation email
-      if (invitation) {
-        console.log(`Invitation created with token: ${invitation.token}`)
-        console.log(`Invite URL: ${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation/${invitation.token}`)
-
-        // Get broker's name for the email
-        const { data: brokerProfile } = await supabase
-          .from('users')
-          .select('name, email')
-          .eq('id', user.id)
+      } else {
+        // Create invitation for new user
+        const { data: invitation, error: inviteError } = await supabase
+          .from('application_invitations')
+          .insert({
+            application_id: application.id,
+            email: applicantEmail,
+            invited_by: user.id,
+            status: 'PENDING',
+          })
+          .select()
           .single()
 
-        // Send the email
-        const emailResult = await sendInvitationEmail({
-          to: applicantEmail,
-          applicantName,
-          brokerName: brokerProfile?.name || brokerProfile?.email || 'Your broker',
-          buildingName: application.building?.name || 'the building',
-          buildingAddress: application.building?.address || '',
-          transactionType,
-          invitationToken: invitation.token,
-        })
+        if (inviteError) {
+          console.error('Error creating invitation:', inviteError)
+          // Application was created, so we don't fail - just log the error
+          // TODO: Implement retry mechanism or queue
+        }
 
-        if (!emailResult.success) {
-          console.warn('Failed to send invitation email:', emailResult.error)
-          // We don't fail the request since the invitation was created
-          // The broker can manually share the link
+        // Send invitation email
+        if (invitation) {
+          console.log(`Invitation created with token: ${invitation.token}`)
+          console.log(`Invite URL: ${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation/${invitation.token}`)
+
+          // Get broker's name for the email
+          const { data: brokerProfile } = await supabase
+            .from('users')
+            .select('name, email')
+            .eq('id', user.id)
+            .single()
+
+          // Send the email
+          const emailResult = await sendInvitationEmail({
+            to: applicantEmail,
+            applicantName: applicantName || 'Applicant',
+            brokerName: brokerProfile?.name || brokerProfile?.email || 'Your broker',
+            buildingName: application.building?.name || 'the building',
+            buildingAddress: application.building?.address || '',
+            transactionType,
+            invitationToken: invitation.token,
+          })
+
+          if (!emailResult.success) {
+            console.warn('Failed to send invitation email:', emailResult.error)
+            // We don't fail the request since the invitation was created
+            // The broker can manually share the link
+          }
         }
       }
+    }
+
+    // Determine the appropriate message
+    let message = 'Application created'
+    if (shouldSendInvitation) {
+      message = existingUser
+        ? 'Application created and applicant linked'
+        : 'Application created and invitation sent'
     }
 
     return NextResponse.json(
@@ -175,9 +194,8 @@ export async function POST(request: NextRequest) {
           primary_applicant_email: application.primary_applicant_email,
           primary_applicant_id: application.primary_applicant_id,
         },
-        message: existingUser
-          ? 'Application created and applicant linked'
-          : 'Application created and invitation sent',
+        invitationSent: shouldSendInvitation && !existingUser,
+        message,
       },
       { status: 201 }
     )
