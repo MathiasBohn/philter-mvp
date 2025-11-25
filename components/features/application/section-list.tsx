@@ -91,23 +91,27 @@ export interface SectionListProps {
 }
 
 export function SectionList({ application }: SectionListProps) {
+  // Ensure sections and rfis arrays exist (they may be undefined from API)
+  const sections = application.sections || [];
+  const rfis = application.rfis || [];
+
   const getSectionStatus = (sectionKey: string): SectionStatus => {
-    const section = application.sections.find((s) => s.key === sectionKey);
+    const section = sections.find((s) => s.key === sectionKey);
 
     if (!section) return "incomplete";
 
     // Check if there's an RFI for this section
-    const hasRFI = application.rfis.some(
+    const hasRFIForSection = rfis.some(
       (rfi) => rfi.sectionKey === sectionKey && rfi.status === "OPEN"
     );
 
-    if (hasRFI) return "error";
+    if (hasRFIForSection) return "error";
 
     return section.isComplete ? "complete" : "incomplete";
   };
 
   const hasRFI = (sectionKey: string): boolean => {
-    return application.rfis.some(
+    return rfis.some(
       (rfi) => rfi.sectionKey === sectionKey && rfi.status === "OPEN"
     );
   };

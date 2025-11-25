@@ -47,8 +47,8 @@ export function ErrorBoundary({
     variant === "page"
       ? "min-h-screen flex items-center justify-center p-4"
       : "p-8 flex items-center justify-center"
-  const homeHref = variant === "page" ? "/" : "/dashboard"
-  const homeLabel = variant === "page" ? "Go Home" : "Back to Dashboard"
+  const homeHref = variant === "page" ? "/" : "/my-applications"
+  const homeLabel = variant === "page" ? "Go Home" : "Back to My Applications"
 
   return (
     <div className={containerClass}>
