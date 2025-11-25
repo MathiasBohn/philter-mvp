@@ -8,9 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { TransactionType } from "@/lib/types"
-import { Loader2, CheckCircle2, Plus, AlertCircle, Building2 } from "lucide-react"
+import { Loader2, CheckCircle2, AlertCircle, Building2 } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/lib/hooks/use-toast"
 
@@ -197,7 +196,7 @@ export default function BrokerNewApplicationPage() {
                   <span className="text-sm text-muted-foreground">Loading buildings...</span>
                 </div>
               ) : (
-                <Select value={buildingId} onValueChange={handleBuildingChange} required disabled={isSubmitting}>
+                <Select value={buildingId} onValueChange={handleBuildingChange} disabled={isSubmitting}>
                   <SelectTrigger id="building">
                     <SelectValue placeholder="Select a building" />
                   </SelectTrigger>
@@ -231,7 +230,6 @@ export default function BrokerNewApplicationPage() {
               <Select
                 value={transactionType}
                 onValueChange={(value) => setTransactionType(value as TransactionType)}
-                required
                 disabled={isSubmitting}
               >
                 <SelectTrigger id="transactionType">
