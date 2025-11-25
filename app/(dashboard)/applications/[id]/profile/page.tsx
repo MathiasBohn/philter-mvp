@@ -241,24 +241,36 @@ export default function ProfilePage({ params }: { params: Promise<{ id: string }
         phone: data.phone,
         dateOfBirth: data.dob ? data.dob.toISOString().split('T')[0] : undefined,
         ssn: data.ssn,
-        currentAddress: data.addressHistory.find(a => a.isCurrent)?.address,
-        addressHistory: data.addressHistory.map(addr => ({
-          id: (addr as { id?: string }).id,
-          address: {
-            street: addr.street,
-            unit: addr.unit,
-            city: addr.city,
-            state: addr.state,
-            zip: addr.zip,
-          },
-          moveInDate: addr.fromDate.toISOString().split('T')[0],
-          moveOutDate: addr.toDate ? addr.toDate.toISOString().split('T')[0] : undefined,
-          isCurrent: addr.isCurrent,
-          landlordName: addr.landlordName,
-          landlordPhone: addr.landlordPhone,
-          landlordEmail: addr.landlordEmail,
-          monthlyRent: addr.monthlyRent,
-        })),
+        currentAddress: (() => {
+          const current = data.addressHistory.find(a => a.isCurrent);
+          return current ? {
+            street: current.street,
+            unit: current.unit,
+            city: current.city,
+            state: current.state,
+            zip: current.zip,
+          } : undefined;
+        })(),
+        addressHistory: data.addressHistory.map(addr => {
+          const addrAny = addr as any; // Type assertion for optional fields
+          return {
+            id: (addr as { id?: string }).id,
+            address: {
+              street: addr.street,
+              unit: addr.unit,
+              city: addr.city,
+              state: addr.state,
+              zip: addr.zip,
+            },
+            moveInDate: addr.fromDate.toISOString().split('T')[0],
+            moveOutDate: addr.toDate ? addr.toDate.toISOString().split('T')[0] : undefined,
+            isCurrent: addr.isCurrent,
+            landlordName: addrAny.landlordName,
+            landlordPhone: addrAny.landlordPhone,
+            landlordEmail: addrAny.landlordEmail,
+            monthlyRent: addrAny.monthlyRent,
+          };
+        }),
         emergencyContacts: emergencyContact.name ? [{
           id: undefined,
           name: emergencyContact.name,

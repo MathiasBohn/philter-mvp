@@ -7,12 +7,17 @@ import { cn } from "@/lib/utils"
 
 export interface UploadedFile {
   id: string
-  file: File
-  preview?: string
+  file?: File  // Optional for persisted documents
+  filename?: string  // For persisted documents without File object
+  size?: number  // For persisted documents
+  mimeType?: string  // For persisted documents
+  preview?: string  // Blob URL for local files, signed URL for persisted docs
   progress: number
   status: "pending" | "uploading" | "paused" | "complete" | "error"
   error?: string
   isPaused?: boolean
+  isPersisted?: boolean  // True if loaded from database
+  signedUrlExpiresAt?: Date  // Track when signed URL expires
 }
 
 interface UploadDropzoneProps {

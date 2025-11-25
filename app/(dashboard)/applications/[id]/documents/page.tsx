@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useState } from "react"
+import { use, useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -13,7 +13,8 @@ import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { useApplication } from "@/lib/hooks/use-applications"
-import { useDocuments, useUploadDocument, useDeleteDocument } from "@/lib/hooks/use-documents"
+import { useDocuments, useUploadDocument, useDeleteDocument, useDocumentSignedURLs } from "@/lib/hooks/use-documents"
+import type { Document } from "@/lib/types"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
   {
@@ -66,11 +67,76 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   const { data: application, isLoading, error } = useApplication(id)
   const { data: dbDocuments, isLoading: isLoadingDocuments } = useDocuments(id)
   const { uploadFile, isUploading } = useUploadDocument(id)
+  const { urlMap, isLoading: isLoadingURLs, refreshURL } = useDocumentSignedURLs(dbDocuments)
 
   const [categories, setCategories] = useState<DocumentCategory[]>(INITIAL_CATEGORIES)
   const [isSaving, setIsSaving] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
   const [uploadingFiles, setUploadingFiles] = useState<Map<string, { progress: number; categoryId: string }>>(new Map())
+  const [documentsLoaded, setDocumentsLoaded] = useState(false)
+
+  // Convert Document from database to UploadedFile format for display
+  const convertDocumentToUploadedFile = (doc: Document, signedUrl?: string, expiresAt?: Date): UploadedFile => {
+    return {
+      id: doc.id,
+      filename: doc.filename,
+      size: doc.size,
+      mimeType: doc.mimeType,
+      preview: signedUrl,
+      progress: 100,
+      status: 'complete',
+      isPersisted: true,
+      signedUrlExpiresAt: expiresAt,
+    }
+  }
+
+  // Map document category to category ID
+  const mapDocumentCategoryToId = (category: string): string => {
+    const categoryMap: Record<string, string> = {
+      'GOVERNMENT_ID': 'govt-id',
+      'BANK_STATEMENT': 'bank-statements',
+      'TAX_RETURN': 'tax-returns',
+      'REFERENCE_LETTER': 'reference-letters',
+      'OTHER': 'building-forms',
+    }
+    return categoryMap[category] || 'building-forms'
+  }
+
+  // Merge database documents into categories when they load
+  useEffect(() => {
+    if (!dbDocuments || isLoadingDocuments || isLoadingURLs || documentsLoaded) {
+      return
+    }
+
+    // Convert db documents to UploadedFile format with signed URLs
+    const uploadedFilesFromDB: UploadedFile[] = dbDocuments.map((doc) => {
+      const urlData = urlMap.get(doc.id)
+      return convertDocumentToUploadedFile(doc, urlData?.url, urlData?.expiresAt)
+    })
+
+    // Group documents by category
+    const documentsByCategory: Record<string, UploadedFile[]> = {}
+    uploadedFilesFromDB.forEach((uploadedFile) => {
+      const doc = dbDocuments.find(d => d.id === uploadedFile.id)
+      if (doc) {
+        const categoryId = mapDocumentCategoryToId(doc.category)
+        if (!documentsByCategory[categoryId]) {
+          documentsByCategory[categoryId] = []
+        }
+        documentsByCategory[categoryId].push(uploadedFile)
+      }
+    })
+
+    // Merge into categories
+    setCategories((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        documents: documentsByCategory[cat.id] || [],
+      }))
+    )
+
+    setDocumentsLoaded(true)
+  }, [dbDocuments, isLoadingDocuments, urlMap, isLoadingURLs, documentsLoaded])
 
   const handleFilesAdded = async (categoryId: string, newFiles: UploadedFile[]) => {
     // Add files to UI state
@@ -92,6 +158,12 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
 
   const startUpload = async (categoryId: string, uploadedFile: UploadedFile) => {
     const fileId = uploadedFile.id
+
+    // Ensure file exists (should always be present for new uploads)
+    if (!uploadedFile.file) {
+      console.error("Cannot upload: file object is missing")
+      return
+    }
 
     // Mark as uploading
     setCategories((prev) =>
@@ -182,6 +254,26 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
         newMap.delete(fileId)
         return newMap
       })
+    }
+  }
+
+  // Handle refreshing expired signed URLs
+  const handleRefreshSignedURL = async (fileId: string) => {
+    await refreshURL(fileId)
+
+    // Update the preview URL in categories state
+    const urlData = urlMap.get(fileId)
+    if (urlData) {
+      setCategories((prev) =>
+        prev.map((cat) => ({
+          ...cat,
+          documents: cat.documents.map((doc) =>
+            doc.id === fileId
+              ? { ...doc, preview: urlData.url, signedUrlExpiresAt: urlData.expiresAt }
+              : doc
+          ),
+        }))
+      )
     }
   }
 

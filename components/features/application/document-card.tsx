@@ -38,8 +38,8 @@ export function DocumentCard({
   onReplace,
 }: DocumentCardProps) {
   const getFileIcon = () => {
-    const { file } = document
-    const type = file.type
+    // Get MIME type from either file object or mimeType property
+    const type = document.file?.type || document.mimeType || ''
 
     if (type.includes("pdf")) {
       return <FileText className="h-6 w-6 text-red-500" />
@@ -103,7 +103,7 @@ export function DocumentCard({
           <div className="relative h-14 w-14 flex-shrink-0">
             <Image
               src={document.preview}
-              alt={document.file.name}
+              alt={document.file?.name || document.filename || 'Document preview'}
               width={56}
               height={56}
               className="h-full w-full rounded object-cover"
@@ -119,11 +119,11 @@ export function DocumentCard({
         <div className="flex-1 space-y-2 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 space-y-1 min-w-0">
-              <p className="text-sm font-medium leading-none truncate" title={document.file.name}>
-                {document.file.name}
+              <p className="text-sm font-medium leading-none truncate" title={document.file?.name || document.filename}>
+                {document.file?.name || document.filename || 'Unknown file'}
               </p>
               <p className="text-xs text-muted-foreground">
-                {formatFileSize(document.file.size)}
+                {formatFileSize(document.file?.size || document.size || 0)}
               </p>
             </div>
 

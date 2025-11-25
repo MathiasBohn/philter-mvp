@@ -188,6 +188,9 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       return
     }
 
+    // Store file reference (TypeScript knows it's defined after the check above)
+    const file = document.file
+
     setDocuments((prev) =>
       prev.map((doc) =>
         doc.id === fileId ? { ...doc, status: "uploading" as const } : doc
@@ -196,7 +199,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     uploadManager.startUpload(
       fileId,
-      document.file,
+      file,
       'documents',
       `applications/${id}/employment/${fileId}`,
       (progress) => {
@@ -214,7 +217,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
         )
 
         // Save to IndexedDB as backup
-        await saveFileToStorage(document.file, fileId, 'employment-verification')
+        await saveFileToStorage(file, fileId, 'employment-verification')
       },
       (error) => {
         setDocuments((prev) =>
@@ -234,6 +237,9 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
       return
     }
 
+    // Store file reference (TypeScript knows it's defined after the check above)
+    const file = document.file
+
     setCpaLetterDocuments((prev) =>
       prev.map((doc) =>
         doc.id === fileId ? { ...doc, status: "uploading" as const } : doc
@@ -242,7 +248,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     uploadManager.startUpload(
       fileId,
-      document.file,
+      file,
       'documents',
       `applications/${id}/cpa-letter/${fileId}`,
       (progress) => {
@@ -260,7 +266,7 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
         )
 
         // Save to IndexedDB as backup
-        await saveFileToStorage(document.file, fileId, 'cpa-letter')
+        await saveFileToStorage(file, fileId, 'cpa-letter')
       },
       (error) => {
         setCpaLetterDocuments((prev) =>
@@ -343,27 +349,30 @@ export default function IncomePage({ params }: { params: Promise<{ id: string }>
 
     try {
       // Save employment data to database via new employment API
-      const employmentInputs = employers.map(emp => ({
-        id: emp.id,
-        personId: undefined, // Not linking to specific person for now
-        employerName: emp.employerName,
-        jobTitle: emp.jobTitle,
-        employmentStatus: emp.employmentStatus as any, // Map to database enum
-        startDate: emp.startDate,
-        endDate: emp.endDate,
-        isCurrent: emp.isCurrent,
-        annualIncome: emp.annualIncome,
-        payCadence: emp.payCadence as any, // Map to database enum
-        supervisorName: emp.supervisorName,
-        supervisorPhone: emp.supervisorPhone,
-        supervisorEmail: emp.supervisorEmail,
-        address: emp.employerAddress ? {
-          street: emp.employerAddress.street || '',
-          city: emp.employerAddress.city || '',
-          state: emp.employerAddress.state || '',
-          zip: emp.employerAddress.zip || '',
-        } : undefined,
-      }))
+      const employmentInputs = employers.map(emp => {
+        const empAny = emp as any // Type assertion for fields not matching exactly
+        return {
+          id: emp.id,
+          personId: undefined, // Not linking to specific person for now
+          employerName: empAny.employerName || emp.employer,
+          jobTitle: empAny.jobTitle || emp.title,
+          employmentStatus: emp.employmentStatus as any, // Map to database enum
+          startDate: emp.startDate instanceof Date ? emp.startDate.toISOString() : emp.startDate,
+          endDate: emp.endDate ? (emp.endDate instanceof Date ? emp.endDate.toISOString() : emp.endDate) : undefined,
+          isCurrent: emp.isCurrent,
+          annualIncome: emp.annualIncome,
+          payCadence: emp.payCadence as any, // Map to database enum
+          supervisorName: emp.supervisorName,
+          supervisorPhone: emp.supervisorPhone,
+          supervisorEmail: empAny.supervisorEmail,
+          address: emp.employerAddress ? {
+            street: emp.employerAddress.street || '',
+            city: emp.employerAddress.city || '',
+            state: emp.employerAddress.state || '',
+            zip: emp.employerAddress.zip || '',
+          } : undefined,
+        }
+      })
 
       await updateEmployment.mutateAsync(employmentInputs)
 

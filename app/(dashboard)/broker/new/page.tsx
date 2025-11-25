@@ -80,8 +80,9 @@ export default function BrokerNewApplicationPage() {
         unit,
         transactionType: transactionType || undefined,
         primaryApplicantEmail: applicantEmail,
-        primaryApplicantName: applicantName,
-      })
+        // Note: primaryApplicantName is not a valid property on Application type
+        // Name will be set when the applicant completes their profile
+      } as any)
 
       setCreatedApplicationId(newApplication.id)
       setShowSuccessDialog(true)

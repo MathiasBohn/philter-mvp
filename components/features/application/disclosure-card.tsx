@@ -620,7 +620,7 @@ export function DisclosureCard({
                   <div className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">
-                      {file?.name || disclosure.signedDocument?.file.name}
+                      {file?.name || disclosure.signedDocument?.file?.name}
                     </span>
                   </div>
                   <Button
@@ -668,7 +668,7 @@ export function DisclosureCard({
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm">
-                    {file?.name || disclosure.signedDocument?.file.name}
+                    {file?.name || disclosure.signedDocument?.file?.name}
                   </span>
                 </div>
                 <Button

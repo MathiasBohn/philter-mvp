@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import {
   useQuery,
   useMutation,
@@ -300,5 +301,85 @@ export function useUploadDocument(applicationId: string) {
     uploadFile,
     isUploading: createDocument.isPending,
     error: createDocument.error,
+  }
+}
+
+/**
+ * Hook to fetch and manage signed URLs for documents with automatic expiration handling
+ *
+ * @param documents - Array of documents to fetch URLs for
+ * @returns Map of document IDs to their signed URLs with expiration dates
+ */
+export function useDocumentSignedURLs(documents: Document[] | undefined) {
+  const [urlMap, setUrlMap] = useState<Map<string, { url: string; expiresAt: Date }>>(new Map())
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!documents || documents.length === 0) {
+      setUrlMap(new Map())
+      return
+    }
+
+    const fetchSignedURLs = async () => {
+      setIsLoading(true)
+      const newUrlMap = new Map<string, { url: string; expiresAt: Date }>()
+
+      try {
+        await Promise.all(
+          documents.map(async (doc) => {
+            try {
+              const response = await fetch(`/api/documents/${doc.id}`)
+              if (response.ok) {
+                const data = await response.json()
+                newUrlMap.set(doc.id, {
+                  url: data.url,
+                  expiresAt: new Date(data.expiresAt),
+                })
+              } else {
+                console.error(`Failed to fetch signed URL for document ${doc.id}`)
+              }
+            } catch (error) {
+              console.error(`Error fetching signed URL for document ${doc.id}:`, error)
+            }
+          })
+        )
+
+        setUrlMap(newUrlMap)
+      } catch (error) {
+        console.error('Error fetching signed URLs:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchSignedURLs()
+  }, [documents])
+
+  /**
+   * Refresh a single document's signed URL (e.g., when it expires)
+   */
+  const refreshURL = async (documentId: string) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setUrlMap((prev) => {
+          const newMap = new Map(prev)
+          newMap.set(documentId, {
+            url: data.url,
+            expiresAt: new Date(data.expiresAt),
+          })
+          return newMap
+        })
+      }
+    } catch (error) {
+      console.error(`Error refreshing signed URL for document ${documentId}:`, error)
+    }
+  }
+
+  return {
+    urlMap,
+    isLoading,
+    refreshURL,
   }
 }

@@ -133,17 +133,20 @@ export default function FinancialsPage({ params }: { params: Promise<{ id: strin
 
     try {
       // Save financial entries to database via new financials API
-      const financialInputs = entries.map(entry => ({
-        id: entry.id,
-        entryType: entry.type as any, // Map to database enum
-        category: entry.category,
-        amount: entry.amount,
-        institution: entry.institution,
-        accountNumberLast4: entry.accountNumber ? entry.accountNumber.slice(-4) : undefined,
-        description: entry.description,
-        isLiquid: entry.type === FinancialEntryType.ASSET ? entry.isLiquid : undefined,
-        monthlyPayment: entry.type === FinancialEntryType.LIABILITY ? entry.monthlyPayment : undefined,
-      }))
+      const financialInputs = entries.map(entry => {
+        const entryAny = entry as any // Type assertion for fields not in FinancialEntry type
+        return {
+          id: entry.id,
+          entryType: entry.entryType as any, // Map to database enum
+          category: entry.category,
+          amount: entry.amount,
+          institution: entry.institution,
+          accountNumberLast4: entryAny.accountNumber ? entryAny.accountNumber.slice(-4) : undefined,
+          description: entry.description,
+          isLiquid: entry.entryType === FinancialEntryType.ASSET ? entryAny.isLiquid : undefined,
+          monthlyPayment: entry.entryType === FinancialEntryType.LIABILITY ? entryAny.monthlyPayment : undefined,
+        }
+      })
 
       await updateFinancials.mutateAsync(financialInputs)
     } catch (error) {

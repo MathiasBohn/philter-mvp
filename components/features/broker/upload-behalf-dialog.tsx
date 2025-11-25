@@ -165,9 +165,9 @@ export function UploadBehalfDialog({
                     <div key={file.id} className="border rounded-lg p-3 space-y-2">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{file.file.name}</p>
+                          <p className="text-sm font-medium truncate">{file.file?.name || file.filename}</p>
                           <p className="text-xs text-muted-foreground">
-                            {(file.file.size / 1024 / 1024).toFixed(2)} MB
+                            {((file.file?.size || 0) / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
                         {!uploading && (

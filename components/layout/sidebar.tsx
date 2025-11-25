@@ -157,11 +157,11 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             >
               <Icon className="h-4 w-4" />
               <span className="flex-1">{section.label}</span>
-              {'complete' in section && section.complete && (
+              {('complete' in section && section.complete) ? (
                 <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                   ✓
                 </Badge>
-              )}
+              ) : null}
             </Link>
           )
         })}
