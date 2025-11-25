@@ -1,15 +1,94 @@
 "use client";
 
+import { useState } from "react";
 import { useUser } from "@/lib/contexts/auth-context";
-import { useApplications } from "@/lib/hooks/use-applications";
+import { useApplications, useDeleteApplication } from "@/lib/hooks/use-applications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import Link from "next/link";
-import { FileText, Building2, Calendar, ChevronRight, AlertCircle } from "lucide-react";
+import { FileText, Building2, Calendar, ChevronRight, AlertCircle, Trash2, Loader2 } from "lucide-react";
 import { getStatusLabel } from "@/lib/constants/labels";
-import { Role, ApplicationStatus } from "@/lib/types";
+import { Role, ApplicationStatus, Application } from "@/lib/types";
+
+// Component to handle individual application deletion
+function DeleteApplicationButton({ application }: { application: Application }) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const deleteApplication = useDeleteApplication(application.id);
+
+  const handleDelete = async () => {
+    try {
+      await deleteApplication.mutateAsync();
+      setShowDeleteDialog(false);
+    } catch (error) {
+      // Error is handled by the hook with toast
+      console.error("Failed to delete application:", error);
+    }
+  };
+
+  // Only allow deletion of IN_PROGRESS applications
+  const canDelete = application.status === ApplicationStatus.IN_PROGRESS;
+
+  if (!canDelete) return null;
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-destructive"
+        onClick={() => setShowDeleteDialog(true)}
+        title="Delete application"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete your application for{" "}
+              <strong>{application.building?.name || "this building"}</strong>.
+              All uploaded documents and entered data will be removed.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteApplication.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleteApplication.isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteApplication.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete Application"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
 
 export default function MyApplicationsPage() {
   const { user } = useUser();
@@ -162,14 +241,17 @@ export default function MyApplicationsPage() {
               <CardContent className="pt-0">
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-muted-foreground">
-                    Application ID: {application.id}
+                    Application ID: {application.id.slice(0, 8)}...
                   </div>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/applications/${application.id}`}>
-                      View Details
-                      <ChevronRight className="ml-1 h-4 w-4" />
-                    </Link>
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <DeleteApplicationButton application={application} />
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/applications/${application.id}`}>
+                        View Details
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

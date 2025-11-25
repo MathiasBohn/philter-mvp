@@ -386,13 +386,83 @@ export async function updateApplication(
 }
 
 /**
- * Delete an application (soft delete)
+ * Delete an application and all associated data
+ *
+ * This function:
+ * 1. Deletes all documents from Supabase Storage
+ * 2. Deletes document records from database
+ * 3. Deletes related records (people, employment, financials, etc.)
+ * 4. Soft deletes the application record
  *
  * @param id - The application ID
  */
 export async function deleteApplication(id: string): Promise<void> {
   const supabase = await createClient()
 
+  // Get current user for storage path
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    throw new Error('User not authenticated')
+  }
+
+  // Step 1: Get all documents for this application
+  const { data: documents } = await supabase
+    .from('documents')
+    .select('id, storage_path')
+    .eq('application_id', id)
+
+  // Step 2: Delete files from Supabase Storage
+  if (documents && documents.length > 0) {
+    const storagePaths = documents
+      .map(doc => doc.storage_path)
+      .filter((path): path is string => !!path)
+
+    if (storagePaths.length > 0) {
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove(storagePaths)
+
+      if (storageError) {
+        console.error('Error deleting files from storage:', storageError)
+        // Continue with deletion even if storage cleanup fails
+      }
+    }
+
+    // Step 3: Delete document records from database
+    const { error: docsError } = await supabase
+      .from('documents')
+      .delete()
+      .eq('application_id', id)
+
+    if (docsError) {
+      console.error('Error deleting document records:', docsError)
+    }
+  }
+
+  // Step 4: Delete related records (cascade should handle this, but being explicit)
+  // Delete people records
+  await supabase.from('people').delete().eq('application_id', id)
+  // Delete employment records
+  await supabase.from('employment_records').delete().eq('application_id', id)
+  // Delete financial entries
+  await supabase.from('financial_entries').delete().eq('application_id', id)
+  // Delete real estate properties
+  await supabase.from('real_estate_properties').delete().eq('application_id', id)
+  // Delete disclosures
+  await supabase.from('disclosures').delete().eq('application_id', id)
+  // Delete RFI messages first (foreign key constraint)
+  const { data: rfis } = await supabase.from('rfis').select('id').eq('application_id', id)
+  if (rfis) {
+    for (const rfi of rfis) {
+      await supabase.from('rfi_messages').delete().eq('rfi_id', rfi.id)
+    }
+  }
+  // Delete RFIs
+  await supabase.from('rfis').delete().eq('application_id', id)
+  // Delete application participants
+  await supabase.from('application_participants').delete().eq('application_id', id)
+
+  // Step 5: Soft delete the application
   const { error } = await supabase
     .from('applications')
     .update({ deleted_at: new Date().toISOString() })
