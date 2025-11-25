@@ -300,7 +300,27 @@ export async function updateApplication(
     throw new Error('Application not found after update')
   }
 
-  return applications[0] as unknown as Application
+  const app = applications[0]
+
+  // Extract metadata fields to top level for consistency with getApplication
+  const metadata = (app.metadata as Record<string, unknown>) || {}
+
+  const enrichedApplication = {
+    ...app,
+    people: app.people || [],
+    employment_records: app.employment_records || [],
+    financial_entries: app.financial_entries || [],
+    real_estate_properties: app.real_estate_properties || [],
+    documents: app.documents || [],
+    disclosures: app.disclosures || [],
+    rfis: app.rfis || [],
+    // Extract commonly used metadata fields to top level
+    leaseTerms: metadata.leaseTerms || null,
+    buildingPolicies: metadata.buildingPolicies || null,
+    coverLetter: metadata.coverLetter || null,
+  }
+
+  return enrichedApplication as unknown as Application
 }
 
 /**
