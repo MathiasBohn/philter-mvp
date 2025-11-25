@@ -16,6 +16,33 @@ import {
 import { z } from 'zod'
 import { ApplicationStatus } from '@/lib/types'
 
+// Lease terms schema
+const leaseTermsSchema = z.object({
+  monthlyRent: z.number().optional(),
+  securityDeposit: z.number().optional(),
+  leaseLengthYears: z.number().optional(),
+  leaseStartDate: z.union([z.string(), z.date()]).optional(),
+  leaseEndDate: z.union([z.string(), z.date()]).optional(),
+  moveInDate: z.union([z.string(), z.date()]).optional(),
+  specialConditions: z.string().optional(),
+  annualRent: z.number().optional(),
+}).optional()
+
+// Building policies schema
+const buildingPoliciesSchema = z.object({
+  petsAllowed: z.boolean().optional(),
+  petTypes: z.array(z.string()).optional(),
+  petDeposit: z.number().optional(),
+  smokingAllowed: z.boolean().optional(),
+  smokingAreas: z.string().optional(),
+  renovationsAllowed: z.boolean().optional(),
+  renovationApprovalRequired: z.boolean().optional(),
+  sublettingAllowed: z.boolean().optional(),
+  sublettingTerms: z.string().optional(),
+  additionalPolicies: z.string().optional(),
+  acknowledgedAt: z.union([z.string(), z.date()]).optional(),
+}).optional()
+
 // Validation schema for updating an application
 const updateApplicationSchema = z.object({
   unit: z.string().optional(),
@@ -24,6 +51,11 @@ const updateApplicationSchema = z.object({
   coverLetter: z.string().optional(),
   currentSection: z.string().optional(),
   isLocked: z.boolean().optional(),
+  // Additional metadata fields
+  leaseTerms: leaseTermsSchema,
+  buildingPolicies: buildingPoliciesSchema,
+  // Allow arbitrary metadata for flexibility
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 /**

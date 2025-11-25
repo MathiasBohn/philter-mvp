@@ -103,6 +103,9 @@ export async function getApplication(id: string): Promise<Application | null> {
     throw new Error(`Failed to fetch application: ${error.message}`)
   }
 
+  // Extract metadata fields to top level for easy access
+  const metadata = (data.metadata as Record<string, unknown>) || {}
+
   // Ensure all arrays exist (for backward compatibility with old data)
   const enrichedApplication = {
     ...data,
@@ -115,6 +118,10 @@ export async function getApplication(id: string): Promise<Application | null> {
     rfis: data.rfis || [],
     application_participants: data.application_participants || [],
     sections: data.sections || [],
+    // Extract commonly used metadata fields to top level
+    leaseTerms: metadata.leaseTerms || null,
+    buildingPolicies: metadata.buildingPolicies || null,
+    coverLetter: metadata.coverLetter || null,
   }
 
   return enrichedApplication as unknown as Application
@@ -197,11 +204,39 @@ export async function createApplication(
  * @param data - Partial application data to update
  * @returns The updated application
  */
+// Type for update data - allows flexible metadata fields
+type UpdateApplicationData = {
+  buildingId?: string
+  unit?: string
+  transactionType?: string
+  status?: string
+  submittedAt?: string | Date
+  completionPercentage?: number
+  isLocked?: boolean
+  currentSection?: string
+  coverLetter?: string
+  leaseTerms?: Record<string, unknown>
+  buildingPolicies?: Record<string, unknown>
+  metadata?: Record<string, unknown>
+}
+
 export async function updateApplication(
   id: string,
-  data: Partial<Omit<Application, 'id' | 'createdAt' | 'createdBy'>>
+  data: UpdateApplicationData
 ): Promise<Application> {
   const supabase = await createClient()
+
+  // First, get the current application to merge metadata
+  const { data: currentApp, error: fetchError } = await supabase
+    .from('applications')
+    .select('metadata')
+    .eq('id', id)
+    .single()
+
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    console.error('Error fetching current application:', fetchError)
+    throw new Error(`Failed to fetch application: ${fetchError.message}`)
+  }
 
   // Convert camelCase to snake_case for database
   const dbData: Record<string, unknown> = {}
@@ -213,7 +248,29 @@ export async function updateApplication(
   if (data.submittedAt) dbData.submitted_at = data.submittedAt
   if (data.completionPercentage !== undefined) dbData.completion_percentage = data.completionPercentage
   if (data.isLocked !== undefined) dbData.is_locked = data.isLocked
-  if (data.coverLetter !== undefined) dbData.metadata = { coverLetter: data.coverLetter }
+  if (data.currentSection !== undefined) dbData.current_section = data.currentSection
+
+  // Handle metadata fields - merge with existing metadata
+  const existingMetadata = (currentApp?.metadata as Record<string, unknown>) || {}
+  const newMetadata: Record<string, unknown> = { ...existingMetadata }
+
+  if (data.coverLetter !== undefined) {
+    newMetadata.coverLetter = data.coverLetter
+  }
+  if (data.leaseTerms !== undefined) {
+    newMetadata.leaseTerms = data.leaseTerms
+  }
+  if (data.buildingPolicies !== undefined) {
+    newMetadata.buildingPolicies = data.buildingPolicies
+  }
+  if (data.metadata !== undefined) {
+    Object.assign(newMetadata, data.metadata)
+  }
+
+  // Only update metadata if there's something to update
+  if (Object.keys(newMetadata).length > 0) {
+    dbData.metadata = newMetadata
+  }
 
   const { data: applications, error } = await supabase
     .from('applications')
