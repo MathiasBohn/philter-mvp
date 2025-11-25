@@ -233,10 +233,25 @@ export async function deleteFiles(bucket: StorageBucket, paths: string[]): Promi
 }
 
 /**
+ * Default storage quota in bytes
+ * - Supabase Free tier: 1GB
+ * - Supabase Pro tier: 100GB
+ * - Enterprise: Custom
+ *
+ * Override with STORAGE_QUOTA_BYTES environment variable
+ */
+const DEFAULT_STORAGE_QUOTA = 1024 * 1024 * 1024 // 1GB
+
+/**
  * Get storage quota information
  *
  * Note: Supabase doesn't provide a direct API for quota information.
  * This function calculates usage based on the user's uploaded files.
+ * For accurate project-level quota, check the Supabase dashboard.
+ *
+ * Performance considerations:
+ * - Uses pagination to handle large file counts
+ * - Recursively lists subdirectories
  *
  * @param bucket - The storage bucket to check (optional, checks all if not specified)
  * @returns Storage quota information
@@ -259,7 +274,7 @@ export async function getStorageQuota(bucket?: StorageBucket): Promise<StorageQu
       throw new Error('Not authenticated')
     }
 
-    // List files in the user's folder
+    // List files in the user's folder with pagination
     const bucketsToCheck = bucket ? [bucket] : Object.values(STORAGE_BUCKETS)
     let totalSize = 0
 
@@ -269,28 +284,15 @@ export async function getStorageQuota(bucket?: StorageBucket): Promise<StorageQu
         continue
       }
 
-      const { data: files, error } = await supabase.storage
-        .from(bucketName)
-        .list(user.id, {
-          limit: 1000,
-          sortBy: { column: 'created_at', order: 'desc' },
-        })
-
-      if (error) {
-        console.error(`Error listing files in ${bucketName}:`, error)
-        continue
-      }
-
-      if (files) {
-        totalSize += files.reduce((sum, file) => sum + (file.metadata?.size || 0), 0)
-      }
+      // Calculate size with pagination support
+      totalSize += await calculateFolderSize(supabase, bucketName, user.id)
     }
 
-    // Supabase free tier: 1GB storage
-    // Pro tier: 100GB storage
-    // We'll assume 1GB quota for now (can be configured)
-    const quota = 1024 * 1024 * 1024 // 1GB in bytes
-    const percentUsed = (totalSize / quota) * 100
+    // Get quota from environment variable or use default
+    // Format: STORAGE_QUOTA_BYTES=1073741824 (1GB in bytes)
+    const quotaEnv = process.env.STORAGE_QUOTA_BYTES
+    const quota = quotaEnv ? parseInt(quotaEnv, 10) : DEFAULT_STORAGE_QUOTA
+    const percentUsed = quota > 0 ? (totalSize / quota) * 100 : 0
 
     return {
       usage: totalSize,
@@ -305,6 +307,69 @@ export async function getStorageQuota(bucket?: StorageBucket): Promise<StorageQu
       percentUsed: 0,
     }
   }
+}
+
+/**
+ * Calculate total size of files in a folder (with pagination)
+ *
+ * @param supabase - Supabase client instance
+ * @param bucket - Bucket name
+ * @param path - Folder path to calculate size for
+ * @returns Total size in bytes
+ */
+async function calculateFolderSize(
+  supabase: ReturnType<typeof createClient>,
+  bucket: string,
+  path: string
+): Promise<number> {
+  let totalSize = 0
+  let offset = 0
+  const limit = 100 // Process in smaller batches for better performance
+  let hasMore = true
+
+  while (hasMore) {
+    const { data: items, error } = await supabase.storage
+      .from(bucket)
+      .list(path, {
+        limit,
+        offset,
+        sortBy: { column: 'name', order: 'asc' },
+      })
+
+    if (error) {
+      console.error(`Error listing files in ${bucket}/${path}:`, error)
+      break
+    }
+
+    if (!items || items.length === 0) {
+      hasMore = false
+      break
+    }
+
+    for (const item of items) {
+      if (item.id) {
+        // It's a file - add its size
+        // Note: Supabase returns metadata.size for files
+        const size = item.metadata?.size
+        if (typeof size === 'number') {
+          totalSize += size
+        }
+      } else {
+        // It's a folder - recursively calculate its size
+        const subfolderPath = path ? `${path}/${item.name}` : item.name
+        totalSize += await calculateFolderSize(supabase, bucket, subfolderPath)
+      }
+    }
+
+    // Check if there are more items
+    if (items.length < limit) {
+      hasMore = false
+    } else {
+      offset += limit
+    }
+  }
+
+  return totalSize
 }
 
 /**

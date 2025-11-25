@@ -2,6 +2,9 @@
  * User Data Access Layer
  *
  * Provides functions for managing user profiles and user-related data.
+ *
+ * NOTE: Email is denormalized from auth.users to the users table for performance.
+ * The sync_user_email trigger keeps it in sync automatically.
  */
 
 import { createClient } from '@/lib/supabase/server'
@@ -22,6 +25,31 @@ export type UserProfile = {
 }
 
 /**
+ * Map database row to UserProfile
+ */
+function mapRowToProfile(row: {
+  id: string
+  email: string | null
+  first_name: string
+  last_name: string
+  phone: string | null
+  role: string
+  created_at: string
+  updated_at: string
+}): UserProfile {
+  return {
+    id: row.id,
+    email: row.email || '',
+    firstName: row.first_name,
+    lastName: row.last_name,
+    phone: row.phone || undefined,
+    role: row.role as Role,
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at),
+  }
+}
+
+/**
  * Get the current authenticated user
  *
  * @returns The current user or null if not authenticated
@@ -35,10 +63,10 @@ export async function getCurrentUser(): Promise<User | null> {
     return null
   }
 
-  // Get user profile from database
+  // Get user profile from database (email is denormalized)
   const { data: profile, error: profileError } = await supabase
     .from('users')
-    .select('*')
+    .select('id, email, first_name, last_name, role, created_at')
     .eq('id', user.id)
     .single()
 
@@ -49,7 +77,8 @@ export async function getCurrentUser(): Promise<User | null> {
   return {
     id: user.id,
     name: `${profile.first_name} ${profile.last_name}`,
-    email: user.email || '',
+    // Use denormalized email, fallback to auth user email
+    email: profile.email || user.email || '',
     role: profile.role as Role,
     createdAt: new Date(profile.created_at),
   }
@@ -66,7 +95,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select('id, email, first_name, last_name, phone, role, created_at, updated_at')
     .eq('id', userId)
     .single()
 
@@ -78,19 +107,8 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     throw new Error(`Failed to fetch user profile: ${error.message}`)
   }
 
-  // Get email from auth.users
-  const { data: { user } } = await supabase.auth.admin.getUserById(userId)
-
-  return {
-    id: data.id,
-    email: user?.email || '',
-    firstName: data.first_name,
-    lastName: data.last_name,
-    phone: data.phone,
-    role: data.role as Role,
-    createdAt: new Date(data.created_at),
-    updatedAt: new Date(data.updated_at),
-  }
+  // Email is now denormalized - no need to call auth.admin.getUserById
+  return mapRowToProfile(data)
 }
 
 /**
@@ -115,7 +133,7 @@ export async function updateUserProfile(
     .from('users')
     .update(updateData)
     .eq('id', userId)
-    .select()
+    .select('id, email, first_name, last_name, phone, role, created_at, updated_at')
     .single()
 
   if (error) {
@@ -123,19 +141,8 @@ export async function updateUserProfile(
     throw new Error(`Failed to update user profile: ${error.message}`)
   }
 
-  // Get email from auth.users
-  const { data: { user } } = await supabase.auth.admin.getUserById(userId)
-
-  return {
-    id: profile.id,
-    email: user?.email || '',
-    firstName: profile.first_name,
-    lastName: profile.last_name,
-    phone: profile.phone,
-    role: profile.role as Role,
-    createdAt: new Date(profile.created_at),
-    updatedAt: new Date(profile.updated_at),
-  }
+  // Email is now denormalized - no need to call auth.admin.getUserById
+  return mapRowToProfile(profile)
 }
 
 /**
@@ -151,10 +158,11 @@ export async function searchUsers(
 ): Promise<UserProfile[]> {
   const supabase = await createClient()
 
+  // Email is now denormalized - we can search across all fields in a single query
   let dbQuery = supabase
     .from('users')
-    .select('*')
-    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
+    .select('id, email, first_name, last_name, phone, role, created_at, updated_at')
+    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
 
   if (role) {
     dbQuery = dbQuery.eq('role', role)
@@ -167,25 +175,8 @@ export async function searchUsers(
     throw new Error(`Failed to search users: ${error.message}`)
   }
 
-  // For each user, get their email from auth.users
-  // Note: This is not optimal for large result sets. Consider caching or denormalizing email.
-  const usersWithEmail = await Promise.all(
-    (data || []).map(async (profile) => {
-      const { data: { user } } = await supabase.auth.admin.getUserById(profile.id)
-      return {
-        id: profile.id,
-        email: user?.email || '',
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        phone: profile.phone,
-        role: profile.role as Role,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at),
-      }
-    })
-  )
-
-  return usersWithEmail
+  // Email is now denormalized - no need for N+1 queries to auth.users
+  return (data || []).map(mapRowToProfile)
 }
 
 /**
@@ -199,7 +190,7 @@ export async function getUsersByRole(role: Role): Promise<UserProfile[]> {
 
   const { data, error } = await supabase
     .from('users')
-    .select('*')
+    .select('id, email, first_name, last_name, phone, role, created_at, updated_at')
     .eq('role', role)
     .order('created_at', { ascending: false })
 
@@ -208,22 +199,6 @@ export async function getUsersByRole(role: Role): Promise<UserProfile[]> {
     throw new Error(`Failed to fetch users by role: ${error.message}`)
   }
 
-  // For each user, get their email from auth.users
-  const usersWithEmail = await Promise.all(
-    (data || []).map(async (profile) => {
-      const { data: { user } } = await supabase.auth.admin.getUserById(profile.id)
-      return {
-        id: profile.id,
-        email: user?.email || '',
-        firstName: profile.first_name,
-        lastName: profile.last_name,
-        phone: profile.phone,
-        role: profile.role as Role,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at),
-      }
-    })
-  )
-
-  return usersWithEmail
+  // Email is now denormalized - no need for N+1 queries to auth.users
+  return (data || []).map(mapRowToProfile)
 }

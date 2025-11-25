@@ -8,13 +8,16 @@
  * 2. Deletes user's profile photos from storage
  * 3. Soft deletes user record in database
  * 4. Deletes user from Supabase Auth
+ *
+ * Rate limited to prevent abuse (3 requests per minute).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { deleteApplication } from '@/lib/api/applications'
+import { withRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit'
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withRateLimit(RATE_LIMITS.strict, async (_request: NextRequest) => {
   try {
     const supabase = await createClient()
 
@@ -115,4 +118,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

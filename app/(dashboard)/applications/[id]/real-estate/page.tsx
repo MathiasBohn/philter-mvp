@@ -33,7 +33,8 @@ export default function RealEstatePage({ params }: { params: Promise<{ id: strin
   const updateApplication = useUpdateApplication(id);
   const [properties, setProperties] = useState<RealEstateProperty[]>([]);
   const [isAddingProperty, setIsAddingProperty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  // Note: isSaving state tracks save operation but is not currently used in UI
+  const [_isSaving, setIsSaving] = useState(false);
   const initialized = useRef(false);
   const [newProperty, setNewProperty] = useState<Partial<RealEstateProperty>>({
     propertyType: PropertyType.CONDO,

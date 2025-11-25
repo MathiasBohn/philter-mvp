@@ -7,8 +7,6 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  Pause,
-  Play,
   RefreshCw,
   FileText,
   Image as ImageIcon,
@@ -33,8 +31,8 @@ export function DocumentCard({
   document,
   onDelete,
   onPreview,
-  onPause,
-  onResume,
+  onPause: _onPause,
+  onResume: _onResume,
   onReplace,
 }: DocumentCardProps) {
   const getFileIcon = () => {
@@ -64,7 +62,8 @@ export function DocumentCard({
       case "uploading":
         return <Loader2 className="h-4 w-4 animate-spin text-primary" />
       case "paused":
-        return <Pause className="h-4 w-4 text-orange-500" />
+        // Note: "paused" status is legacy - pause/resume not implemented
+        return <Loader2 className="h-4 w-4 text-muted-foreground" />
       case "complete":
         return <CheckCircle2 className="h-4 w-4 text-green-600" />
       case "error":
@@ -79,7 +78,8 @@ export function DocumentCard({
       case "uploading":
         return `${document.progress}% uploaded`
       case "paused":
-        return "Paused"
+        // Note: "paused" status is legacy - pause/resume not implemented
+        return "Processing..."
       case "complete":
         return "Complete"
       case "error":
@@ -130,32 +130,12 @@ export function DocumentCard({
             <div className="flex items-center gap-1 flex-shrink-0">
               {getStatusIcon()}
 
-              {/* Pause/Resume buttons for uploading files */}
-              {document.status === "uploading" && onPause && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={onPause}
-                  title="Pause upload"
-                >
-                  <Pause className="h-4 w-4" />
-                  <span className="sr-only">Pause upload</span>
-                </Button>
-              )}
-
-              {document.status === "paused" && onResume && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8"
-                  onClick={onResume}
-                  title="Resume upload"
-                >
-                  <Play className="h-4 w-4" />
-                  <span className="sr-only">Resume upload</span>
-                </Button>
-              )}
+              {/*
+                Note: Pause/Resume buttons are intentionally hidden.
+                True pause/resume requires chunked uploads which is not implemented.
+                Supabase Storage uploads are atomic and cannot be paused mid-transfer.
+                Keeping the props for future implementation with tus-js-client or similar.
+              */}
 
               {/* Preview button for completed files */}
               {onPreview && document.status === "complete" && (

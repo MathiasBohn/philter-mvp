@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { withRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit'
 
 const invitationSchema = z.object({
   application_id: z.string().uuid(),
   email: z.string().email(),
 })
 
-export async function POST(request: NextRequest) {
+// POST handler with rate limiting (10 requests per minute)
+export const POST = withRateLimit(RATE_LIMITS.invitation, async (request: NextRequest) => {
   try {
     const supabase = await createClient()
 
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
 // GET endpoint to list invitations for an application
 export async function GET(request: NextRequest) {

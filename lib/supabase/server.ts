@@ -61,10 +61,18 @@ export async function createClient() {
             cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options)
             })
-          } catch {
+          } catch (error) {
             // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing
-            // user sessions.
+            // This can be ignored if you have middleware/proxy refreshing user sessions.
+            // Log in development for debugging purposes.
+            if (process.env.NODE_ENV === 'development') {
+              console.debug(
+                '[Supabase Server] Cookie setAll called from Server Component context. ' +
+                'This is expected behavior when using Server Components with Supabase Auth. ' +
+                'The proxy.ts handles session refresh.',
+                { cookieCount: cookiesToSet.length, error }
+              )
+            }
           }
         },
       },

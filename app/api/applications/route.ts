@@ -45,19 +45,26 @@ export const GET = withErrorHandler(async (_request: NextRequest) => {
   // Assert user is authenticated (throws AuthenticationError if not)
   assertAuthenticated(user?.id)
 
-  // Get user profile to determine role (use admin client to bypass RLS)
-  const adminClient = createAdminClient()
-  const { data: profile, error: profileError } = await adminClient
+  // Try to get user profile with standard client first (respects RLS)
+  // RLS policy should allow users to read their own profile
+  const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('role')
     .eq('id', user.id)
     .single()
 
-  // If profile doesn't exist, create it with default APPLICANT role
+  // If profile doesn't exist, create it with admin client as fallback
+  // This handles the case where the database trigger failed to create the profile
   if (!profile || profileError) {
-    console.warn(`User profile not found for user ${user.id}, creating default profile`)
+    console.warn(
+      `User profile not found for user ${user.id}. ` +
+      'This may indicate the signup trigger failed. Creating default profile.'
+    )
 
-    // Create user profile with APPLICANT role as fallback
+    // Use admin client ONLY for profile creation (bypasses RLS INSERT restriction)
+    // This is intentional - users can read their own profile but new profiles
+    // should only be created via signup trigger or this fallback
+    const adminClient = createAdminClient()
     const { data: newProfile, error: createError } = await adminClient
       .from('users')
       .insert({

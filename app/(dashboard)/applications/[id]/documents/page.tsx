@@ -13,7 +13,7 @@ import { FormActions } from "@/components/forms/form-actions"
 import type { UploadedFile } from "@/components/features/application/upload-dropzone"
 import { FormSkeleton } from "@/components/loading/form-skeleton"
 import { useApplication } from "@/lib/hooks/use-applications"
-import { useDocuments, useUploadDocument, useDocumentSignedURLs } from "@/lib/hooks/use-documents"
+import { useDocuments, useUploadDocument, useDocumentSignedURLs, useDeleteDocumentMutation } from "@/lib/hooks/use-documents"
 import type { Document } from "@/lib/types"
 
 const INITIAL_CATEGORIES: DocumentCategory[] = [
@@ -67,7 +67,12 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
   const { data: application, isLoading, error } = useApplication(id)
   const { data: dbDocuments, isLoading: isLoadingDocuments } = useDocuments(id)
   const { uploadFile, isUploading } = useUploadDocument(id)
-  const { urlMap, isLoading: isLoadingURLs, refreshURL } = useDocumentSignedURLs(dbDocuments)
+  // Note: isURLExpired is available for error handling in document components if needed
+  const { urlMap, isLoading: isLoadingURLs, refreshURL, isURLExpired: _isURLExpired } = useDocumentSignedURLs(dbDocuments, {
+    autoRefresh: true, // Automatically refresh URLs before expiration
+    refreshBuffer: 5 * 60 * 1000, // Refresh 5 minutes before expiration
+  })
+  const deleteDocumentMutation = useDeleteDocumentMutation(id)
 
   const [categories, setCategories] = useState<DocumentCategory[]>(INITIAL_CATEGORIES)
   const [isSaving, setIsSaving] = useState(false)
@@ -257,29 +262,55 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
     }
   }
 
-  // Handle refreshing expired signed URLs
+  // Handle refreshing expired signed URLs (used for manual refresh on image load errors)
+  // This function can be passed to document cards for error handling if needed
   const _handleRefreshSignedURL = async (fileId: string) => {
-    await refreshURL(fileId)
+    const success = await refreshURL(fileId)
 
-    // Update the preview URL in categories state
-    const urlData = urlMap.get(fileId)
-    if (urlData) {
-      setCategories((prev) =>
-        prev.map((cat) => ({
-          ...cat,
-          documents: cat.documents.map((doc) =>
-            doc.id === fileId
-              ? { ...doc, preview: urlData.url, signedUrlExpiresAt: urlData.expiresAt }
-              : doc
-          ),
-        }))
-      )
+    if (success) {
+      // Update the preview URL in categories state
+      // Note: urlMap is updated by refreshURL, so we need to get the new value
+      setTimeout(() => {
+        const newUrlData = urlMap.get(fileId)
+        if (newUrlData) {
+          setCategories((prev) =>
+            prev.map((cat) => ({
+              ...cat,
+              documents: cat.documents.map((doc) =>
+                doc.id === fileId
+                  ? { ...doc, preview: newUrlData.url, signedUrlExpiresAt: newUrlData.expiresAt }
+                  : doc
+              ),
+            }))
+          )
+        }
+      }, 100) // Small delay to ensure urlMap is updated
     }
+
+    return success
   }
 
+  // Update categories when urlMap changes (e.g., after auto-refresh)
+  useEffect(() => {
+    if (urlMap.size === 0 || !documentsLoaded) return
+
+    setCategories((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        documents: cat.documents.map((doc) => {
+          const newUrlData = urlMap.get(doc.id)
+          if (newUrlData && doc.preview !== newUrlData.url) {
+            return { ...doc, preview: newUrlData.url, signedUrlExpiresAt: newUrlData.expiresAt }
+          }
+          return doc
+        }),
+      }))
+    )
+  }, [urlMap, documentsLoaded])
+
   const handleFileRemoved = async (categoryId: string, fileId: string) => {
-    // Find the document in the database
-    const _dbDocument = dbDocuments?.find(doc => doc.id === fileId)
+    // Check if this is a persisted document (exists in database)
+    const dbDocument = dbDocuments?.find(doc => doc.id === fileId)
 
     // Remove from UI state immediately (optimistic update)
     setCategories((prev) =>
@@ -293,10 +324,39 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
       )
     )
 
-    // Delete from database if it exists
-    // Note: The useDeleteDocument hook will handle removing from storage and database
-    // For now, we'll just remove from local state since documents aren't persisted yet
-    // This will be replaced with the proper mutation when the Documents API is fully integrated
+    // If this is a persisted document, delete from database and storage
+    if (dbDocument) {
+      try {
+        await deleteDocumentMutation.mutateAsync(fileId)
+      } catch (error) {
+        // Error handling is done in the mutation hook (shows toast)
+        // If deletion fails, React Query will rollback the optimistic update
+        console.error('Failed to delete document:', error)
+
+        // Restore the document to UI state since server deletion failed
+        const urlData = urlMap.get(fileId)
+        const restoredFile: UploadedFile = {
+          id: dbDocument.id,
+          filename: dbDocument.filename,
+          size: dbDocument.size,
+          mimeType: dbDocument.mimeType,
+          preview: urlData?.url,
+          progress: 100,
+          status: 'complete',
+          isPersisted: true,
+          signedUrlExpiresAt: urlData?.expiresAt,
+        }
+
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === categoryId
+              ? { ...cat, documents: [...cat.documents, restoredFile] }
+              : cat
+          )
+        )
+      }
+    }
+    // For non-persisted files (still uploading or pending), just remove from UI state
   }
 
   const handleSkipReasonChange = (categoryId: string, reason: string) => {
@@ -317,38 +377,19 @@ export default function DocumentsPage({ params }: { params: Promise<{ id: string
     )
   }
 
-  const handlePauseUpload = (fileId: string) => {
-    // Note: Pause/resume functionality requires additional implementation
-    // in the upload manager. For now, we'll show a paused state in UI.
-    setCategories(prev => prev.map(cat => ({
-      ...cat,
-      documents: cat.documents.map(doc =>
-        doc.id === fileId ? { ...doc, status: 'paused' as const } : doc
-      )
-    })))
+  // Note: Pause/Resume functionality is intentionally not implemented.
+  // Implementing true pause/resume requires chunked uploads, which adds significant
+  // complexity. Supabase Storage doesn't natively support pause/resume.
+  // These handlers are kept as no-ops to avoid breaking the component interface.
+  // For future implementation, consider using tus-js-client or similar.
+  const handlePauseUpload = (_fileId: string) => {
+    // Not implemented - would require chunked upload support
+    console.info('Pause upload not implemented. Uploads cannot be paused without chunked upload support.')
   }
 
-  const handleResumeUpload = async (fileId: string) => {
-    // Find the category and document
-    let categoryId = ''
-    let document: UploadedFile | undefined
-
-    for (const cat of categories) {
-      const doc = cat.documents.find(d => d.id === fileId)
-      if (doc) {
-        categoryId = cat.id
-        document = doc
-        break
-      }
-    }
-
-    if (!categoryId || !document) {
-      console.error('Category or document not found for file')
-      return
-    }
-
-    // Restart the upload
-    await startUpload(categoryId, document)
+  const handleResumeUpload = (_fileId: string) => {
+    // Not implemented - would require chunked upload support
+    console.info('Resume upload not implemented. Uploads cannot be resumed without chunked upload support.')
   }
 
   const validate = () => {

@@ -2,19 +2,49 @@
  * Invitation Acceptance API Route
  *
  * POST /api/invitations/[token]/accept - Accept an application invitation
+ *
+ * Rate limited to prevent brute force token guessing attacks.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit, RATE_LIMITS } from '@/lib/api/rate-limit'
 
 /**
  * POST /api/invitations/[token]/accept
  * Accept an application invitation and link user to the application
+ *
+ * Rate limited: 5 requests per minute (auth rate limit)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
+  // Apply rate limiting to prevent brute force token guessing
+  const { isLimited, remaining, resetTime } = checkRateLimit(request, {
+    ...RATE_LIMITS.auth,
+    identifier: 'invitation-accept',
+  })
+
+  if (isLimited) {
+    return NextResponse.json(
+      {
+        error: {
+          message: 'Too many attempts. Please wait before trying again.',
+          code: 'RATE_LIMIT_EXCEEDED',
+        },
+      },
+      {
+        status: 429,
+        headers: {
+          'X-RateLimit-Limit': RATE_LIMITS.auth.limit.toString(),
+          'X-RateLimit-Remaining': remaining.toString(),
+          'X-RateLimit-Reset': Math.ceil(resetTime / 1000).toString(),
+          'Retry-After': Math.ceil((resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    )
+  }
   try {
     const { token } = await params
     const supabase = await createClient()
