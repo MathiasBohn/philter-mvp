@@ -6,6 +6,37 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/database.types'
+
+type FinancialEntryInsert = Database['public']['Tables']['financial_entries']['Insert']
+
+/**
+ * Helper to convert null to undefined for optional fields
+ */
+function nullToUndefined<T>(value: T | null): T | undefined {
+  return value === null ? undefined : value
+}
+
+/**
+ * Map database record to FinancialEntryRecord type
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapToFinancialEntryRecord(data: any): FinancialEntryRecord {
+  return {
+    id: data.id,
+    application_id: data.application_id,
+    entry_type: data.entry_type,
+    category: data.category,
+    amount: data.amount,
+    institution: nullToUndefined(data.institution),
+    account_number_last4: nullToUndefined(data.account_number_last4),
+    description: nullToUndefined(data.description),
+    is_liquid: nullToUndefined(data.is_liquid),
+    monthly_payment: nullToUndefined(data.monthly_payment),
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  }
+}
 
 /**
  * Financial entry type enum (matches database)
@@ -112,7 +143,7 @@ export async function getFinancialEntries(
     throw new Error(`Failed to fetch financial entries: ${error.message}`)
   }
 
-  return data || []
+  return (data || []).map(mapToFinancialEntryRecord)
 }
 
 /**
@@ -136,7 +167,7 @@ export async function getFinancialEntriesByType(
     throw new Error(`Failed to fetch financial entries by type: ${error.message}`)
   }
 
-  return data || []
+  return (data || []).map(mapToFinancialEntryRecord)
 }
 
 /**
@@ -161,7 +192,7 @@ export async function getFinancialEntry(
     throw new Error(`Failed to fetch financial entry: ${error.message}`)
   }
 
-  return data
+  return mapToFinancialEntryRecord(data)
 }
 
 /**
@@ -173,7 +204,7 @@ export async function upsertFinancialEntry(
 ): Promise<FinancialEntryRecord> {
   const supabase = await createClient()
 
-  const entryRecord: Record<string, unknown> = {
+  const entryRecord: FinancialEntryInsert = {
     application_id: applicationId,
     entry_type: entryData.entryType,
     category: entryData.category,
@@ -199,7 +230,7 @@ export async function upsertFinancialEntry(
       throw new Error(`Failed to update financial entry: ${error.message}`)
     }
 
-    return data
+    return mapToFinancialEntryRecord(data)
   } else {
     // Create new record
     const { data, error } = await supabase
@@ -213,7 +244,7 @@ export async function upsertFinancialEntry(
       throw new Error(`Failed to create financial entry: ${error.message}`)
     }
 
-    return data
+    return mapToFinancialEntryRecord(data)
   }
 }
 

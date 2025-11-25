@@ -154,17 +154,26 @@ export async function POST(request: NextRequest) {
           // Get broker's name for the email
           const { data: brokerProfile } = await supabase
             .from('users')
-            .select('name, email')
+            .select('first_name, last_name, email')
             .eq('id', user.id)
             .single()
 
           // Send the email
+          const brokerName = brokerProfile
+            ? [brokerProfile.first_name, brokerProfile.last_name].filter(Boolean).join(' ') || brokerProfile.email
+            : 'Your broker'
+          // Format building address from JSON object
+          const buildingAddress = application.building?.address
+            ? typeof application.building.address === 'object' && application.building.address !== null
+              ? `${(application.building.address as Record<string, unknown>).street || ''}, ${(application.building.address as Record<string, unknown>).city || ''}, ${(application.building.address as Record<string, unknown>).state || ''} ${(application.building.address as Record<string, unknown>).zip || ''}`
+              : String(application.building.address)
+            : ''
           const emailResult = await sendInvitationEmail({
             to: applicantEmail,
             applicantName: applicantName || 'Applicant',
-            brokerName: brokerProfile?.name || brokerProfile?.email || 'Your broker',
+            brokerName: brokerName || 'Your broker',
             buildingName: application.building?.name || 'the building',
-            buildingAddress: application.building?.address || '',
+            buildingAddress,
             transactionType,
             invitationToken: invitation.token,
           })

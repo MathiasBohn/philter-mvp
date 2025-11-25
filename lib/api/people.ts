@@ -7,7 +7,63 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { Role } from '@/lib/types'
+import type { Database, Json } from '@/lib/database.types'
 import CryptoJS from 'crypto-js'
+
+type PersonInsert = Database['public']['Tables']['people']['Insert']
+
+/**
+ * Helper to convert null to undefined for optional fields
+ */
+function nullToUndefined<T>(value: T | null): T | undefined {
+  return value === null ? undefined : value
+}
+
+/**
+ * Map database record to PersonRecord type
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapToPersonRecord(data: any): PersonRecord {
+  return {
+    id: data.id,
+    application_id: data.application_id,
+    role: data.role as Role,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: nullToUndefined(data.email),
+    phone: nullToUndefined(data.phone),
+    date_of_birth: nullToUndefined(data.date_of_birth),
+    ssn_encrypted: nullToUndefined(data.ssn_encrypted),
+    ssn_last4: nullToUndefined(data.ssn_last4),
+    current_address: data.current_address as PersonRecord['current_address'],
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    address_history: data.address_history?.map((ah: Record<string, unknown>) => ({
+      id: ah.id,
+      person_id: ah.person_id,
+      address: ah.address as AddressHistoryRecord['address'],
+      move_in_date: ah.move_in_date,
+      move_out_date: nullToUndefined(ah.move_out_date as string | null),
+      is_current: ah.is_current,
+      landlord_name: nullToUndefined(ah.landlord_name as string | null),
+      landlord_phone: nullToUndefined(ah.landlord_phone as string | null),
+      landlord_email: nullToUndefined(ah.landlord_email as string | null),
+      monthly_rent: nullToUndefined(ah.monthly_rent as number | null),
+      created_at: ah.created_at,
+      updated_at: ah.updated_at,
+    })),
+    emergency_contacts: data.emergency_contacts?.map((ec: Record<string, unknown>) => ({
+      id: ec.id,
+      person_id: ec.person_id,
+      name: ec.name,
+      relationship: ec.relationship,
+      phone: ec.phone,
+      email: nullToUndefined(ec.email as string | null),
+      created_at: ec.created_at,
+      updated_at: ec.updated_at,
+    })),
+  }
+}
 
 /**
  * Encrypt SSN for storage
@@ -160,7 +216,7 @@ export async function getPeople(applicationId: string): Promise<PersonRecord[]> 
     throw new Error(`Failed to fetch people: ${error.message}`)
   }
 
-  return data || []
+  return (data || []).map(mapToPersonRecord)
 }
 
 /**
@@ -187,7 +243,7 @@ export async function getPerson(personId: string): Promise<PersonRecord | null> 
     throw new Error(`Failed to fetch person: ${error.message}`)
   }
 
-  return data
+  return mapToPersonRecord(data)
 }
 
 /**
@@ -201,21 +257,17 @@ export async function upsertPerson(
   const supabase = await createClient()
 
   // Prepare person data
-  const personRecord: Record<string, unknown> = {
+  const personRecord: PersonInsert = {
     application_id: applicationId,
-    role: personData.role,
+    role: personData.role as string as Database['public']['Enums']['role_enum'],
     first_name: personData.firstName,
     last_name: personData.lastName,
     email: personData.email,
     phone: personData.phone,
     date_of_birth: personData.dateOfBirth,
-    current_address: personData.currentAddress,
-  }
-
-  // Handle SSN encryption
-  if (personData.ssn) {
-    personRecord.ssn_encrypted = encryptSSN(personData.ssn)
-    personRecord.ssn_last4 = personData.ssn.replace(/\D/g, '').slice(-4)
+    current_address: personData.currentAddress as Json,
+    ssn_encrypted: personData.ssn ? encryptSSN(personData.ssn) : undefined,
+    ssn_last4: personData.ssn ? personData.ssn.replace(/\D/g, '').slice(-4) : undefined,
   }
 
   let personId: string

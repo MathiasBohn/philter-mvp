@@ -8,6 +8,30 @@ import { createClient } from '@/lib/supabase/server'
 import type { Template, DocumentCategory, DisclosureType, BuildingPolicies } from '@/lib/types'
 
 /**
+ * Map database record to Template type
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapToTemplate(template: any): Template {
+  const sections = template.sections as { required?: string[]; optional?: string[] } | null
+  return {
+    id: template.id,
+    buildingId: template.building_id,
+    name: template.name,
+    description: template.description,
+    version: template.version || 1,
+    requiredSections: sections?.required || [],
+    optionalSections: sections?.optional || [],
+    requiredDocuments: (template.required_documents as DocumentCategory[] | null) || [],
+    optionalDocuments: (template.optional_documents as DocumentCategory[] | null) || [],
+    enabledDisclosures: (template.custom_disclosures as DisclosureType[] | null) || [],
+    buildingPolicies: template.building_policies as BuildingPolicies | undefined,
+    createdAt: new Date(template.created_at),
+    publishedAt: template.published_at ? new Date(template.published_at) : undefined,
+    isPublished: template.is_published,
+  }
+}
+
+/**
  * Input type for creating a new template
  */
 export type CreateTemplateInput = {
@@ -43,22 +67,7 @@ export async function getTemplates(): Promise<Template[]> {
     throw new Error(`Failed to fetch templates: ${error.message}`)
   }
 
-  return (data || []).map(template => ({
-    id: template.id,
-    buildingId: template.building_id,
-    name: template.name,
-    description: template.description,
-    version: template.version || 1,
-    requiredSections: template.sections?.required || [],
-    optionalSections: template.sections?.optional || [],
-    requiredDocuments: template.required_documents || [],
-    optionalDocuments: template.optional_documents || [],
-    enabledDisclosures: template.custom_disclosures || [],
-    buildingPolicies: template.building_policies,
-    createdAt: new Date(template.created_at),
-    publishedAt: template.published_at ? new Date(template.published_at) : undefined,
-    isPublished: template.is_published,
-  }))
+  return (data || []).map(mapToTemplate)
 }
 
 /**
@@ -87,22 +96,7 @@ export async function getTemplate(id: string): Promise<Template | null> {
     throw new Error(`Failed to fetch template: ${error.message}`)
   }
 
-  return {
-    id: data.id,
-    buildingId: data.building_id,
-    name: data.name,
-    description: data.description,
-    version: data.version || 1,
-    requiredSections: data.sections?.required || [],
-    optionalSections: data.sections?.optional || [],
-    requiredDocuments: data.required_documents || [],
-    optionalDocuments: data.optional_documents || [],
-    enabledDisclosures: data.custom_disclosures || [],
-    buildingPolicies: data.building_policies,
-    createdAt: new Date(data.created_at),
-    publishedAt: data.published_at ? new Date(data.published_at) : undefined,
-    isPublished: data.is_published,
-  }
+  return mapToTemplate(data)
 }
 
 /**
@@ -134,22 +128,7 @@ export async function getBuildingTemplate(buildingId: string): Promise<Template 
     throw new Error(`Failed to fetch building template: ${error.message}`)
   }
 
-  return {
-    id: data.id,
-    buildingId: data.building_id,
-    name: data.name,
-    description: data.description,
-    version: data.version || 1,
-    requiredSections: data.sections?.required || [],
-    optionalSections: data.sections?.optional || [],
-    requiredDocuments: data.required_documents || [],
-    optionalDocuments: data.optional_documents || [],
-    enabledDisclosures: data.custom_disclosures || [],
-    buildingPolicies: data.building_policies,
-    createdAt: new Date(data.created_at),
-    publishedAt: data.published_at ? new Date(data.published_at) : undefined,
-    isPublished: data.is_published,
-  }
+  return mapToTemplate(data)
 }
 
 /**
@@ -189,22 +168,7 @@ export async function createTemplate(data: CreateTemplateInput): Promise<Templat
     throw new Error(`Failed to create template: ${error.message}`)
   }
 
-  return {
-    id: template.id,
-    buildingId: template.building_id,
-    name: template.name,
-    description: template.description,
-    version: template.version || 1,
-    requiredSections: template.sections?.required || [],
-    optionalSections: template.sections?.optional || [],
-    requiredDocuments: template.required_documents || [],
-    optionalDocuments: template.optional_documents || [],
-    enabledDisclosures: template.custom_disclosures || [],
-    buildingPolicies: template.building_policies,
-    createdAt: new Date(template.created_at),
-    publishedAt: template.published_at ? new Date(template.published_at) : undefined,
-    isPublished: template.is_published,
-  }
+  return mapToTemplate(template)
 }
 
 /**
@@ -250,22 +214,7 @@ export async function updateTemplate(
     throw new Error(`Failed to update template: ${error.message}`)
   }
 
-  return {
-    id: template.id,
-    buildingId: template.building_id,
-    name: template.name,
-    description: template.description,
-    version: template.version || 1,
-    requiredSections: template.sections?.required || [],
-    optionalSections: template.sections?.optional || [],
-    requiredDocuments: template.required_documents || [],
-    optionalDocuments: template.optional_documents || [],
-    enabledDisclosures: template.custom_disclosures || [],
-    buildingPolicies: template.building_policies,
-    createdAt: new Date(template.created_at),
-    publishedAt: template.published_at ? new Date(template.published_at) : undefined,
-    isPublished: template.is_published,
-  }
+  return mapToTemplate(template)
 }
 
 /**
@@ -295,20 +244,5 @@ export async function publishTemplate(id: string): Promise<Template> {
     throw new Error(`Failed to publish template: ${error.message}`)
   }
 
-  return {
-    id: template.id,
-    buildingId: template.building_id,
-    name: template.name,
-    description: template.description,
-    version: template.version || 1,
-    requiredSections: template.sections?.required || [],
-    optionalSections: template.sections?.optional || [],
-    requiredDocuments: template.required_documents || [],
-    optionalDocuments: template.optional_documents || [],
-    enabledDisclosures: template.custom_disclosures || [],
-    buildingPolicies: template.building_policies,
-    createdAt: new Date(template.created_at),
-    publishedAt: template.published_at ? new Date(template.published_at) : undefined,
-    isPublished: template.is_published,
-  }
+  return mapToTemplate(template)
 }

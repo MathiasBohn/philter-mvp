@@ -1,7 +1,7 @@
 /**
  * Debug Test Update Application API Route
  *
- * POST /api/debug/test-update-application - Test updating an application
+ * GET /api/debug/test-update-application - Test updating an application
  *
  * This endpoint helps diagnose issues with application updates by
  * providing detailed error information.
@@ -10,8 +10,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { updateApplication, getApplication } from '@/lib/api/applications'
+import { checkDebugAccess } from '@/lib/api/debug-protection'
 
 export async function GET(request: NextRequest) {
+  // Check debug access (admin-only in production)
+  const access = await checkDebugAccess()
+  if (!access.allowed) return access.response
+
   const results: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     steps: [],
@@ -128,7 +133,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       ...results,
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
+      stack: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.stack : undefined) : undefined,
     }, { status: 500 })
   }
 }

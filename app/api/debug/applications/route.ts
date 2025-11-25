@@ -8,8 +8,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { checkDebugAccess } from '@/lib/api/debug-protection'
 
 export const GET = async (_request: NextRequest) => {
+  // Check debug access (admin-only in production)
+  const access = await checkDebugAccess()
+  if (!access.allowed) return access.response
+
   try {
     const supabase = await createClient()
 

@@ -91,7 +91,7 @@ export async function createRFI(data: CreateRFIInput): Promise<RFI> {
   return {
     id: rfi.id,
     applicationId: rfi.application_id,
-    sectionKey: rfi.section_key,
+    sectionKey: rfi.section_key ?? '',
     status: rfi.status as RFIStatus,
     assigneeRole: rfi.assignee_role as Role.APPLICANT | Role.BROKER,
     createdBy: rfi.created_by,
@@ -103,7 +103,7 @@ export async function createRFI(data: CreateRFIInput): Promise<RFI> {
       authorRole: message.author_role as Role,
       message: message.message,
       createdAt: new Date(message.created_at),
-      attachments: message.attachments || [],
+      attachments: (message.attachments as string[]) || [],
     }],
   }
 }
@@ -134,22 +134,22 @@ export async function getRFIs(applicationId: string): Promise<RFI[]> {
   return (data || []).map(rfi => ({
     id: rfi.id,
     applicationId: rfi.application_id,
-    sectionKey: rfi.section_key,
+    sectionKey: rfi.section_key ?? '',
     status: rfi.status as RFIStatus,
     assigneeRole: rfi.assignee_role as Role.APPLICANT | Role.BROKER,
     createdBy: rfi.created_by,
     createdAt: new Date(rfi.created_at),
     resolvedAt: rfi.resolved_at ? new Date(rfi.resolved_at) : undefined,
     messages: (rfi.rfi_messages || [])
-      .sort((a: { created_at: string }, b: { created_at: string }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((msg: { id: string; author_id: string; author_name: string; author_role: string; message: string; created_at: string; attachments?: unknown[] }) => ({
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .map((msg) => ({
         id: msg.id,
         authorId: msg.author_id,
         authorName: msg.author_name,
         authorRole: msg.author_role as Role,
         message: msg.message,
         createdAt: new Date(msg.created_at),
-        attachments: msg.attachments || [],
+        attachments: (msg.attachments as string[] | null) || [],
       })),
   }))
 }
@@ -183,22 +183,22 @@ export async function getRFI(id: string): Promise<RFI | null> {
   return {
     id: data.id,
     applicationId: data.application_id,
-    sectionKey: data.section_key,
+    sectionKey: data.section_key ?? '',
     status: data.status as RFIStatus,
     assigneeRole: data.assignee_role as Role.APPLICANT | Role.BROKER,
     createdBy: data.created_by,
     createdAt: new Date(data.created_at),
     resolvedAt: data.resolved_at ? new Date(data.resolved_at) : undefined,
     messages: (data.rfi_messages || [])
-      .sort((a: { created_at: string }, b: { created_at: string }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((msg: { id: string; author_id: string; author_name: string; author_role: string; message: string; created_at: string; attachments?: unknown[] }) => ({
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .map((msg) => ({
         id: msg.id,
         authorId: msg.author_id,
         authorName: msg.author_name,
         authorRole: msg.author_role as Role,
         message: msg.message,
         createdAt: new Date(msg.created_at),
-        attachments: msg.attachments || [],
+        attachments: (msg.attachments as string[] | null) || [],
       })),
   }
 }
@@ -258,7 +258,7 @@ export async function addRFIMessage(
     authorRole: data.author_role as Role,
     message: data.message,
     createdAt: new Date(data.created_at),
-    attachments: data.attachments || [],
+    attachments: (data.attachments as string[] | null) || [],
   }
 }
 
@@ -292,22 +292,22 @@ export async function resolveRFI(id: string): Promise<RFI> {
   return {
     id: data.id,
     applicationId: data.application_id,
-    sectionKey: data.section_key,
+    sectionKey: data.section_key ?? '',
     status: data.status as RFIStatus,
     assigneeRole: data.assignee_role as Role.APPLICANT | Role.BROKER,
     createdBy: data.created_by,
     createdAt: new Date(data.created_at),
     resolvedAt: data.resolved_at ? new Date(data.resolved_at) : undefined,
     messages: (data.rfi_messages || [])
-      .sort((a: { created_at: string }, b: { created_at: string }) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-      .map((msg: { id: string; author_id: string; author_name: string; author_role: string; message: string; created_at: string; attachments?: unknown[] }) => ({
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+      .map((msg) => ({
         id: msg.id,
         authorId: msg.author_id,
         authorName: msg.author_name,
         authorRole: msg.author_role as Role,
         message: msg.message,
         createdAt: new Date(msg.created_at),
-        attachments: msg.attachments || [],
+        attachments: (msg.attachments as string[] | null) || [],
       })),
   }
 }
@@ -339,6 +339,6 @@ export async function getRFIMessages(rfiId: string): Promise<RFIMessage[]> {
     authorRole: msg.author_role as Role,
     message: msg.message,
     createdAt: new Date(msg.created_at),
-    attachments: msg.attachments || [],
+    attachments: (msg.attachments as string[] | null) || [],
   }))
 }

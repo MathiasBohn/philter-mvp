@@ -30,25 +30,20 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { validatePublicEnvVars, validateServerEnvVars } from './env-validation'
+import type { Database } from '@/lib/database.types'
 
 export async function createClient() {
   const cookieStore = await cookies()
 
-  // Check if Supabase environment variables are configured
-  // If not, create a dummy client with placeholders (graceful degradation)
+  // Validate environment variables (throws in production if missing)
+  validatePublicEnvVars()
+
+  // Get environment variables (fallback to placeholders for graceful degradation in dev)
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
 
-  // Log warning in development if env vars are missing
-  if ((!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) &&
-      process.env.NODE_ENV === 'development') {
-    console.warn(
-      'Supabase environment variables are not configured. ' +
-      'Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your environment.'
-    )
-  }
-
-  return createServerClient(
+  return createServerClient<Database>(
     url,
     anonKey,
     {
@@ -97,17 +92,12 @@ export async function createClient() {
  * ```
  */
 export function createAdminClient() {
-  // Check if Supabase environment variables are configured
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error(
-      'Supabase environment variables are not configured. ' +
-      'Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment.'
-    )
-  }
+  // Validate all server environment variables (always throws if missing)
+  validateServerEnvVars()
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       cookies: {
         getAll() {

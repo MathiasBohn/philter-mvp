@@ -1,7 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkDebugAccess } from '@/lib/api/debug-protection'
 
 export async function GET() {
+  // Check debug access (admin-only in production)
+  const access = await checkDebugAccess()
+  if (!access.allowed) return access.response
+
   try {
     const supabase = await createClient()
 
@@ -55,7 +60,7 @@ export async function GET() {
     const errorStack = error instanceof Error ? error.stack : undefined
     return NextResponse.json({
       error: errorMessage,
-      stack: errorStack,
+      stack: process.env.NODE_ENV !== 'production' ? errorStack : undefined,
     }, { status: 500 })
   }
 }

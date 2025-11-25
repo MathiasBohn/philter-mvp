@@ -13,7 +13,7 @@ import {
   type CreateApplicationInput,
 } from '@/lib/api/applications'
 import { z } from 'zod'
-import { TransactionType } from '@/lib/types'
+import { TransactionType, Role } from '@/lib/types'
 import {
   withErrorHandler,
   assertAuthenticated,
@@ -83,12 +83,12 @@ export const GET = withErrorHandler(async (_request: NextRequest) => {
     }
 
     // Use newly created profile
-    const applications = await getApplications(user.id, newProfile.role)
+    const applications = await getApplications(user.id, newProfile.role as Role)
     return NextResponse.json({ applications }, { status: 200 })
   }
 
   // Fetch applications using data access layer
-  const applications = await getApplications(user.id, profile.role)
+  const applications = await getApplications(user.id, profile.role as Role)
 
   return NextResponse.json({ applications }, { status: 200 })
 })

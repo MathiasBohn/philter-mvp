@@ -6,6 +6,42 @@
  */
 
 import { createClient } from '@/lib/supabase/server'
+import type { Database, Json } from '@/lib/database.types'
+
+type EmploymentRecordInsert = Database['public']['Tables']['employment_records']['Insert']
+
+/**
+ * Helper to convert null to undefined for optional fields
+ */
+function nullToUndefined<T>(value: T | null): T | undefined {
+  return value === null ? undefined : value
+}
+
+/**
+ * Map database record to EmploymentRecord type
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapToEmploymentRecord(data: any): EmploymentRecord {
+  return {
+    id: data.id,
+    application_id: data.application_id,
+    person_id: nullToUndefined(data.person_id),
+    employer_name: data.employer_name,
+    job_title: nullToUndefined(data.job_title),
+    employment_status: data.employment_status,
+    start_date: data.start_date,
+    end_date: nullToUndefined(data.end_date),
+    is_current: data.is_current,
+    annual_income: nullToUndefined(data.annual_income),
+    pay_cadence: nullToUndefined(data.pay_cadence),
+    supervisor_name: nullToUndefined(data.supervisor_name),
+    supervisor_phone: nullToUndefined(data.supervisor_phone),
+    supervisor_email: nullToUndefined(data.supervisor_email),
+    address: data.address as EmploymentRecord['address'],
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+  }
+}
 
 /**
  * Employment status enum (matches database)
@@ -106,7 +142,7 @@ export async function getEmploymentRecords(
     throw new Error(`Failed to fetch employment records: ${error.message}`)
   }
 
-  return data || []
+  return (data || []).map(mapToEmploymentRecord)
 }
 
 /**
@@ -131,7 +167,7 @@ export async function getEmploymentRecord(
     throw new Error(`Failed to fetch employment record: ${error.message}`)
   }
 
-  return data
+  return mapToEmploymentRecord(data)
 }
 
 /**
@@ -143,7 +179,7 @@ export async function upsertEmploymentRecord(
 ): Promise<EmploymentRecord> {
   const supabase = await createClient()
 
-  const employmentRecord: Record<string, unknown> = {
+  const employmentRecord: EmploymentRecordInsert = {
     application_id: applicationId,
     person_id: employmentData.personId,
     employer_name: employmentData.employerName,
@@ -157,7 +193,7 @@ export async function upsertEmploymentRecord(
     supervisor_name: employmentData.supervisorName,
     supervisor_phone: employmentData.supervisorPhone,
     supervisor_email: employmentData.supervisorEmail,
-    address: employmentData.address,
+    address: employmentData.address as Json,
   }
 
   if (employmentData.id) {
@@ -174,7 +210,7 @@ export async function upsertEmploymentRecord(
       throw new Error(`Failed to update employment record: ${error.message}`)
     }
 
-    return data
+    return mapToEmploymentRecord(data)
   } else {
     // Create new record
     const { data, error } = await supabase
@@ -188,7 +224,7 @@ export async function upsertEmploymentRecord(
       throw new Error(`Failed to create employment record: ${error.message}`)
     }
 
-    return data
+    return mapToEmploymentRecord(data)
   }
 }
 

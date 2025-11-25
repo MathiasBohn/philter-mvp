@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getApplication } from "@/lib/api/applications";
 import { createCoverSheetData } from "@/lib/pdf-utils";
 
 /**
@@ -26,15 +26,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch the application from Supabase
-    const supabase = await createClient();
-    const { data: application, error } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("id", applicationId)
-      .single();
+    // Fetch the application using the data access layer
+    const application = await getApplication(applicationId);
 
-    if (error || !application) {
+    if (!application) {
       return NextResponse.json(
         { error: "Application not found" },
         { status: 404 }

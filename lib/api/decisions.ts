@@ -6,6 +6,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { DecisionRecord, Decision } from '@/lib/types'
+import type { Database } from '@/lib/database.types'
+
+type ApplicationStatus = Database['public']['Enums']['application_status_enum']
 
 /**
  * Input type for creating a new decision
@@ -65,7 +68,7 @@ export async function createDecision(
   }
 
   // Update application status based on decision
-  let newStatus: string
+  let newStatus: ApplicationStatus
   switch (data.decision) {
     case 'APPROVE':
       newStatus = 'APPROVED'
@@ -94,8 +97,8 @@ export async function createDecision(
     id: decisionRecord.id,
     applicationId: decisionRecord.application_id,
     decision: decisionRecord.decision as Decision,
-    reasonCodes: decisionRecord.reason_codes || [],
-    notes: decisionRecord.notes,
+    reasonCodes: (decisionRecord.reason_codes as string[] | null) || [],
+    notes: decisionRecord.notes ?? undefined,
     usesConsumerReport: decisionRecord.uses_consumer_report,
     adverseActionRequired: decisionRecord.adverse_action_required,
     decidedBy: decisionRecord.decided_by,
@@ -134,8 +137,8 @@ export async function getDecision(
     id: data.id,
     applicationId: data.application_id,
     decision: data.decision as Decision,
-    reasonCodes: data.reason_codes || [],
-    notes: data.notes,
+    reasonCodes: (data.reason_codes as string[] | null) || [],
+    notes: data.notes ?? undefined,
     usesConsumerReport: data.uses_consumer_report,
     adverseActionRequired: data.adverse_action_required,
     decidedBy: data.decided_by,
@@ -184,8 +187,8 @@ export async function getDecisions(filters?: {
     id: record.id,
     applicationId: record.application_id,
     decision: record.decision as Decision,
-    reasonCodes: record.reason_codes || [],
-    notes: record.notes,
+    reasonCodes: (record.reason_codes as string[] | null) || [],
+    notes: record.notes ?? undefined,
     usesConsumerReport: record.uses_consumer_report,
     adverseActionRequired: record.adverse_action_required,
     decidedBy: record.decided_by,

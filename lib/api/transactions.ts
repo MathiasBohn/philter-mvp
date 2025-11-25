@@ -131,10 +131,10 @@ export async function recordApplicationDecision(params: {
   const { data, error } = await supabase.rpc('record_application_decision', {
     p_application_id: params.applicationId,
     p_decision: params.decision,
-    p_conditions: params.conditions || null,
-    p_reason_codes: params.reasonCodes ? JSON.stringify(params.reasonCodes) : null,
-    p_uses_consumer_report: params.usesConsumerReport || false,
-    p_notes: params.notes || null,
+    p_conditions: params.conditions,
+    p_reason_codes: params.reasonCodes ? JSON.stringify(params.reasonCodes) : undefined,
+    p_uses_consumer_report: params.usesConsumerReport ?? false,
+    p_notes: params.notes,
   })
 
   if (error) {

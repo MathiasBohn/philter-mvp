@@ -18,3 +18,12 @@
 export { createClient as createBrowserClient } from './client'
 export { createClient as createServerClient, createAdminClient } from './server'
 export { updateSession, isAuthenticated } from './middleware'
+export {
+  validatePublicEnvVars,
+  validateServerEnvVars,
+  isSupabaseConfigured,
+  isSupabaseAdminConfigured,
+} from './env-validation'
+
+// Re-export database types for convenience
+export type { Database, Tables, TablesInsert, TablesUpdate, Enums, Json } from '@/lib/database.types'

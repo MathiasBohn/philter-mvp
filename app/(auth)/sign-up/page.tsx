@@ -43,6 +43,8 @@ function SignUpForm() {
 
   // Load invitation data if token is present
   const loadInvitationData = async () => {
+    if (!invitationToken) return
+
     try {
       const { data, error } = await supabase
         .from('application_invitations')

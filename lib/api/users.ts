@@ -9,6 +9,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { User, Role } from '@/lib/types'
+import type { Database } from '@/lib/database.types'
+
+type DbRole = Database['public']['Enums']['role_enum']
 
 /**
  * User profile type (extends base User with additional fields)
@@ -165,7 +168,7 @@ export async function searchUsers(
     .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
 
   if (role) {
-    dbQuery = dbQuery.eq('role', role)
+    dbQuery = dbQuery.eq('role', role as unknown as DbRole)
   }
 
   const { data, error } = await dbQuery.limit(20)
@@ -191,7 +194,7 @@ export async function getUsersByRole(role: Role): Promise<UserProfile[]> {
   const { data, error } = await supabase
     .from('users')
     .select('id, email, first_name, last_name, phone, role, created_at, updated_at')
-    .eq('role', role)
+    .eq('role', role as unknown as DbRole)
     .order('created_at', { ascending: false })
 
   if (error) {

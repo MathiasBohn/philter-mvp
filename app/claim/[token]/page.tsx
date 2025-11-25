@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, CheckCircle2, XCircle, FileText } from 'lucide-react'
+import type { Json } from '@/lib/database.types'
 
 interface ClaimData {
   id: string
@@ -16,12 +17,12 @@ interface ClaimData {
   created_at: string
   application?: {
     id: string
-    unit: string
+    unit: string | null
     transaction_type: string
     building?: {
       name: string
-      address: Record<string, unknown>
-    }
+      address: Json
+    } | null
   }
 }
 

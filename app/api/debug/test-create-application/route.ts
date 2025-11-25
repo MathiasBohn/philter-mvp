@@ -9,8 +9,13 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { checkDebugAccess } from '@/lib/api/debug-protection'
 
 export async function POST(request: NextRequest) {
+  // Check debug access (admin-only in production)
+  const access = await checkDebugAccess()
+  if (!access.allowed) return access.response
+
   const results: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     steps: [],
@@ -105,8 +110,8 @@ export async function POST(request: NextRequest) {
 
     const applicationData = {
       building_id: buildingId,
-      transaction_type: transactionType || 'COOP_PURCHASE',
-      status: 'IN_PROGRESS',
+      transaction_type: (transactionType || 'COOP_PURCHASE') as 'COOP_PURCHASE' | 'CONDO_PURCHASE' | 'COOP_SUBLET' | 'CONDO_LEASE',
+      status: 'IN_PROGRESS' as const,
       created_by: user.id,
       current_section: 'profile',
       completion_percentage: 0,
@@ -167,7 +172,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ...results,
       error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: process.env.NODE_ENV !== 'production' ? (error instanceof Error ? error.stack : undefined) : undefined
     }, { status: 500 })
   }
 }

@@ -7,6 +7,10 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { Document, DocumentCategory, DocumentStatus } from '@/lib/types'
+import type { Database } from '@/lib/database.types'
+
+type DbDocumentCategory = Database['public']['Enums']['document_category_enum']
+type DbDocumentStatus = Database['public']['Enums']['document_status_enum']
 
 /**
  * Input type for creating a new document record
@@ -42,11 +46,11 @@ export async function createDocument(
     .insert({
       application_id: metadata.applicationId,
       filename: metadata.filename,
-      category: metadata.category,
+      category: metadata.category as unknown as DbDocumentCategory,
       size: metadata.size,
       mime_type: metadata.mimeType,
       storage_path: metadata.storagePath,
-      status: 'UPLOADED' as DocumentStatus,
+      status: 'COMPLETE',
       uploaded_by: user.id,
       uploaded_at: new Date().toISOString(),
     })
@@ -100,7 +104,6 @@ export async function getDocuments(applicationId: string): Promise<Document[]> {
     uploadedAt: new Date(doc.uploaded_at),
     uploadedBy: doc.uploaded_by,
     status: doc.status as DocumentStatus,
-    notes: doc.notes,
   }))
 }
 
@@ -137,7 +140,6 @@ export async function getDocument(id: string): Promise<Document | null> {
     uploadedAt: new Date(data.uploaded_at),
     uploadedBy: data.uploaded_by,
     status: data.status as DocumentStatus,
-    notes: data.notes,
   }
 }
 
@@ -156,7 +158,7 @@ export async function updateDocumentStatus(
 
   const { data, error } = await supabase
     .from('documents')
-    .update({ status })
+    .update({ status: status as unknown as DbDocumentStatus })
     .eq('id', id)
     .select()
     .single()
@@ -175,7 +177,6 @@ export async function updateDocumentStatus(
     uploadedAt: new Date(data.uploaded_at),
     uploadedBy: data.uploaded_by,
     status: data.status as DocumentStatus,
-    notes: data.notes,
   }
 }
 

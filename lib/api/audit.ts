@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
+import type { Json } from '@/lib/database.types'
 
 /**
  * Activity Log Utilities
@@ -59,15 +60,15 @@ export type EntityType =
  */
 export interface ActivityLogEntry {
   id: string
-  user_id: string
-  application_id?: string
+  user_id: string | null
+  application_id?: string | null
   action: string
   entity_type: string
-  entity_id?: string
-  old_values?: Record<string, unknown>
-  new_values?: Record<string, unknown>
-  ip_address?: string
-  user_agent?: string
+  entity_id?: string | null
+  old_values?: Json | null
+  new_values?: Json | null
+  ip_address?: unknown
+  user_agent?: string | null
   created_at: string
 }
 
@@ -144,8 +145,8 @@ export async function logActivity(
       entity_type: input.entity_type || 'other',
       entity_id: input.entity_id || null,
       application_id: input.application_id || null,
-      old_values: input.old_values || null,
-      new_values: input.new_values || null,
+      old_values: (input.old_values || null) as Json,
+      new_values: (input.new_values || null) as Json,
       ip_address,
       user_agent,
       created_at: new Date().toISOString(),
