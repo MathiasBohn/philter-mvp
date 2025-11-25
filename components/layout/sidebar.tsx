@@ -8,6 +8,8 @@ import {
   Inbox,
   Settings,
   ClipboardList,
+  CheckCircle,
+  Send,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
@@ -48,14 +50,19 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       case Role.BROKER:
         return [
           {
-            label: "My Applications",
-            href: `/my-applications`,
-            icon: Home,
+            label: "Pipeline",
+            href: `/broker`,
+            icon: ClipboardList,
           },
           {
-            label: "Pipeline",
-            href: `/broker/pipeline`,
-            icon: ClipboardList,
+            label: "QA Review",
+            href: `/broker/qa`,
+            icon: CheckCircle,
+          },
+          {
+            label: "Ready to Submit",
+            href: `/broker/submit`,
+            icon: Send,
           },
           {
             label: "Settings",
