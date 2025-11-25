@@ -21,32 +21,68 @@ EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
 
--- Create notifications table
+-- Create notifications table if it doesn't exist
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type notification_type_enum NOT NULL,
+  type TEXT NOT NULL,
   title VARCHAR(255) NOT NULL,
   message TEXT,
   link VARCHAR(500),
   metadata JSONB DEFAULT '{}'::jsonb,
   read BOOLEAN DEFAULT FALSE,
   read_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-
-  -- For grouping related notifications
-  application_id UUID REFERENCES applications(id) ON DELETE SET NULL,
-  rfi_id UUID REFERENCES rfis(id) ON DELETE SET NULL,
-
-  -- For tracking notification origin
-  triggered_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+  created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Create indexes for performance
+-- Add new columns if they don't exist (for existing tables)
+DO $$
+BEGIN
+  -- Add application_id column
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'application_id'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN application_id UUID REFERENCES applications(id) ON DELETE SET NULL;
+  END IF;
+
+  -- Add rfi_id column
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'rfi_id'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN rfi_id UUID REFERENCES rfis(id) ON DELETE SET NULL;
+  END IF;
+
+  -- Add triggered_by column
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'triggered_by'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN triggered_by UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+  END IF;
+
+  -- Add metadata column if missing
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'metadata'
+  ) THEN
+    ALTER TABLE notifications ADD COLUMN metadata JSONB DEFAULT '{}'::jsonb;
+  END IF;
+END $$;
+
+-- Create indexes for performance (only if columns exist)
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, read);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_created ON notifications(user_id, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_notifications_application_id ON notifications(application_id);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'notifications' AND column_name = 'application_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_notifications_application_id ON notifications(application_id);
+  END IF;
+END $$;
 
 -- Enable Row-Level Security
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
@@ -100,10 +136,10 @@ BEGIN
   END IF;
 END $$;
 
--- Function to create a notification
+-- Function to create a notification (using TEXT type for compatibility)
 CREATE OR REPLACE FUNCTION create_notification(
   p_user_id UUID,
-  p_type notification_type_enum,
+  p_type TEXT,
   p_title VARCHAR(255),
   p_message TEXT DEFAULT NULL,
   p_link VARCHAR(500) DEFAULT NULL,
@@ -118,7 +154,7 @@ DECLARE
   v_user_prefs JSONB;
 BEGIN
   -- Check if user wants in-app notifications for this type
-  SELECT notification_preferences->'in_app'->lower(p_type::text)
+  SELECT notification_preferences->'in_app'->lower(p_type)
   INTO v_user_prefs
   FROM users
   WHERE id = p_user_id;
@@ -205,7 +241,7 @@ BEGIN
     LOOP
       PERFORM create_notification(
         v_broker_id,
-        'APPLICATION_SUBMITTED',
+        'APPLICATION_SUBMITTED'::TEXT,
         'Application Submitted',
         format('Application for %s at %s has been submitted',
                COALESCE(v_app_details.unit, 'unit'),
@@ -251,7 +287,7 @@ BEGIN
   IF v_app_details.created_by IS NOT NULL AND v_app_details.created_by != NEW.created_by THEN
     PERFORM create_notification(
       v_app_details.created_by,
-      'RFI_CREATED',
+      'RFI_CREATED'::TEXT,
       'Information Requested',
       format('New request for information on your application for %s',
              COALESCE(v_app_details.unit, 'your unit')),
@@ -295,7 +331,7 @@ BEGIN
   IF v_rfi.rfi_creator IS NOT NULL AND v_rfi.rfi_creator != NEW.author_id THEN
     PERFORM create_notification(
       v_rfi.rfi_creator,
-      'RFI_MESSAGE',
+      'RFI_MESSAGE'::TEXT,
       'New RFI Response',
       format('%s replied to your request', NEW.author_name),
       format('/applications/%s/review', v_rfi.application_id),
@@ -312,7 +348,7 @@ BEGIN
      AND v_rfi.app_owner != v_rfi.rfi_creator THEN
     PERFORM create_notification(
       v_rfi.app_owner,
-      'RFI_MESSAGE',
+      'RFI_MESSAGE'::TEXT,
       'New RFI Response',
       format('%s replied to your request', NEW.author_name),
       format('/applications/%s/review', v_rfi.application_id),
@@ -364,7 +400,7 @@ BEGIN
   IF v_app_details.created_by IS NOT NULL THEN
     PERFORM create_notification(
       v_app_details.created_by,
-      'DECISION_MADE',
+      'DECISION_MADE'::TEXT,
       format('Application %s', initcap(v_decision_text)),
       format('Your application for %s at %s has been %s',
              COALESCE(v_app_details.unit, 'the unit'),

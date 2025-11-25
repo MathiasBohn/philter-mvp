@@ -70,12 +70,17 @@ export async function POST(
     const body = await request.json()
     const personData = body as PersonInput
 
-    // Validate required fields
-    if (!personData.role || !personData.firstName || !personData.lastName) {
+    // Validate required fields (lastName is optional - some people have single names)
+    if (!personData.role || !personData.firstName) {
       return NextResponse.json(
-        { error: 'Missing required fields: role, firstName, lastName' },
+        { error: 'Missing required fields: role, firstName' },
         { status: 400 }
       )
+    }
+
+    // Ensure lastName has a default value
+    if (!personData.lastName) {
+      personData.lastName = ''
     }
 
     // Upsert person record

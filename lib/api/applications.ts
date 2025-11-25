@@ -170,6 +170,57 @@ export async function getApplications(
 }
 
 /**
+ * Transform a database person record to the frontend Person format
+ */
+function transformPersonRecord(dbPerson: Record<string, unknown>): Record<string, unknown> {
+  // If already has fullName (from metadata), return as-is
+  if (dbPerson.fullName) {
+    return dbPerson
+  }
+
+  // Transform database snake_case to frontend camelCase
+  const firstName = (dbPerson.first_name as string) || ''
+  const lastName = (dbPerson.last_name as string) || ''
+  const fullName = [firstName, lastName].filter(Boolean).join(' ')
+
+  return {
+    ...dbPerson,
+    fullName,
+    firstName,
+    lastName,
+    email: dbPerson.email,
+    phone: dbPerson.phone,
+    dob: dbPerson.date_of_birth,
+    ssnLast4: dbPerson.ssn_last4,
+    ssnFull: dbPerson.ssn_encrypted ? undefined : undefined, // Don't expose encrypted SSN
+    // Transform address history if present
+    addressHistory: dbPerson.address_history
+      ? (dbPerson.address_history as Array<Record<string, unknown>>).map(addr => ({
+          id: addr.id,
+          street: (addr.address as Record<string, unknown>)?.street || '',
+          unit: (addr.address as Record<string, unknown>)?.unit,
+          city: (addr.address as Record<string, unknown>)?.city || '',
+          state: (addr.address as Record<string, unknown>)?.state || '',
+          zip: (addr.address as Record<string, unknown>)?.zip || '',
+          fromDate: addr.move_in_date ? new Date(addr.move_in_date as string) : new Date(),
+          toDate: addr.move_out_date ? new Date(addr.move_out_date as string) : undefined,
+          isCurrent: addr.is_current || false,
+        }))
+      : [],
+    // Transform emergency contacts if present
+    emergencyContacts: dbPerson.emergency_contacts
+      ? (dbPerson.emergency_contacts as Array<Record<string, unknown>>).map(contact => ({
+          id: contact.id,
+          name: contact.name,
+          relationship: contact.relationship,
+          phone: contact.phone,
+          email: contact.email,
+        }))
+      : [],
+  }
+}
+
+/**
  * Get a single application by ID
  *
  * @param id - The application ID
@@ -183,7 +234,7 @@ export async function getApplication(id: string): Promise<Application | null> {
     .select(`
       *,
       building:buildings(*),
-      people(*),
+      people(*, address_history(*), emergency_contacts(*)),
       employment_records(*),
       financial_entries(*),
       real_estate_properties(*),
@@ -214,7 +265,7 @@ export async function getApplication(id: string): Promise<Application | null> {
   // Get people - prefer metadata (for co-applicants/guarantors) over database table
   // Database table is used by Profile page, metadata is used by People page
   const metadataPeople = metadata.people as Array<Record<string, unknown>> | undefined
-  const databasePeople = data.people || []
+  const databasePeople = (data.people || []).map(transformPersonRecord)
 
   // Merge: database people (primary applicant from Profile) + metadata people (co-applicants from People page)
   const allPeople = metadataPeople && metadataPeople.length > 0
@@ -433,7 +484,7 @@ export async function updateApplication(
     .select(`
       *,
       building:buildings(*),
-      people(*),
+      people(*, address_history(*), emergency_contacts(*)),
       employment_records(*),
       financial_entries(*),
       real_estate_properties(*),
@@ -460,8 +511,9 @@ export async function updateApplication(
   const metadata = (app.metadata as Record<string, unknown>) || {}
 
   // Get people - prefer metadata (for co-applicants/guarantors) over database table
+  // Transform database people to frontend format
   const metadataPeople = metadata.people as Array<Record<string, unknown>> | undefined
-  const databasePeople = app.people || []
+  const databasePeople = (app.people || []).map(transformPersonRecord)
   const allPeople = metadataPeople && metadataPeople.length > 0
     ? [...databasePeople, ...metadataPeople.filter(mp => !databasePeople.some((dp: { id?: string }) => dp.id === mp.id))]
     : databasePeople
