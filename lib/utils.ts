@@ -27,10 +27,20 @@ export function formatCurrency(amount: number): string {
  * @returns Formatted date string
  */
 export function formatDate(
-  date: Date | string,
+  date: Date | string | null | undefined,
   format: "short" | "long" | "relative" = "short"
 ): string {
+  // Handle null/undefined dates
+  if (!date) {
+    return "—";
+  }
+
   const d = typeof date === "string" ? new Date(date) : date;
+
+  // Handle invalid dates
+  if (isNaN(d.getTime())) {
+    return "—";
+  }
 
   if (format === "relative") {
     const now = new Date();

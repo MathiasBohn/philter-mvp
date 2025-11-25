@@ -65,9 +65,9 @@ const columns: Column<Application>[] = [
     sortable: true,
     render: (_, application) => (
       <div>
-        <p className="font-medium">{application.building?.name}</p>
+        <p className="font-medium">{application.building?.name || "Unknown Building"}</p>
         <p className="text-xs text-muted-foreground">
-          {application.building?.address.street}
+          {application.building?.address?.street || "Address not available"}
         </p>
       </div>
     ),

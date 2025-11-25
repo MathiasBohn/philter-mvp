@@ -15,7 +15,7 @@ import {
 import { StatusTag } from "../status-tag";
 import { Application } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
-import { MoreHorizontal, UserPlus, Eye, FileText } from "lucide-react";
+import { MoreHorizontal, UserPlus, Eye } from "lucide-react";
 import Link from "next/link";
 
 interface ApplicationMobileCardProps {
@@ -55,18 +55,12 @@ export const ApplicationMobileCard = memo(function ApplicationMobileCard({ appli
               <DropdownMenuItem asChild>
                 <Link href={`/broker/${application.id}/qa`}>
                   <Eye className="mr-2 h-4 w-4" />
-                  Open Application Workspace
+                  Review Application
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <UserPlus className="mr-2 h-4 w-4" />
                 Invite Applicant
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href={`/applications/${application.id}`}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Details
-                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
