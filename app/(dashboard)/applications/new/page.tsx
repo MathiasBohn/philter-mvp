@@ -17,6 +17,7 @@ export default function NewApplicationPage() {
   const [buildingCode, setBuildingCode] = useState("")
   const [transactionType, setTransactionType] = useState<TransactionType | null>(null)
   const [errors, setErrors] = useState<{ field: string; message: string; anchor?: string }[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const createApplication = useCreateApplication()
 
@@ -44,13 +45,18 @@ export default function NewApplicationPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('[Form] handleSubmit called')
+    setErrors([])
 
     if (!validateForm()) {
-      // Focus on the error summary
+      console.log('[Form] Validation failed')
       const errorSummary = document.querySelector('[role="alert"]')
       errorSummary?.scrollIntoView({ behavior: "smooth", block: "start" })
       return
     }
+
+    console.log('[Form] Validation passed, starting submission')
+    setIsSubmitting(true)
 
     try {
       // Look up building by code
@@ -73,21 +79,26 @@ export default function NewApplicationPage() {
             anchor: "building-code",
           },
         ])
+        setIsSubmitting(false)
         return
       }
 
       console.log('[Form] Found building:', building.name, 'with ID:', building.id)
+      console.log('[Form] Transaction type:', transactionType)
 
       // Create a new application via API with the building UUID
-      console.log('[Form] Creating application with buildingId:', building.id, 'type:', typeof building.id)
+      console.log('[Form] Creating application...')
       const newApplication = await createApplication.mutateAsync({
         buildingId: building.id,
-        transactionType: transactionType || undefined,
+        transactionType: transactionType!,
       })
+
+      console.log('[Form] Application created:', newApplication.id)
 
       // Navigate to the application overview
       router.push(`/applications/${newApplication.id}`)
     } catch (error) {
+      console.error('[Form] Error caught:', error)
       setErrors([
         {
           field: "buildingCode",
@@ -95,6 +106,8 @@ export default function NewApplicationPage() {
           anchor: "building-code",
         },
       ])
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -136,9 +149,14 @@ export default function NewApplicationPage() {
             />
 
             <div className="flex flex-col gap-4 border-t pt-6">
-              <Button type="submit" size="lg" className="w-full sm:w-auto sm:ml-auto" disabled={createApplication.isPending}>
-                {createApplication.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Start Application
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full sm:w-auto sm:ml-auto"
+                disabled={isSubmitting || createApplication.isPending}
+              >
+                {(isSubmitting || createApplication.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSubmitting ? 'Creating Application...' : 'Start Application'}
               </Button>
 
               <div className="rounded-lg border bg-muted/50 p-4">
