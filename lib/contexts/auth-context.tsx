@@ -45,6 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const initializingRef = useRef(false)
+  // Track if we've received the initial auth state - don't set isLoading=false until we're sure there's no session
+  const hasReceivedInitialStateRef = useRef(false)
+  const pendingAuthCheckRef = useRef<NodeJS.Timeout | null>(null)
 
   // Convert Supabase user + profile to our User type
   // Returns a minimal user object even if profile is not available
@@ -83,8 +86,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AuthContext] Fetching profile for user:', userId)
 
       // Add timeout to prevent hanging indefinitely
+      let timeoutId: NodeJS.Timeout | null = null
+      let didTimeout = false
+
       const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => {
+        timeoutId = setTimeout(() => {
+          didTimeout = true
           console.warn('[AuthContext] Profile fetch timed out after 5 seconds')
           resolve(null)
         }, 5000)
@@ -97,11 +104,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("id", userId)
           .single()
 
+        // Clear the timeout since fetch completed
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+
         if (error) {
           console.error("[AuthContext] Error fetching profile:", error.message)
           return null
         }
-        console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
+
+        // Only log success if we didn't timeout
+        if (!didTimeout) {
+          console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
+        }
         return data as UserProfile
       })()
 
@@ -152,27 +168,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Set up auth state change listener
     // This fires immediately with current state AND on any state changes
+    // IMPORTANT: INITIAL_SESSION often fires first with no session (from memory),
+    // then SIGNED_IN fires shortly after (from cookies). We need to wait before
+    // concluding there's no session.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
         console.log('[AuthContext] Auth state changed:', event, { hasSession: !!session, userId: session?.user?.id })
 
         if (!isSubscribed) return
 
+        // Clear any pending auth check since we got a new event
+        if (pendingAuthCheckRef.current) {
+          clearTimeout(pendingAuthCheckRef.current)
+          pendingAuthCheckRef.current = null
+        }
+
         if (session?.user) {
           // User is authenticated - load their profile
+          hasReceivedInitialStateRef.current = true
           console.log('[AuthContext] Loading user profile...')
           await loadUser(session.user)
         } else {
-          // No session - clear user state
-          console.log('[AuthContext] No session, clearing user')
-          clearUser()
+          // No session in this event, but don't immediately conclude there's no user.
+          // INITIAL_SESSION fires first (often with no session from memory),
+          // then SIGNED_IN may fire shortly after (with session from cookies).
+          // Wait a brief moment to see if SIGNED_IN follows.
+          console.log('[AuthContext] No session in event, waiting to confirm...')
+
+          pendingAuthCheckRef.current = setTimeout(async () => {
+            if (!isSubscribed) return
+
+            // Double-check with getUser() to be absolutely sure
+            console.log('[AuthContext] Confirming no session with getUser()...')
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+
+            if (authUser) {
+              console.log('[AuthContext] Found user via getUser():', authUser.id)
+              await loadUser(authUser)
+            } else {
+              console.log('[AuthContext] Confirmed no user, clearing state')
+              hasReceivedInitialStateRef.current = true
+              clearUser()
+            }
+          }, 500) // Wait 500ms to see if SIGNED_IN fires
         }
       }
     )
 
-    // Fallback: If onAuthStateChange doesn't fire within 2 seconds, check manually
+    // Fallback: If onAuthStateChange doesn't settle within 3 seconds, check manually
     const fallbackTimeout = setTimeout(async () => {
-      if (!isSubscribed) return
+      if (!isSubscribed || hasReceivedInitialStateRef.current) return
 
       console.log('[AuthContext] Fallback check - getting user manually')
       const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -182,16 +227,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await loadUser(authUser)
       } else {
         console.log('[AuthContext] Fallback: no user found')
+        hasReceivedInitialStateRef.current = true
         setIsLoading(false)
       }
-    }, 2000)
+    }, 3000)
 
     return () => {
       console.log('[AuthContext] Cleaning up subscription')
       isSubscribed = false
       clearTimeout(fallbackTimeout)
+      if (pendingAuthCheckRef.current) {
+        clearTimeout(pendingAuthCheckRef.current)
+      }
       subscription.unsubscribe()
       initializingRef.current = false
+      hasReceivedInitialStateRef.current = false
     }
   }, [loadUser, clearUser])
 
