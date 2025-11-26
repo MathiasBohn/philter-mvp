@@ -132,6 +132,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load user and set up auth state
   const loadUser = useCallback(async (authUser: SupabaseUser) => {
     console.log('[AuthContext] Loading user:', authUser.id)
+    // Set loading true while we fetch the profile - this prevents race conditions
+    // where components see user=null and isLoading=false simultaneously
+    setIsLoading(true)
     const userProfile = await fetchUserProfile(authUser.id)
     setProfile(userProfile)
     const userObj = createUserObject(authUser, userProfile)
@@ -213,6 +216,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 console.log('[AuthContext] Found user via getUser():', authUser.id)
                 await loadUser(authUser)
               } else {
+                // Wait a bit more before clearing - SIGNED_IN might be about to fire
+                // This small delay prevents the race condition where getUser() returns null
+                // but SIGNED_IN fires immediately after
+                console.log('[AuthContext] getUser() returned null, waiting briefly before clearing...')
+                await new Promise(resolve => setTimeout(resolve, 500))
+
+                // Re-check if SIGNED_IN fired during the wait
+                if (!isSubscribed || hasReceivedInitialStateRef.current) {
+                  console.log('[AuthContext] SIGNED_IN received during wait, not clearing')
+                  return
+                }
+
                 console.log('[AuthContext] Confirmed no user, clearing state')
                 hasReceivedInitialStateRef.current = true
                 clearUser()
