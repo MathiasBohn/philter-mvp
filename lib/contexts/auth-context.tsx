@@ -47,8 +47,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initializingRef = useRef(false)
 
   // Convert Supabase user + profile to our User type
+  // Returns a minimal user object even if profile is not available
   const createUserObject = useCallback((authUser: SupabaseUser, userProfile: UserProfile | null): User | null => {
-    if (!userProfile) return null
+    // If no profile, still create a basic user object with auth info
+    // This allows the app to function while profile loads or if profile fetch fails
+    if (!userProfile) {
+      console.log('[AuthContext] Creating user without profile (profile unavailable)')
+      return {
+        id: authUser.id,
+        name: authUser.email?.split('@')[0] || 'User',
+        email: authUser.email!,
+        role: 'APPLICANT' as Role, // Default role, will be updated when profile loads
+        createdAt: new Date(authUser.created_at),
+      }
+    }
 
     return {
       id: authUser.id,
@@ -59,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Fetch user profile from database
+  // Fetch user profile from database with timeout
   const fetchUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     const supabase = getSupabaseClient()
     if (!supabase) {
@@ -70,19 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log('[AuthContext] Fetching profile for user:', userId)
 
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging indefinitely
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          console.warn('[AuthContext] Profile fetch timed out after 5 seconds')
+          resolve(null)
+        }, 5000)
+      })
+
+      const fetchPromise = supabase
         .from("users")
         .select("*")
         .eq("id", userId)
         .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("[AuthContext] Error fetching profile:", error.message)
+            return null
+          }
+          console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
+          return data as UserProfile
+        })
 
-      if (error) {
-        console.error("[AuthContext] Error fetching profile:", error.message)
-        return null
-      }
-
-      console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
-      return data as UserProfile
+      const result = await Promise.race([fetchPromise, timeoutPromise])
+      return result
     } catch (error) {
       console.error("[AuthContext] Exception fetching profile:", error)
       return null
