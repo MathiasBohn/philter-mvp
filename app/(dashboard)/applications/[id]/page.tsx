@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use } from "react";
 import { useApplication } from "@/lib/hooks/use-applications";
 import { useRFIs } from "@/lib/hooks/use-rfis";
 import { SectionList } from "@/components/features/application/section-list";
@@ -15,24 +15,11 @@ import { AlertCircle } from "lucide-react";
 
 export default function ApplicationOverviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { data: application, isLoading, error, isFetching, status, fetchStatus } = useApplication(id);
+  const { data: application, isLoading, error } = useApplication(id);
   const { data: rfis } = useRFIs(id, !!id);
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[ApplicationPage] State:', {
-      id,
-      isLoading,
-      isFetching,
-      status,
-      fetchStatus,
-      hasApplication: !!application,
-      hasError: !!error,
-      errorMessage: error?.message,
-      applicationId: application?.id,
-      transactionType: application?.transactionType,
-    });
-  }, [id, isLoading, isFetching, status, fetchStatus, application, error]);
+  // Log render state
+  console.log('[ApplicationPage] Render:', { id, isLoading, hasApp: !!application, hasError: !!error });
 
   // Loading skeleton
   if (isLoading) {
