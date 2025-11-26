@@ -75,19 +75,24 @@ export default async function proxy(request: NextRequest) {
  * - Image optimization files (_next/image)
  * - Favicon and other image assets
  * - Auth callback route (needs to set cookies)
+ * - API routes (handled by their own auth logic)
  *
- * API routes ARE included to ensure session cookies are refreshed
+ * API routes are excluded because:
+ * 1. They have their own auth logic via createClient()
+ * 2. The proxy was causing issues with client-side fetch requests
+ * 3. Next.js 16 recommends excluding API routes from proxy
  */
 export const config = {
   matcher: [
     /*
      * Match all request paths except:
+     * - api routes (have their own auth)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - Image files (.svg, .png, .jpg, .jpeg, .gif, .webp)
      * - auth/callback (needs to set cookies without redirect)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|auth/callback).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|auth/callback).*)',
   ],
 }
