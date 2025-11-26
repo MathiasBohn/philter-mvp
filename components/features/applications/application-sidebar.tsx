@@ -36,6 +36,7 @@ interface ApplicationSection {
   description: string;
 }
 
+// Section order matches SectionList in section-list.tsx (Profile-first order)
 const SECTIONS: ApplicationSection[] = [
   {
     id: "overview",
@@ -45,18 +46,11 @@ const SECTIONS: ApplicationSection[] = [
     description: "Application summary",
   },
   {
-    id: "building-policies",
-    label: "Building Policies",
-    path: "/building-policies",
-    icon: Building2,
-    description: "Review building requirements",
-  },
-  {
-    id: "lease-terms",
-    label: "Lease Terms",
-    path: "/lease-terms",
-    icon: FileText,
-    description: "Proposed lease terms",
+    id: "profile",
+    label: "Profile",
+    path: "/profile",
+    icon: UserCircle,
+    description: "Personal information",
   },
   {
     id: "parties",
@@ -73,32 +67,39 @@ const SECTIONS: ApplicationSection[] = [
     description: "Co-applicants & guarantors",
   },
   {
-    id: "profile",
-    label: "Profile",
-    path: "/profile",
-    icon: UserCircle,
-    description: "Personal information",
-  },
-  {
     id: "income",
-    label: "Income & Employment",
+    label: "Employment & Income",
     path: "/income",
     icon: Briefcase,
     description: "Employment history",
   },
   {
     id: "financials",
-    label: "Financials",
+    label: "Financial Summary",
     path: "/financials",
     icon: DollarSign,
     description: "Assets & liabilities",
   },
   {
     id: "real-estate",
-    label: "Real Estate",
+    label: "Real Estate Holdings",
     path: "/real-estate",
     icon: Building2,
     description: "Property holdings",
+  },
+  {
+    id: "lease-terms",
+    label: "Lease Terms",
+    path: "/lease-terms",
+    icon: FileText,
+    description: "Proposed lease terms",
+  },
+  {
+    id: "building-policies",
+    label: "Building Policies",
+    path: "/building-policies",
+    icon: Building2,
+    description: "Review building requirements",
   },
   {
     id: "documents",

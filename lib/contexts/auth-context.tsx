@@ -188,29 +188,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hasReceivedInitialStateRef.current = true
           console.log('[AuthContext] Loading user profile...')
           await loadUser(session.user)
+        } else if (event === 'SIGNED_OUT') {
+          // Explicit sign out - clear immediately
+          console.log('[AuthContext] User signed out, clearing state')
+          hasReceivedInitialStateRef.current = true
+          clearUser()
         } else {
-          // No session in this event, but don't immediately conclude there's no user.
+          // No session in this event (likely INITIAL_SESSION), but don't immediately conclude there's no user.
           // INITIAL_SESSION fires first (often with no session from memory),
           // then SIGNED_IN may fire shortly after (with session from cookies).
-          // Wait a brief moment to see if SIGNED_IN follows.
-          console.log('[AuthContext] No session in event, waiting to confirm...')
+          // Wait longer to see if SIGNED_IN follows - 500ms was causing race conditions.
+          console.log('[AuthContext] No session in event (%s), waiting for potential SIGNED_IN...', event)
 
           pendingAuthCheckRef.current = setTimeout(async () => {
             if (!isSubscribed) return
 
-            // Double-check with getUser() to be absolutely sure
-            console.log('[AuthContext] Confirming no session with getUser()...')
-            const { data: { user: authUser } } = await supabase.auth.getUser()
+            // If we still haven't received initial state (meaning no SIGNED_IN came),
+            // then check with getUser() to be absolutely sure
+            if (!hasReceivedInitialStateRef.current) {
+              console.log('[AuthContext] No SIGNED_IN received, checking with getUser()...')
+              const { data: { user: authUser } } = await supabase.auth.getUser()
 
-            if (authUser) {
-              console.log('[AuthContext] Found user via getUser():', authUser.id)
-              await loadUser(authUser)
-            } else {
-              console.log('[AuthContext] Confirmed no user, clearing state')
-              hasReceivedInitialStateRef.current = true
-              clearUser()
+              if (authUser) {
+                console.log('[AuthContext] Found user via getUser():', authUser.id)
+                await loadUser(authUser)
+              } else {
+                console.log('[AuthContext] Confirmed no user, clearing state')
+                hasReceivedInitialStateRef.current = true
+                clearUser()
+              }
             }
-          }, 500) // Wait 500ms to see if SIGNED_IN fires
+          }, 1500) // Wait 1500ms to see if SIGNED_IN fires (increased from 500ms)
         }
       }
     )
