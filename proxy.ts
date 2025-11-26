@@ -35,7 +35,7 @@ const authRoutes = [
   '/verify-email',
 ]
 
-export async function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   // Update session and get user info
   const { response, user } = await updateSession(request)
 
@@ -74,8 +74,9 @@ export async function proxy(request: NextRequest) {
  * - Static files (_next/static)
  * - Image optimization files (_next/image)
  * - Favicon and other image assets
- * - API routes (they handle their own auth)
  * - Auth callback route (needs to set cookies)
+ *
+ * API routes ARE included to ensure session cookies are refreshed
  */
 export const config = {
   matcher: [
@@ -85,9 +86,8 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - Image files (.svg, .png, .jpg, .jpeg, .gif, .webp)
-     * - api routes (handled separately)
      * - auth/callback (needs to set cookies without redirect)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api|auth/callback).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|auth/callback).*)',
   ],
 }
