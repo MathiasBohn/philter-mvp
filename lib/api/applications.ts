@@ -154,16 +154,54 @@ export async function getApplications(
     throw new Error(`Failed to fetch applications: ${error.message}`)
   }
 
-  // Transform data to match Application type (with empty arrays for missing relations)
+  // Transform data to match Application type (with camelCase fields and empty arrays for missing relations)
   const applications = (data || []).map(app => ({
-    ...app,
+    // Core identification
+    id: app.id,
+    // Transform snake_case to camelCase for main fields
+    buildingId: app.building_id,
+    building: app.building,
+    unit: app.unit,
+    transactionType: app.transaction_type as TransactionType,
+    status: app.status as ApplicationStatus,
+    createdBy: app.created_by,
+    createdAt: app.created_at,
+    updatedAt: app.updated_at,
+    submittedAt: app.submitted_at,
+    brokerOwned: app.broker_owned,
+    primaryApplicantEmail: app.primary_applicant_email,
+    primaryApplicantId: app.primary_applicant_id,
+    completionPercentage: app.completion_percentage ?? 0,
+    currentSection: app.current_section,
+    isLocked: app.is_locked ?? false,
+    deletedAt: app.deleted_at,
+    metadata: app.metadata,
+    // Also keep snake_case versions for backward compatibility
+    building_id: app.building_id,
+    transaction_type: app.transaction_type,
+    created_by: app.created_by,
+    created_at: app.created_at,
+    updated_at: app.updated_at,
+    submitted_at: app.submitted_at,
+    broker_owned: app.broker_owned,
+    primary_applicant_email: app.primary_applicant_email,
+    primary_applicant_id: app.primary_applicant_id,
+    completion_percentage: app.completion_percentage,
+    current_section: app.current_section,
+    is_locked: app.is_locked,
+    deleted_at: app.deleted_at,
+    // Empty arrays for related entities
     people: [],
+    employmentRecords: [],
     employment_records: [],
+    financialEntries: [],
     financial_entries: [],
+    realEstateProperties: [],
     real_estate_properties: [],
     documents: [],
     disclosures: [],
     rfis: [],
+    sections: [],
   }))
 
   return applications as unknown as Application[]
@@ -280,8 +318,43 @@ export async function getApplication(id: string): Promise<Application | null> {
   const computedSections = computeSections(data)
 
   // Ensure all arrays exist (for backward compatibility with old data)
+  // Transform snake_case database fields to camelCase for frontend
   const enrichedApplication = {
-    ...data,
+    // Core identification
+    id: data.id,
+    // Transform snake_case to camelCase for main fields
+    buildingId: data.building_id,
+    building: data.building,
+    unit: data.unit,
+    transactionType: data.transaction_type as TransactionType,
+    status: data.status as ApplicationStatus,
+    createdBy: data.created_by,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    submittedAt: data.submitted_at,
+    brokerOwned: data.broker_owned,
+    primaryApplicantEmail: data.primary_applicant_email,
+    primaryApplicantId: data.primary_applicant_id,
+    completionPercentage: data.completion_percentage ?? 0,
+    currentSection: data.current_section,
+    isLocked: data.is_locked ?? false,
+    deletedAt: data.deleted_at,
+    metadata: data.metadata,
+    // Also keep snake_case versions for backward compatibility
+    building_id: data.building_id,
+    transaction_type: data.transaction_type,
+    created_by: data.created_by,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    submitted_at: data.submitted_at,
+    broker_owned: data.broker_owned,
+    primary_applicant_email: data.primary_applicant_email,
+    primary_applicant_id: data.primary_applicant_id,
+    completion_percentage: data.completion_percentage,
+    current_section: data.current_section,
+    is_locked: data.is_locked,
+    deleted_at: data.deleted_at,
+    // Related entities with camelCase names
     people: allPeople,
     employmentRecords: data.employment_records || [],
     employment_records: data.employment_records || [],
@@ -361,12 +434,49 @@ export async function createApplication(
     throw new Error(`Failed to create application: ${error.message}`)
   }
 
-  // Add empty arrays for related entities that weren't fetched
+  // Transform snake_case to camelCase and add empty arrays for related entities
   const enrichedApplication = {
-    ...application,
+    // Core identification
+    id: application.id,
+    // Transform snake_case to camelCase for main fields
+    buildingId: application.building_id,
+    building: application.building,
+    unit: application.unit,
+    transactionType: application.transaction_type as TransactionType,
+    status: application.status as ApplicationStatus,
+    createdBy: application.created_by,
+    createdAt: application.created_at,
+    updatedAt: application.updated_at,
+    submittedAt: application.submitted_at,
+    brokerOwned: application.broker_owned,
+    primaryApplicantEmail: application.primary_applicant_email,
+    primaryApplicantId: application.primary_applicant_id,
+    completionPercentage: application.completion_percentage ?? 0,
+    currentSection: application.current_section,
+    isLocked: application.is_locked ?? false,
+    deletedAt: application.deleted_at,
+    metadata: application.metadata,
+    // Also keep snake_case versions for backward compatibility
+    building_id: application.building_id,
+    transaction_type: application.transaction_type,
+    created_by: application.created_by,
+    created_at: application.created_at,
+    updated_at: application.updated_at,
+    submitted_at: application.submitted_at,
+    broker_owned: application.broker_owned,
+    primary_applicant_email: application.primary_applicant_email,
+    primary_applicant_id: application.primary_applicant_id,
+    completion_percentage: application.completion_percentage,
+    current_section: application.current_section,
+    is_locked: application.is_locked,
+    deleted_at: application.deleted_at,
+    // Empty arrays for related entities
     people: [],
+    employmentRecords: [],
     employment_records: [],
+    financialEntries: [],
     financial_entries: [],
+    realEstateProperties: [],
     real_estate_properties: [],
     documents: [],
     disclosures: [],
@@ -524,8 +634,43 @@ export async function updateApplication(
   // Compute sections dynamically from application data
   const computedSections = computeSections(app)
 
+  // Transform snake_case database fields to camelCase for frontend
   const enrichedApplication = {
-    ...app,
+    // Core identification
+    id: app.id,
+    // Transform snake_case to camelCase for main fields
+    buildingId: app.building_id,
+    building: app.building,
+    unit: app.unit,
+    transactionType: app.transaction_type as TransactionType,
+    status: app.status as ApplicationStatus,
+    createdBy: app.created_by,
+    createdAt: app.created_at,
+    updatedAt: app.updated_at,
+    submittedAt: app.submitted_at,
+    brokerOwned: app.broker_owned,
+    primaryApplicantEmail: app.primary_applicant_email,
+    primaryApplicantId: app.primary_applicant_id,
+    completionPercentage: app.completion_percentage ?? 0,
+    currentSection: app.current_section,
+    isLocked: app.is_locked ?? false,
+    deletedAt: app.deleted_at,
+    metadata: app.metadata,
+    // Also keep snake_case versions for backward compatibility
+    building_id: app.building_id,
+    transaction_type: app.transaction_type,
+    created_by: app.created_by,
+    created_at: app.created_at,
+    updated_at: app.updated_at,
+    submitted_at: app.submitted_at,
+    broker_owned: app.broker_owned,
+    primary_applicant_email: app.primary_applicant_email,
+    primary_applicant_id: app.primary_applicant_id,
+    completion_percentage: app.completion_percentage,
+    current_section: app.current_section,
+    is_locked: app.is_locked,
+    deleted_at: app.deleted_at,
+    // Related entities with camelCase names
     people: allPeople,
     employmentRecords: app.employment_records || [],
     employment_records: app.employment_records || [],
