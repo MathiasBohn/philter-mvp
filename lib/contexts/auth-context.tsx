@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from "react"
-import { User as SupabaseUser } from "@supabase/supabase-js"
+import { User as SupabaseUser, AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
 import { User, Role } from "@/lib/types"
 
@@ -90,19 +90,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }, 5000)
       })
 
-      const fetchPromise = supabase
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .single()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error("[AuthContext] Error fetching profile:", error.message)
-            return null
-          }
-          console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
-          return data as UserProfile
-        })
+      const fetchPromise = (async () => {
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", userId)
+          .single()
+
+        if (error) {
+          console.error("[AuthContext] Error fetching profile:", error.message)
+          return null
+        }
+        console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
+        return data as UserProfile
+      })()
 
       const result = await Promise.race([fetchPromise, timeoutPromise])
       return result
@@ -152,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state change listener
     // This fires immediately with current state AND on any state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
         console.log('[AuthContext] Auth state changed:', event, { hasSession: !!session, userId: session?.user?.id })
 
         if (!isSubscribed) return
