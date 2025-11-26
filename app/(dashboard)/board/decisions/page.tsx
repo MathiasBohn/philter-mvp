@@ -178,7 +178,7 @@ export default function BoardDecisionsPage() {
                             ID: <span className="font-mono">{application.id}</span>
                           </span>
                           <span className="text-muted-foreground">
-                            Type: <span className="font-medium">{application.transactionType.replace(/_/g, " ")}</span>
+                            Type: <span className="font-medium">{application.transactionType ? application.transactionType.replace(/_/g, " ") : "—"}</span>
                           </span>
                         </div>
                         <div className="flex gap-2">

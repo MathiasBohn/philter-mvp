@@ -94,7 +94,12 @@ export const STATUS_CONFIG: Record<ApplicationStatus, StatusConfig> = {
  * @returns Status configuration object with label, color, and variant
  */
 export function getStatusConfig(status: ApplicationStatus): StatusConfig {
-  return STATUS_CONFIG[status]
+  return STATUS_CONFIG[status] || {
+    label: "Unknown",
+    color: "bg-gray-400",
+    variant: "secondary" as const,
+    description: "Status unknown",
+  }
 }
 
 /**

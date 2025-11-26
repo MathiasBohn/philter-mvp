@@ -183,7 +183,7 @@ export function InviteApplicantModal({
                   </dd>
                   <dt className="text-muted-foreground">Type:</dt>
                   <dd className="font-medium">
-                    {transactionType.replace(/_/g, " ")}
+                    {transactionType ? transactionType.replace(/_/g, " ") : "—"}
                   </dd>
                 </dl>
               </div>

@@ -303,7 +303,7 @@ export function ApplicationSummary({ application }: ApplicationSummaryProps) {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Transaction Type:</span>
                     <span className="font-medium">
-                      {application.transactionType.replace(/_/g, " ")}
+                      {application.transactionType ? application.transactionType.replace(/_/g, " ") : "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">

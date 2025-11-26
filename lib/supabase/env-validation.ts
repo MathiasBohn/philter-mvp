@@ -3,6 +3,10 @@
  *
  * Validates required environment variables and throws errors in production
  * if they are missing. In development, logs warnings instead.
+ *
+ * IMPORTANT: Environment variables must be accessed with literal strings
+ * (e.g., process.env.NEXT_PUBLIC_SUPABASE_URL) for Next.js to inline them
+ * at build time. Dynamic access (process.env[key]) will NOT be inlined.
  */
 
 interface EnvironmentValidationResult {
@@ -10,18 +14,11 @@ interface EnvironmentValidationResult {
   missingVars: string[]
 }
 
-const REQUIRED_PUBLIC_VARS = [
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-] as const
-
-const REQUIRED_SERVER_VARS = [
-  'SUPABASE_SERVICE_ROLE_KEY',
-] as const
-
 /**
  * Validates that required public environment variables are set.
  * These are needed for both client and server Supabase clients.
+ *
+ * Uses direct access to env vars so Next.js can inline them at build time.
  *
  * @param throwOnMissing - Whether to throw an error if vars are missing (default: true in production)
  * @returns Validation result with list of missing variables
@@ -29,9 +26,16 @@ const REQUIRED_SERVER_VARS = [
 export function validatePublicEnvVars(throwOnMissing?: boolean): EnvironmentValidationResult {
   const shouldThrow = throwOnMissing ?? process.env.NODE_ENV === 'production'
 
-  const missingVars = REQUIRED_PUBLIC_VARS.filter(
-    (key) => !process.env[key]
-  )
+  // IMPORTANT: Access env vars directly with literal strings for Next.js inlining
+  const missingVars: string[] = []
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+  }
+
+  if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  }
 
   if (missingVars.length > 0) {
     const message = `Missing required environment variables: ${missingVars.join(', ')}`
@@ -60,9 +64,12 @@ export function validateServerEnvVars(throwOnMissing = true): EnvironmentValidat
   // First validate public vars
   const publicResult = validatePublicEnvVars(throwOnMissing)
 
-  const missingServerVars = REQUIRED_SERVER_VARS.filter(
-    (key) => !process.env[key]
-  )
+  // Check server-side env vars directly
+  const missingServerVars: string[] = []
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    missingServerVars.push('SUPABASE_SERVICE_ROLE_KEY')
+  }
 
   const allMissingVars = [...publicResult.missingVars, ...missingServerVars]
 

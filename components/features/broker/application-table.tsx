@@ -76,18 +76,21 @@ const columns: Column<Application>[] = [
     key: "transactionType",
     label: "Transaction Type",
     sortable: true,
-    render: (value) => String(value).replace(/_/g, " "),
+    render: (value) => value ? String(value).replace(/_/g, " ") : "—",
   },
   {
     key: "completionPercentage",
     label: "Completion",
     sortable: true,
-    render: (value) => (
-      <div className="space-y-1">
-        <Progress value={value as number} className="h-2" />
-        <p className="text-xs text-muted-foreground">{String(value)}%</p>
-      </div>
-    ),
+    render: (value) => {
+      const percentage = typeof value === "number" ? value : 0;
+      return (
+        <div className="space-y-1">
+          <Progress value={percentage} className="h-2" />
+          <p className="text-xs text-muted-foreground">{percentage}%</p>
+        </div>
+      );
+    },
   },
   {
     key: "submittedAt",

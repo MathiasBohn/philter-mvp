@@ -71,7 +71,7 @@ export const ApplicationMobileCard = memo(function ApplicationMobileCard({ appli
           <div>
             <p className="text-muted-foreground text-xs">Type</p>
             <p className="font-medium mt-0.5">
-              {application.transactionType.replace(/_/g, " ")}
+              {application.transactionType ? application.transactionType.replace(/_/g, " ") : "—"}
             </p>
           </div>
           <div>
@@ -83,8 +83,8 @@ export const ApplicationMobileCard = memo(function ApplicationMobileCard({ appli
           <div>
             <p className="text-muted-foreground text-xs">Completion</p>
             <div className="mt-1">
-              <Progress value={application.completionPercentage} className="h-2" />
-              <p className="text-xs mt-1">{application.completionPercentage}%</p>
+              <Progress value={application.completionPercentage ?? 0} className="h-2" />
+              <p className="text-xs mt-1">{application.completionPercentage ?? 0}%</p>
             </div>
           </div>
           <div>

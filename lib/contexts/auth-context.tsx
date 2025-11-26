@@ -25,100 +25,29 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Cache duration for profile fetches (5 minutes)
-const PROFILE_CACHE_DURATION = 5 * 60 * 1000
-// Debounce delay for rapid profile fetch requests (500ms)
-const PROFILE_FETCH_DEBOUNCE = 500
+// Create a singleton Supabase client for the auth context
+let supabaseClient: ReturnType<typeof createClient> | null = null
+
+function getSupabaseClient() {
+  if (!supabaseClient) {
+    try {
+      supabaseClient = createClient()
+    } catch (error) {
+      console.error('[AuthContext] Failed to create Supabase client:', error)
+      return null
+    }
+  }
+  return supabaseClient
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
-  // Profile fetch optimization: cache and debounce
-  const profileCacheRef = useRef<{
-    userId: string
-    profile: UserProfile | null
-    timestamp: number
-  } | null>(null)
-  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const pendingFetchRef = useRef<Promise<UserProfile | null> | null>(null)
-
-  // Create Supabase client with error handling
-  let supabase
-  try {
-    supabase = createClient()
-  } catch (error) {
-    console.error('Failed to create Supabase client:', error)
-    // Create a fallback that won't break the app
-    supabase = null
-  }
-
-  // Fetch user profile from database with caching and debouncing
-  const fetchUserProfile = useCallback(async (userId: string, forceRefresh = false): Promise<UserProfile | null> => {
-    if (!supabase) {
-      console.warn('Cannot fetch user profile: Supabase client not available')
-      return null
-    }
-
-    // Check cache first (unless force refresh)
-    if (!forceRefresh && profileCacheRef.current) {
-      const { userId: cachedUserId, profile: cachedProfile, timestamp } = profileCacheRef.current
-      const cacheAge = Date.now() - timestamp
-
-      if (cachedUserId === userId && cacheAge < PROFILE_CACHE_DURATION) {
-        return cachedProfile
-      }
-    }
-
-    // If there's already a pending fetch for this user, return that promise
-    if (pendingFetchRef.current) {
-      return pendingFetchRef.current
-    }
-
-    // Create the fetch promise
-    const fetchPromise = (async (): Promise<UserProfile | null> => {
-      try {
-        const { data, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", userId)
-          .single()
-
-        if (error) {
-          // Log more details about the error
-          console.error("Error fetching user profile:")
-          console.error("- Error object:", JSON.stringify(error))
-          console.error("- User ID:", userId)
-          console.error("- Error message:", error?.message || "No message")
-          console.error("- Error code:", error?.code || "No code")
-          return null
-        }
-
-        const userProfile = data as UserProfile
-
-        // Update cache
-        profileCacheRef.current = {
-          userId,
-          profile: userProfile,
-          timestamp: Date.now(),
-        }
-
-        return userProfile
-      } catch (error) {
-        console.error("Error fetching user profile (caught):", error)
-        return null
-      } finally {
-        pendingFetchRef.current = null
-      }
-    })()
-
-    pendingFetchRef.current = fetchPromise
-    return fetchPromise
-  }, [supabase])
+  const initializingRef = useRef(false)
 
   // Convert Supabase user + profile to our User type
-  const createUserObject = (authUser: SupabaseUser, userProfile: UserProfile | null): User | null => {
+  const createUserObject = useCallback((authUser: SupabaseUser, userProfile: UserProfile | null): User | null => {
     if (!userProfile) return null
 
     return {
@@ -128,110 +57,148 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: userProfile.role,
       createdAt: new Date(authUser.created_at),
     }
-  }
+  }, [])
 
-  // Load user on mount and subscribe to auth state changes
-  useEffect(() => {
-    // If Supabase client creation failed, skip auth initialization
+  // Fetch user profile from database
+  const fetchUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
+    const supabase = getSupabaseClient()
     if (!supabase) {
-      console.warn('Supabase client not available, skipping auth initialization')
+      console.warn('[AuthContext] Cannot fetch profile: Supabase client not available')
+      return null
+    }
+
+    try {
+      console.log('[AuthContext] Fetching profile for user:', userId)
+
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .single()
+
+      if (error) {
+        console.error("[AuthContext] Error fetching profile:", error.message)
+        return null
+      }
+
+      console.log('[AuthContext] Profile fetched:', { id: data?.id, role: data?.role })
+      return data as UserProfile
+    } catch (error) {
+      console.error("[AuthContext] Exception fetching profile:", error)
+      return null
+    }
+  }, [])
+
+  // Load user and set up auth state
+  const loadUser = useCallback(async (authUser: SupabaseUser) => {
+    console.log('[AuthContext] Loading user:', authUser.id)
+    const userProfile = await fetchUserProfile(authUser.id)
+    setProfile(userProfile)
+    const userObj = createUserObject(authUser, userProfile)
+    console.log('[AuthContext] User object created:', { hasUser: !!userObj, role: userObj?.role })
+    setUser(userObj)
+    setIsLoading(false)
+  }, [fetchUserProfile, createUserObject])
+
+  // Clear user state
+  const clearUser = useCallback(() => {
+    console.log('[AuthContext] Clearing user state')
+    setUser(null)
+    setProfile(null)
+    setIsLoading(false)
+  }, [])
+
+  // Initialize auth on mount
+  useEffect(() => {
+    const supabase = getSupabaseClient()
+
+    if (!supabase) {
+      console.warn('[AuthContext] Supabase client not available')
       setIsLoading(false)
       return
     }
 
-    // Get initial session
-    const initializeAuth = async () => {
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser()
+    // Prevent double initialization in React 18 Strict Mode
+    if (initializingRef.current) return
+    initializingRef.current = true
 
-        if (authUser) {
-          const userProfile = await fetchUserProfile(authUser.id)
-          setProfile(userProfile)
-          setUser(createUserObject(authUser, userProfile))
-        }
-      } catch (error) {
-        console.error("Error initializing auth:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    console.log('[AuthContext] Initializing auth...')
 
-    initializeAuth()
+    let isSubscribed = true
 
-    // Subscribe to auth state changes
+    // Set up auth state change listener
+    // This fires immediately with current state AND on any state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_IN" && session?.user) {
-          const userProfile = await fetchUserProfile(session.user.id)
-          setProfile(userProfile)
-          setUser(createUserObject(session.user, userProfile))
-        } else if (event === "SIGNED_OUT") {
-          setUser(null)
-          setProfile(null)
-          // Clear cache on sign out
-          profileCacheRef.current = null
-        } else if (event === "USER_UPDATED" && session?.user) {
-          // Debounce USER_UPDATED events to prevent excessive API calls
-          // This event can fire multiple times in quick succession
-          if (fetchTimeoutRef.current) {
-            clearTimeout(fetchTimeoutRef.current)
-          }
+        console.log('[AuthContext] Auth state changed:', event, { hasSession: !!session, userId: session?.user?.id })
 
-          fetchTimeoutRef.current = setTimeout(async () => {
-            // Force refresh on USER_UPDATED since user data may have changed
-            const userProfile = await fetchUserProfile(session.user.id, true)
-            setProfile(userProfile)
-            setUser(createUserObject(session.user, userProfile))
-          }, PROFILE_FETCH_DEBOUNCE)
+        if (!isSubscribed) return
+
+        if (session?.user) {
+          // User is authenticated - load their profile
+          console.log('[AuthContext] Loading user profile...')
+          await loadUser(session.user)
+        } else {
+          // No session - clear user state
+          console.log('[AuthContext] No session, clearing user')
+          clearUser()
         }
       }
     )
 
-    return () => {
-      subscription.unsubscribe()
-      // Clean up debounce timeout
-      if (fetchTimeoutRef.current) {
-        clearTimeout(fetchTimeoutRef.current)
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    // Fallback: If onAuthStateChange doesn't fire within 2 seconds, check manually
+    const fallbackTimeout = setTimeout(async () => {
+      if (!isSubscribed) return
 
-  const signOut = async () => {
+      console.log('[AuthContext] Fallback check - getting user manually')
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+
+      if (authUser) {
+        console.log('[AuthContext] Fallback found user:', authUser.id)
+        await loadUser(authUser)
+      } else {
+        console.log('[AuthContext] Fallback: no user found')
+        setIsLoading(false)
+      }
+    }, 2000)
+
+    return () => {
+      console.log('[AuthContext] Cleaning up subscription')
+      isSubscribed = false
+      clearTimeout(fallbackTimeout)
+      subscription.unsubscribe()
+      initializingRef.current = false
+    }
+  }, [loadUser, clearUser])
+
+  const signOut = useCallback(async () => {
+    const supabase = getSupabaseClient()
     if (!supabase) {
-      console.warn('Cannot sign out: Supabase client not available')
+      console.warn('[AuthContext] Cannot sign out: Supabase client not available')
       return
     }
 
     try {
       await supabase.auth.signOut()
-      setUser(null)
-      setProfile(null)
-      // Clear cache on sign out
-      profileCacheRef.current = null
+      clearUser()
     } catch (error) {
-      console.error("Error signing out:", error)
+      console.error("[AuthContext] Error signing out:", error)
     }
-  }
+  }, [clearUser])
 
-  // Manual profile refresh (force bypasses cache)
   const refreshProfile = useCallback(async () => {
-    if (!supabase) {
-      console.warn('Cannot refresh profile: Supabase client not available')
-      return
-    }
+    const supabase = getSupabaseClient()
+    if (!supabase) return
 
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser()
       if (authUser) {
-        const userProfile = await fetchUserProfile(authUser.id, true) // Force refresh
-        setProfile(userProfile)
-        setUser(createUserObject(authUser, userProfile))
+        await loadUser(authUser)
       }
     } catch (error) {
-      console.error("Error refreshing profile:", error)
+      console.error("[AuthContext] Error refreshing profile:", error)
     }
-  }, [supabase, fetchUserProfile])
+  }, [loadUser])
 
   return (
     <AuthContext.Provider value={{ user, profile, isLoading, signOut, refreshProfile }}>

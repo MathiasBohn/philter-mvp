@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { User, Briefcase, Shield, Users, CheckCircle2, Clock, FileCheck, ArrowRight, Building2, FileText, Lock, Zap } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/lib/contexts/auth-context";
@@ -100,9 +101,43 @@ export default function Home() {
     "Condo Lease"
   ];
 
+  // Get the appropriate dashboard based on user role
+  const getRoleDashboard = (role: Role): string => {
+    switch (role) {
+      case Role.APPLICANT:
+      case Role.CO_APPLICANT:
+      case Role.GUARANTOR:
+        return '/my-applications';
+      case Role.BROKER:
+        return '/broker';
+      case Role.ADMIN:
+        return '/agent/inbox';
+      case Role.BOARD:
+        return '/board';
+      default:
+        return '/my-applications';
+    }
+  };
+
+  // Check if the flow matches the user's role
+  const isUserRole = (flowRole: Role): boolean => {
+    if (!user) return false;
+    // Applicant, co-applicant, and guarantor all share the APPLICANT flow
+    if (flowRole === Role.APPLICANT) {
+      return [Role.APPLICANT, Role.CO_APPLICANT, Role.GUARANTOR].includes(user.role);
+    }
+    return user.role === flowRole;
+  };
+
   const handleFlowClick = (flow: typeof userFlows[0]) => {
     if (user) {
-      router.push(flow.href);
+      // If user clicks their own role, go to that dashboard
+      if (isUserRole(flow.role)) {
+        router.push(flow.href);
+      } else {
+        // Otherwise, redirect to their own dashboard
+        router.push(getRoleDashboard(user.role));
+      }
     } else {
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('redirect_after_login', flow.href);
@@ -216,19 +251,36 @@ export default function Home() {
         <div className="grid gap-5 md:grid-cols-2 lg:gap-6 max-w-6xl mx-auto">
           {userFlows.map((flow) => {
             const Icon = flow.icon;
+            const isCurrentUserRole = isUserRole(flow.role);
+            const isDisabled = !!(user && !isCurrentUserRole);
             return (
               <Card
                 key={flow.title}
-                className="group relative overflow-hidden hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] cursor-pointer border-2 hover:border-primary/40 bg-card/80 dark:bg-card/60 backdrop-blur-sm"
-                onClick={() => handleFlowClick(flow)}
+                className={`group relative overflow-hidden transition-all duration-300 border-2 bg-card/80 dark:bg-card/60 backdrop-blur-sm ${
+                  isCurrentUserRole
+                    ? 'ring-2 ring-primary ring-offset-2 hover:shadow-2xl hover:scale-[1.02] cursor-pointer hover:border-primary/40'
+                    : isDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:shadow-2xl hover:scale-[1.02] cursor-pointer hover:border-primary/40'
+                }`}
+                onClick={() => !isDisabled && handleFlowClick(flow)}
               >
                 {/* Gradient overlay on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20" />
 
                 <CardHeader className="space-y-3 pb-3 relative z-10">
+                  {isCurrentUserRole && (
+                    <div className="absolute top-3 right-3">
+                      <Badge variant="default" className="text-xs">Your Role</Badge>
+                    </div>
+                  )}
                   <div className="flex items-start gap-3.5">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 dark:bg-primary/20 shrink-0 group-hover:scale-110 group-hover:bg-primary/20 dark:group-hover:bg-primary/30 transition-all duration-300">
-                      <Icon className="h-6 w-6 text-primary" />
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-lg shrink-0 transition-all duration-300 ${
+                      isDisabled
+                        ? 'bg-muted'
+                        : 'bg-primary/10 dark:bg-primary/20 group-hover:scale-110 group-hover:bg-primary/20 dark:group-hover:bg-primary/30'
+                    }`}>
+                      <Icon className={`h-6 w-6 ${isDisabled ? 'text-muted-foreground' : 'text-primary'}`} />
                     </div>
                     <div className="flex-1 space-y-1.5">
                       <CardTitle className="text-lg font-bold text-foreground">{flow.question}</CardTitle>
@@ -253,13 +305,15 @@ export default function Home() {
                   <Button
                     className="w-full group-hover:shadow-lg transition-all"
                     size="lg"
+                    disabled={isDisabled}
+                    variant={isDisabled ? "secondary" : "default"}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleFlowClick(flow);
+                      if (!isDisabled) handleFlowClick(flow);
                     }}
                   >
-                    {flow.cta}
-                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    {isDisabled ? "Not Available" : flow.cta}
+                    {!isDisabled && <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />}
                   </Button>
                 </CardContent>
               </Card>

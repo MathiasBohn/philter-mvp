@@ -242,7 +242,7 @@ export default function BoardDashboardPage() {
                         <div>
                           <p className="text-sm text-muted-foreground">Transaction Type</p>
                           <p className="text-sm font-medium">
-                            {app.transactionType.replace(/_/g, " ")}
+                            {app.transactionType ? app.transactionType.replace(/_/g, " ") : "—"}
                           </p>
                         </div>
                         <div>

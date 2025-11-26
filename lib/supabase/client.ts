@@ -19,11 +19,15 @@ import type { Database } from '@/lib/database.types'
 
 export function createClient() {
   // Validate environment variables (throws in production if missing)
-  validatePublicEnvVars()
+  const validationResult = validatePublicEnvVars()
+  console.log('[SupabaseClient] Environment validation:', validationResult)
 
   // Get environment variables (fallback to placeholders for graceful degradation in dev)
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+
+  console.log('[SupabaseClient] Creating client with URL:', url?.substring(0, 30) + '...')
+  console.log('[SupabaseClient] Has anon key:', !!anonKey && anonKey !== 'placeholder-anon-key')
 
   return createBrowserClient<Database>(url, anonKey)
 }

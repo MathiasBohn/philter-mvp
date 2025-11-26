@@ -110,7 +110,7 @@ export function ReadOnlyViewer({ application }: ReadOnlyViewerProps) {
                 </span>
               </div>
               <Badge variant="secondary">
-                {application.transactionType.replace("_", " ")}
+                {application.transactionType ? application.transactionType.replace("_", " ") : "—"}
               </Badge>
             </div>
           </div>
@@ -164,7 +164,7 @@ export function ReadOnlyViewer({ application }: ReadOnlyViewerProps) {
                         Transaction Type:
                       </span>
                       <span className="font-medium">
-                        {application.transactionType.replace("_", " ")}
+                        {application.transactionType ? application.transactionType.replace("_", " ") : "—"}
                       </span>
                     </div>
                     <Separator />
