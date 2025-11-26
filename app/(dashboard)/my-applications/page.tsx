@@ -174,12 +174,12 @@ export default function MyApplicationsPage() {
           </p>
         </div>
         {(user?.role === Role.BROKER || user?.role === Role.APPLICANT) && (
-          <Button asChild>
-            <Link href={user.role === Role.BROKER ? "/broker/new" : "/applications/new"}>
+          <Link href={user.role === Role.BROKER ? "/broker/new" : "/applications/new"}>
+            <Button>
               <FileText className="mr-2 h-4 w-4" />
               New Application
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         )}
       </div>
 
@@ -196,12 +196,12 @@ export default function MyApplicationsPage() {
                 : "You don't have any applications at this time."}
             </p>
             {(user?.role === Role.BROKER || user?.role === Role.APPLICANT) && (
-              <Button asChild variant="outline">
-                <Link href={user.role === Role.BROKER ? "/broker/new" : "/applications/new"}>
+              <Link href={user.role === Role.BROKER ? "/broker/new" : "/applications/new"}>
+                <Button variant="outline">
                   <FileText className="mr-2 h-4 w-4" />
                   Create Your First Application
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             )}
           </CardContent>
         </Card>

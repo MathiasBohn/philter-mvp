@@ -36,7 +36,9 @@ export function useDecision(
   return useQuery({
     queryKey: queryKeys.decisions.byApplication(applicationId),
     queryFn: async () => {
-      const response = await fetch(`/api/applications/${applicationId}/decision`)
+      const response = await fetch(`/api/applications/${applicationId}/decision`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch decision')
@@ -69,6 +71,7 @@ export function useCreateDecision(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {

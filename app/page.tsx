@@ -159,17 +159,17 @@ export default function Home() {
             <ThemeToggle />
             {!user ? (
               <>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/sign-in">Sign In</Link>
-                </Button>
-                <Button asChild size="sm" className="shadow-sm">
-                  <Link href="/sign-up">Get Started</Link>
-                </Button>
+                <Link href="/sign-in">
+                  <Button variant="ghost" size="sm">Sign In</Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button size="sm" className="shadow-sm">Get Started</Button>
+                </Link>
               </>
             ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link href="/my-applications">My Applications</Link>
-              </Button>
+              <Link href="/my-applications">
+                <Button variant="outline" size="sm">My Applications</Button>
+              </Link>
             )}
           </div>
         </div>
@@ -203,17 +203,17 @@ export default function Home() {
 
             {!user && (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
-                <Button asChild size="lg" className="text-base px-8 h-11 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all">
-                  <Link href="/sign-up">
+                <Link href="/sign-up">
+                  <Button size="lg" className="text-base px-8 h-11 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 transition-all">
                     Get Started Free
                     <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg" className="text-base px-8 h-11 border-2">
-                  <Link href="/sign-in">
+                  </Button>
+                </Link>
+                <Link href="/sign-in">
+                  <Button variant="outline" size="lg" className="text-base px-8 h-11 border-2">
                     Sign In
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
               </div>
             )}
           </div>
@@ -402,12 +402,12 @@ export default function Home() {
               <p className="text-sm text-muted-foreground">
                 Ready to streamline your transaction process?
               </p>
-              <Button asChild size="lg" variant="outline" className="text-base px-8 h-11 border-2 hover:bg-accent">
-                <Link href="/sign-up">
+              <Link href="/sign-up">
+                <Button size="lg" variant="outline" className="text-base px-8 h-11 border-2 hover:bg-accent">
                   Create Your Free Account
                   <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           )}
 

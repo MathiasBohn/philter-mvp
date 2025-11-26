@@ -31,7 +31,9 @@ export function useApplications(): UseQueryResult<Application[], Error> {
   return useQuery({
     queryKey: queryKeys.applications.all,
     queryFn: async () => {
-      const response = await fetch('/api/applications')
+      const response = await fetch('/api/applications', {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const errorData = await response.json()
         // API returns errors in format: { error: { message: "..." } }
@@ -60,18 +62,16 @@ export function useApplication(
   return useQuery({
     queryKey: queryKeys.applications.detail(id),
     queryFn: async () => {
-      console.log('[useApplication] Starting fetch for:', id)
-      const response = await fetch(`/api/applications/${id}`)
-      console.log('[useApplication] Response status:', response.status, response.ok)
+      const response = await fetch(`/api/applications/${id}`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const errorData = await response.json()
-        console.log('[useApplication] Error response:', errorData)
         // API returns errors in format: { error: { message: "..." } }
         const errorMessage = errorData.error?.message || errorData.message || 'Failed to fetch application'
         throw new Error(errorMessage)
       }
       const result = await response.json()
-      console.log('[useApplication] Success, application id:', result.application?.id, 'transactionType:', result.application?.transactionType)
       return result.application
     },
     enabled: enabled && !!id,
@@ -101,6 +101,7 @@ export function useCreateApplication(): UseMutationResult<
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -150,6 +151,7 @@ export function useUpdateApplication(
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -225,6 +227,7 @@ export function useDeleteApplication(
     mutationFn: async () => {
       const response = await fetch(`/api/applications/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -266,6 +269,7 @@ export function useSubmitApplication(
     mutationFn: async () => {
       const response = await fetch(`/api/applications/${id}/submit`, {
         method: 'POST',
+        credentials: 'include',
       })
 
       if (!response.ok) {

@@ -210,8 +210,7 @@ export function ApplicationSidebar({ applicationId }: { applicationId: string })
   const pathname = usePathname();
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const { data: application, isLoading, isFetching, isPending, status } = useApplication(applicationId);
-  console.log('[ApplicationSidebar] useApplication result:', { isLoading, isFetching, isPending, status, hasApp: !!application });
+  const { data: application, isLoading } = useApplication(applicationId);
 
   // Calculate section statuses based on application data using useMemo
   const sectionStatuses = useMemo(() => {

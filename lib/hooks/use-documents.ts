@@ -39,7 +39,9 @@ export function useDocuments(
   return useQuery({
     queryKey: queryKeys.documents.byApplication(applicationId),
     queryFn: async () => {
-      const response = await fetch(`/api/applications/${applicationId}/documents`)
+      const response = await fetch(`/api/applications/${applicationId}/documents`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch documents')
@@ -65,7 +67,9 @@ export function useDocument(
   return useQuery({
     queryKey: queryKeys.documents.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/documents/${id}`)
+      const response = await fetch(`/api/documents/${id}`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch document')
@@ -109,6 +113,7 @@ export function useCreateDocument(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -155,6 +160,7 @@ export function useUpdateDocumentStatus(
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -191,6 +197,7 @@ export function useDeleteDocument(
     mutationFn: async () => {
       const response = await fetch(`/api/documents/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -257,6 +264,7 @@ export function useDeleteDocumentMutation(
     mutationFn: async (documentId: string) => {
       const response = await fetch(`/api/documents/${documentId}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -413,7 +421,9 @@ export function useDocumentSignedURLs(
         await Promise.all(
           documents.map(async (doc) => {
             try {
-              const response = await fetch(`/api/documents/${doc.id}`)
+              const response = await fetch(`/api/documents/${doc.id}`, {
+                credentials: 'include',
+              })
               if (response.ok) {
                 const data = await response.json()
                 newUrlMap.set(doc.id, {
@@ -501,7 +511,9 @@ export function useDocumentSignedURLs(
         if (expiredDocs.length > 0) {
           for (const docId of expiredDocs) {
             try {
-              const response = await fetch(`/api/documents/${docId}`)
+              const response = await fetch(`/api/documents/${docId}`, {
+                credentials: 'include',
+              })
               if (response.ok) {
                 const data = await response.json()
                 setUrlMap((prev) => {
@@ -537,7 +549,9 @@ export function useDocumentSignedURLs(
         if (expiredDocs.length > 0) {
           for (const docId of expiredDocs) {
             try {
-              const response = await fetch(`/api/documents/${docId}`)
+              const response = await fetch(`/api/documents/${docId}`, {
+                credentials: 'include',
+              })
               if (response.ok) {
                 const data = await response.json()
                 setUrlMap((prev) => {
@@ -566,7 +580,9 @@ export function useDocumentSignedURLs(
    */
   const refreshURL = async (documentId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/documents/${documentId}`)
+      const response = await fetch(`/api/documents/${documentId}`, {
+        credentials: 'include',
+      })
       if (response.ok) {
         const data = await response.json()
         setUrlMap((prev) => {

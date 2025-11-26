@@ -49,7 +49,9 @@ export function useFinancialEntries(
   return useQuery({
     queryKey: queryKeys.financials.byApplication(applicationId),
     queryFn: async () => {
-      const response = await fetch(`/api/applications/${applicationId}/financials`)
+      const response = await fetch(`/api/applications/${applicationId}/financials`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch financial entries')
@@ -76,7 +78,10 @@ export function useFinancialSummary(
     queryKey: [...queryKeys.financials.byApplication(applicationId), 'summary'] as const,
     queryFn: async () => {
       const response = await fetch(
-        `/api/applications/${applicationId}/financials?includeSummary=true`
+        `/api/applications/${applicationId}/financials?includeSummary=true`,
+        {
+          credentials: 'include',
+        }
       )
       if (!response.ok) {
         const error = await response.json()
@@ -110,6 +115,7 @@ export function useUpsertFinancialEntry(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -173,6 +179,7 @@ export function useUpdateFinancialEntries(
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ financialEntries }),
+        credentials: 'include',
       })
 
       if (!response.ok) {

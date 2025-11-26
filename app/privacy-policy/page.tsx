@@ -22,11 +22,11 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <div className="pt-4">
-          <Button asChild className="w-full">
-            <Link href="/sign-up">
+          <Link href="/sign-up" className="w-full block">
+            <Button className="w-full">
               Back to Sign Up
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

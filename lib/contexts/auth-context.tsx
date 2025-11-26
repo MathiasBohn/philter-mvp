@@ -132,9 +132,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Load user and set up auth state
   const loadUser = useCallback(async (authUser: SupabaseUser) => {
     console.log('[AuthContext] Loading user:', authUser.id)
-    // Set loading true while we fetch the profile - this prevents race conditions
-    // where components see user=null and isLoading=false simultaneously
-    setIsLoading(true)
     const userProfile = await fetchUserProfile(authUser.id)
     setProfile(userProfile)
     const userObj = createUserObject(authUser, userProfile)
@@ -212,28 +209,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.log('[AuthContext] No SIGNED_IN received, checking with getUser()...')
               const { data: { user: authUser } } = await supabase.auth.getUser()
 
+              // Re-check after the async call - SIGNED_IN might have arrived while we were waiting
+              if (hasReceivedInitialStateRef.current) {
+                console.log('[AuthContext] SIGNED_IN arrived during getUser() call, skipping')
+                return
+              }
+
               if (authUser) {
                 console.log('[AuthContext] Found user via getUser():', authUser.id)
+                hasReceivedInitialStateRef.current = true
                 await loadUser(authUser)
               } else {
-                // Wait a bit more before clearing - SIGNED_IN might be about to fire
-                // This small delay prevents the race condition where getUser() returns null
-                // but SIGNED_IN fires immediately after
+                // Wait a bit more before concluding there's no user
+                // This gives more time for SIGNED_IN to arrive from cookie-based auth
                 console.log('[AuthContext] getUser() returned null, waiting briefly before clearing...')
                 await new Promise(resolve => setTimeout(resolve, 500))
 
-                // Re-check if SIGNED_IN fired during the wait
-                if (!isSubscribed || hasReceivedInitialStateRef.current) {
-                  console.log('[AuthContext] SIGNED_IN received during wait, not clearing')
+                // Final check - did SIGNED_IN arrive during our wait?
+                if (hasReceivedInitialStateRef.current) {
+                  console.log('[AuthContext] SIGNED_IN arrived during final wait, skipping clear')
                   return
                 }
 
-                console.log('[AuthContext] Confirmed no user, clearing state')
+                console.log('[AuthContext] Confirmed no user after all checks, clearing state')
                 hasReceivedInitialStateRef.current = true
                 clearUser()
               }
             }
-          }, 1500) // Wait 1500ms to see if SIGNED_IN fires (increased from 500ms)
+          }, 1000) // Wait 1000ms to see if SIGNED_IN fires
         }
       }
     )

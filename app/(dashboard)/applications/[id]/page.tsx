@@ -14,15 +14,9 @@ import { notFound } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 
 export default function ApplicationOverviewPage({ params }: { params: Promise<{ id: string }> }) {
-  console.log('[ApplicationPage] Component executing...');
   const { id } = use(params);
-  console.log('[ApplicationPage] Got id:', id);
-  const { data: application, isLoading, error, isFetching, isPending, status } = useApplication(id);
-  console.log('[ApplicationPage] useApplication result:', { isLoading, isFetching, isPending, status, hasApp: !!application, hasError: !!error });
+  const { data: application, isLoading, error } = useApplication(id);
   const { data: rfis } = useRFIs(id, !!id);
-
-  // Log render state
-  console.log('[ApplicationPage] Render complete:', { id, isLoading, hasApp: !!application, hasError: !!error });
 
   // Loading skeleton
   if (isLoading) {

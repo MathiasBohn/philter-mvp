@@ -38,14 +38,18 @@ export function ApplicationRealtimeWrapper({
   showPresence = true,
   enableRealtime = true
 }: ApplicationRealtimeWrapperProps) {
-  const { user } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
+
+  // Don't enable realtime features until auth is fully loaded
+  // This prevents rapid subscribe/unsubscribe cycles during auth initialization
+  const shouldEnableRealtime = enableRealtime && !authLoading && !!user
 
   // Set up presence tracking
   const {
     presentUsers,
     updatePresence
   } = usePresence(`application-${applicationId}`, {
-    enabled: enableRealtime && showPresence && !!user,
+    enabled: shouldEnableRealtime && showPresence,
     currentUser: user ? {
       id: user.id,
       name: user.name,
@@ -65,7 +69,7 @@ export function ApplicationRealtimeWrapper({
 
   // Set up real-time application updates
   useRealtimeApplication(applicationId, {
-    enabled: enableRealtime,
+    enabled: shouldEnableRealtime,
     onUpdate: (payload) => {
       if (payload.status) {
         toast.info('Application status updated')
@@ -75,13 +79,13 @@ export function ApplicationRealtimeWrapper({
 
   // Set up real-time document updates
   useRealtimeDocuments(applicationId, {
-    enabled: enableRealtime,
+    enabled: shouldEnableRealtime,
     currentUserId: user?.id
   })
 
   // Set up real-time RFI updates
   useRealtimeApplicationRFIs(applicationId, {
-    enabled: enableRealtime,
+    enabled: shouldEnableRealtime,
     currentUserId: user?.id
   })
 

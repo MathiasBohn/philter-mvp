@@ -141,16 +141,7 @@ export async function GET(
       error: authError,
     } = await supabase.auth.getUser()
 
-    // Debug logging
-    console.log('[API /applications/[id]] Auth check:', {
-      hasUser: !!user,
-      userId: user?.id,
-      authError: authError?.message,
-      cookies: request.cookies.getAll().map(c => c.name),
-    })
-
     if (authError || !user) {
-      console.log('[API /applications/[id]] Returning 401 - authError:', authError?.message)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

@@ -50,7 +50,9 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
 
   const loadInvitations = useCallback(async () => {
     try {
-      const response = await fetch(`/api/invitations?application_id=${applicationId}`)
+      const response = await fetch(`/api/invitations?application_id=${applicationId}`, {
+        credentials: 'include',
+      })
       const data = await response.json()
 
       if (data.success) {
@@ -84,6 +86,7 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
           application_id: applicationId,
           email,
         }),
+        credentials: 'include',
       })
 
       const data = await response.json()
@@ -110,6 +113,7 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
     try {
       const response = await fetch(`/api/applications/${applicationId}/claim-link`, {
         method: 'POST',
+        credentials: 'include',
       })
 
       const data = await response.json()

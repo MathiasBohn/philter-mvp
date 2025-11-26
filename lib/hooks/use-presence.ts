@@ -123,6 +123,34 @@ export function usePresence(
   const channelRef = useRef<RealtimeChannel | null>(null)
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
 
+  // Use refs for callbacks to avoid triggering effect re-runs
+  const onJoinRef = useRef(onJoin)
+  const onLeaveRef = useRef(onLeave)
+  const onSyncRef = useRef(onSync)
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onJoinRef.current = onJoin
+    onLeaveRef.current = onLeave
+    onSyncRef.current = onSync
+  }, [onJoin, onLeave, onSync])
+
+  // Store stable user reference - only update when user ID changes
+  // This prevents re-subscriptions when parent component re-renders with same user
+  const currentUserRef = useRef(currentUser)
+  const currentUserIdRef = useRef(currentUser?.id)
+
+  // Only update the ref when user ID actually changes
+  if (currentUser?.id !== currentUserIdRef.current) {
+    currentUserRef.current = currentUser
+    currentUserIdRef.current = currentUser?.id
+  }
+
+  const stableCurrentUser = currentUserRef.current
+
+  // Track if we're currently subscribed to prevent state updates after unmount
+  const isSubscribedRef = useRef(false)
+
   // Parse presence state into our user format
   const parsePresenceState = useCallback((state: RealtimePresenceState): PresenceUser[] => {
     const users: PresenceUser[] = []
@@ -150,29 +178,39 @@ export function usePresence(
     return uniqueUsers
   }, [])
 
+  // Store currentSection in a ref for use in updatePresence without triggering re-subscriptions
+  const currentSectionRef = useRef(currentSection)
+  useEffect(() => {
+    currentSectionRef.current = currentSection
+  }, [currentSection])
+
   // Update presence state
   const updatePresence = useCallback(async (updates: Partial<Pick<PresenceUser, 'currentSection'>>) => {
-    if (!channelRef.current || !currentUser) return
+    if (!channelRef.current || !stableCurrentUser) return
 
     try {
       await channelRef.current.track({
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-        role: currentUser.role,
-        avatarUrl: currentUser.avatarUrl,
+        id: stableCurrentUser.id,
+        name: stableCurrentUser.name,
+        email: stableCurrentUser.email,
+        role: stableCurrentUser.role,
+        avatarUrl: stableCurrentUser.avatarUrl,
         joinedAt: new Date().toISOString(),
-        currentSection: updates.currentSection || currentSection
+        currentSection: updates.currentSection || currentSectionRef.current
       })
     } catch (err) {
       console.error('Failed to update presence:', err)
     }
-  }, [currentUser, currentSection])
+  }, [stableCurrentUser])
 
   useEffect(() => {
-    if (!channelName || !enabled || !currentUser) {
+    // Only subscribe when we have all required data
+    if (!channelName || !enabled || !stableCurrentUser) {
       return
     }
+
+    // Mark as subscribed
+    isSubscribedRef.current = true
 
     const supabase = createClient()
     supabaseRef.current = supabase
@@ -180,7 +218,7 @@ export function usePresence(
     const channel = supabase.channel(channelName, {
       config: {
         presence: {
-          key: currentUser.id
+          key: stableCurrentUser.id
         }
       }
     })
@@ -189,48 +227,56 @@ export function usePresence(
 
     // Handle presence sync (initial state and all changes)
     channel.on('presence', { event: 'sync' }, () => {
+      if (!isSubscribedRef.current) return
+
       const state = channel.presenceState()
       const users = parsePresenceState(state)
       setPresentUsers(users)
 
-      if (onSync) {
-        onSync(users)
+      if (onSyncRef.current) {
+        onSyncRef.current(users)
       }
     })
 
     // Handle users joining
     channel.on('presence', { event: 'join' }, ({ newPresences }) => {
+      if (!isSubscribedRef.current) return
+
       const users = newPresences.map((p) => p as unknown as PresenceUser)
 
-      if (onJoin) {
-        onJoin(users)
+      if (onJoinRef.current) {
+        onJoinRef.current(users)
       }
     })
 
     // Handle users leaving
     channel.on('presence', { event: 'leave' }, ({ leftPresences }) => {
+      if (!isSubscribedRef.current) return
+
       const users = leftPresences.map((p) => p as unknown as PresenceUser)
 
-      if (onLeave) {
-        onLeave(users)
+      if (onLeaveRef.current) {
+        onLeaveRef.current(users)
       }
     })
 
     // Subscribe and track current user's presence
     channel.subscribe(async (status) => {
+      if (!isSubscribedRef.current) return
+
       if (status === 'SUBSCRIBED') {
         setIsConnected(true)
         setError(null)
 
         // Track our presence
         await channel.track({
-          id: currentUser.id,
-          name: currentUser.name,
-          email: currentUser.email,
-          role: currentUser.role,
-          avatarUrl: currentUser.avatarUrl,
+          id: stableCurrentUser.id,
+          name: stableCurrentUser.name,
+          email: stableCurrentUser.email,
+          role: stableCurrentUser.role,
+          avatarUrl: stableCurrentUser.avatarUrl,
           joinedAt: new Date().toISOString(),
-          currentSection
+          currentSection: currentSectionRef.current
         })
       } else if (status === 'CHANNEL_ERROR') {
         setIsConnected(false)
@@ -239,22 +285,27 @@ export function usePresence(
         setIsConnected(false)
         setError(new Error('Connection timed out'))
       } else if (status === 'CLOSED') {
-        setIsConnected(false)
+        // Only update state if we're still subscribed (not during cleanup)
+        if (isSubscribedRef.current) {
+          setIsConnected(false)
+        }
       }
     })
 
     return () => {
+      // Mark as unsubscribed FIRST to prevent state updates
+      isSubscribedRef.current = false
+      channelRef.current = null
+
+      // Then cleanup the channel
       channel.unsubscribe()
       supabase.removeChannel(channel)
-      channelRef.current = null
-      setIsConnected(false)
-      setPresentUsers([])
     }
-  }, [channelName, enabled, currentUser, currentSection, parsePresenceState, onJoin, onLeave, onSync])
+  }, [channelName, enabled, stableCurrentUser, parsePresenceState])
 
-  // Update presence when section changes
+  // Update presence when section changes (but don't re-subscribe)
   useEffect(() => {
-    if (isConnected && currentSection !== undefined) {
+    if (isConnected && currentSection !== undefined && isSubscribedRef.current) {
       updatePresence({ currentSection })
     }
   }, [currentSection, isConnected, updatePresence])

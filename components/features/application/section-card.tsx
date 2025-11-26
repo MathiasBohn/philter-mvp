@@ -67,11 +67,11 @@ export function SectionCard({ title, description, status, href, applicationId, h
               </Badge>
             )}
           </div>
-          <Button asChild size="sm" variant={status === "complete" ? "outline" : "default"}>
-            <Link href={`/applications/${applicationId}${href}`}>
+          <Link href={`/applications/${applicationId}${href}`}>
+            <Button size="sm" variant={status === "complete" ? "outline" : "default"}>
               {status === "complete" ? "Review" : "Start"}
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         </div>
       </CardHeader>
     </Card>

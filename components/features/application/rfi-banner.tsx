@@ -49,11 +49,11 @@ export function RFIBanner({ rfis, applicationId }: RFIBannerProps) {
                   {rfi.messages.length} {rfi.messages.length === 1 ? "message" : "messages"}
                 </p>
               </div>
-              <Button asChild variant="secondary" size="sm">
-                <Link href={`/applications/${applicationId}/${rfi.sectionKey}`}>
+              <Link href={`/applications/${applicationId}/${rfi.sectionKey}`}>
+                <Button variant="secondary" size="sm">
                   View & Respond
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           ))}
         </div>

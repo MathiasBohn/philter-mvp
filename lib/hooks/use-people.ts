@@ -36,7 +36,9 @@ export function usePeople(
   return useQuery({
     queryKey: queryKeys.people.byApplication(applicationId),
     queryFn: async () => {
-      const response = await fetch(`/api/applications/${applicationId}/people`)
+      const response = await fetch(`/api/applications/${applicationId}/people`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch people')
@@ -69,6 +71,7 @@ export function useUpsertPerson(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -127,6 +130,7 @@ export function useUpdatePeople(
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ people }),
+        credentials: 'include',
       })
 
       if (!response.ok) {

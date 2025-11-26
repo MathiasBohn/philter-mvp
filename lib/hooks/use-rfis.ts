@@ -36,7 +36,9 @@ export function useRFIs(
   return useQuery({
     queryKey: queryKeys.rfis.byApplication(applicationId),
     queryFn: async () => {
-      const response = await fetch(`/api/applications/${applicationId}/rfis`)
+      const response = await fetch(`/api/applications/${applicationId}/rfis`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch RFIs')
@@ -64,7 +66,9 @@ export function useRFI(
   return useQuery({
     queryKey: queryKeys.rfis.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/rfis/${id}`)
+      const response = await fetch(`/api/rfis/${id}`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch RFI')
@@ -90,7 +94,9 @@ export function useRFIMessages(
   return useQuery({
     queryKey: queryKeys.rfis.messages(rfiId),
     queryFn: async () => {
-      const response = await fetch(`/api/rfis/${rfiId}/messages`)
+      const response = await fetch(`/api/rfis/${rfiId}/messages`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch RFI messages')
@@ -131,6 +137,7 @@ export function useCreateRFI(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -188,6 +195,7 @@ export function useAddRFIMessage(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -279,6 +287,7 @@ export function useResolveRFI(
     mutationFn: async () => {
       const response = await fetch(`/api/rfis/${rfiId}/resolve`, {
         method: 'PATCH',
+        credentials: 'include',
       })
 
       if (!response.ok) {

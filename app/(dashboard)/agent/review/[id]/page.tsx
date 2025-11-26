@@ -139,6 +139,7 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -155,6 +156,7 @@ export default function AgentReviewPage({ params }: { params: Promise<{ id: stri
       const response = await fetch(`/api/rfis/${rfiId}/resolve`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       if (!response.ok) {

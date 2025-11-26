@@ -31,7 +31,9 @@ export function useTemplates(): UseQueryResult<Template[], Error> {
   return useQuery({
     queryKey: queryKeys.templates.all,
     queryFn: async () => {
-      const response = await fetch('/api/templates')
+      const response = await fetch('/api/templates', {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch templates')
@@ -56,7 +58,9 @@ export function useTemplate(
   return useQuery({
     queryKey: queryKeys.templates.detail(id),
     queryFn: async () => {
-      const response = await fetch(`/api/templates/${id}`)
+      const response = await fetch(`/api/templates/${id}`, {
+        credentials: 'include',
+      })
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch template')
@@ -90,6 +94,7 @@ export function useCreateTemplate(): UseMutationResult<
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -128,6 +133,7 @@ export function useUpdateTemplate(
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -189,6 +195,7 @@ export function useDeleteTemplate(
     mutationFn: async () => {
       const response = await fetch(`/api/templates/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -225,6 +232,7 @@ export function usePublishTemplate(
     mutationFn: async () => {
       const response = await fetch(`/api/templates/${id}/publish`, {
         method: 'POST',
+        credentials: 'include',
       })
 
       if (!response.ok) {
