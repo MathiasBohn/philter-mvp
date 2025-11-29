@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,6 @@ import { PhilterLogo } from '@/components/brand/philter-logo'
 import { getDashboardForRole } from '@/lib/routing'
 
 function SignInForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const { user, profile, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
