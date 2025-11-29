@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,9 +49,15 @@ function getAgeColorClass(days: number): string {
 }
 
 export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
+  const router = useRouter();
   const { toast } = useToast();
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+
+  // Navigate to review page when clicking on a row
+  const handleRowClick = useCallback((app: Application) => {
+    router.push(`/agent/review/${app.id}`);
+  }, [router]);
 
   const handleStatusChange = useCallback((appId: string, newStatus: ApplicationStatus) => {
     if (onStatusChange) {
@@ -158,34 +165,37 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
       label: "Status",
       sortable: false,
       render: (_, app) => (
-        <Select
-          value={app.status}
-          onValueChange={(value) =>
-            handleStatusChange(app.id, value as ApplicationStatus)
-          }
-        >
-          <SelectTrigger className="w-[140px] h-8" aria-label="Change application status">
-            <Badge className={getStatusColor(app.status)} variant="default">
-              {app.status}
-            </Badge>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ApplicationStatus.SUBMITTED}>
-              Submitted
-            </SelectItem>
-            <SelectItem value={ApplicationStatus.IN_REVIEW}>
-              In Review
-            </SelectItem>
-            <SelectItem value={ApplicationStatus.RFI}>RFI</SelectItem>
-            <SelectItem value={ApplicationStatus.APPROVED}>
-              Approved
-            </SelectItem>
-            <SelectItem value={ApplicationStatus.CONDITIONAL}>
-              Conditional
-            </SelectItem>
-            <SelectItem value={ApplicationStatus.DENIED}>Denied</SelectItem>
-          </SelectContent>
-        </Select>
+        // Stop propagation to prevent row click navigation when using dropdown
+        <div onClick={(e) => e.stopPropagation()}>
+          <Select
+            value={app.status}
+            onValueChange={(value) =>
+              handleStatusChange(app.id, value as ApplicationStatus)
+            }
+          >
+            <SelectTrigger className="w-[140px] h-8" aria-label="Change application status">
+              <Badge className={getStatusColor(app.status)} variant="default">
+                {app.status}
+              </Badge>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ApplicationStatus.SUBMITTED}>
+                Submitted
+              </SelectItem>
+              <SelectItem value={ApplicationStatus.IN_REVIEW}>
+                In Review
+              </SelectItem>
+              <SelectItem value={ApplicationStatus.RFI}>RFI</SelectItem>
+              <SelectItem value={ApplicationStatus.APPROVED}>
+                Approved
+              </SelectItem>
+              <SelectItem value={ApplicationStatus.CONDITIONAL}>
+                Conditional
+              </SelectItem>
+              <SelectItem value={ApplicationStatus.DENIED}>Denied</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       ),
     },
     {
@@ -220,32 +230,35 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
   ), []);
 
   const renderActions = useCallback((app: Application) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Open actions menu">
-          <MoreVertical className="h-4 w-4" />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href={`/agent/review/${app.id}`} className="flex items-center">
-            <ExternalLink className="mr-2 h-4 w-4" />
-            Open Review Workspace
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleAssignClick(app)}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          Assign to Reviewer
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleDownloadPackage(app)}>
-          <Download className="mr-2 h-4 w-4" />
-          Download Package
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    // Stop propagation to prevent row click navigation when using dropdown
+    <div onClick={(e) => e.stopPropagation()}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm" aria-label="Open actions menu">
+            <MoreVertical className="h-4 w-4" />
+            <span className="sr-only">Open menu</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={`/agent/review/${app.id}`} className="flex items-center">
+              <ExternalLink className="mr-2 h-4 w-4" />
+              Open Review Workspace
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleAssignClick(app)}>
+            <UserPlus className="mr-2 h-4 w-4" />
+            Assign to Reviewer
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleDownloadPackage(app)}>
+            <Download className="mr-2 h-4 w-4" />
+            Download Package
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   ), [handleAssignClick, handleDownloadPackage]);
 
   return (
@@ -256,6 +269,7 @@ export function InboxTable({ applications, onStatusChange }: InboxTableProps) {
         keyExtractor={(app) => app.id}
         emptyState={emptyState}
         actions={renderActions}
+        onRowClick={handleRowClick}
         mobileCardRenderer={(app) => (
           <InboxMobileCard application={app} onStatusChange={onStatusChange} />
         )}
