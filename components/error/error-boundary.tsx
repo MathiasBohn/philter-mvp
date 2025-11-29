@@ -10,6 +10,8 @@ import {
   CardFooter,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { useAuth } from "@/lib/contexts/auth-context"
+import { getDashboardForRole, getDashboardLabel } from "@/lib/routing"
 
 interface ErrorBoundaryProps {
   error: Error & { digest?: string }
@@ -38,6 +40,8 @@ export function ErrorBoundary({
   reset,
   variant = "page",
 }: ErrorBoundaryProps) {
+  const { user } = useAuth()
+
   useEffect(() => {
     console.error(`${variant} error:`, error)
   }, [error, variant])
@@ -47,8 +51,10 @@ export function ErrorBoundary({
     variant === "page"
       ? "min-h-screen flex items-center justify-center p-4"
       : "p-8 flex items-center justify-center"
-  const homeHref = variant === "page" ? "/" : "/my-applications"
-  const homeLabel = variant === "page" ? "Go Home" : "Back to My Applications"
+
+  // Use role-based routing for dashboard variant
+  const homeHref = variant === "page" ? "/" : getDashboardForRole(user?.role)
+  const homeLabel = variant === "page" ? "Go Home" : `Back to ${getDashboardLabel(user?.role)}`
 
   return (
     <div className={containerClass}>
