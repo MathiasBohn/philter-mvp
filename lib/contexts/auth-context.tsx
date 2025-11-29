@@ -489,18 +489,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     const supabase = getSupabaseClient()
+
+    // IMPORTANT: Clear user state IMMEDIATELY (optimistic) before network call
+    // This ensures the UI responds instantly regardless of network issues
+    log.debug('[AuthContext] Clearing user state optimistically')
+    clearUser()
+
     if (!supabase) {
-      log.warn('[AuthContext] Cannot sign out: Supabase client not available')
+      log.warn('[AuthContext] Cannot sign out from Supabase: client not available')
       return
     }
 
     try {
-      await supabase.auth.signOut()
-      clearUser()
+      // Add timeout to prevent hanging on slow network
+      const timeoutPromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          log.warn('[AuthContext] Sign out timed out after 5s, continuing anyway')
+          resolve()
+        }, 5000)
+      })
+
+      const signOutPromise = supabase.auth.signOut().then(() => {
+        log.debug('[AuthContext] Supabase sign out completed')
+      })
+
+      // Race: either complete sign out or timeout
+      await Promise.race([signOutPromise, timeoutPromise])
     } catch (error) {
       log.error('[AuthContext] Error signing out', {
         error: error instanceof Error ? error.message : 'Unknown error'
       })
+      // State already cleared, so user is effectively signed out
     }
   }, [clearUser])
 

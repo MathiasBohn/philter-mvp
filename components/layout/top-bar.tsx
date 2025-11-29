@@ -29,18 +29,13 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
 
-  const handleSignOut = async () => {
-    try {
-      console.log('[TopBar] Starting sign out...')
-      await signOut()
-      console.log('[TopBar] Sign out completed, redirecting...')
-      // Use window.location for a full page reload to clear all state
-      window.location.href = "/"
-    } catch (error) {
-      console.error('[TopBar] Sign out error:', error)
-      // Still try to redirect even if signOut fails
-      window.location.href = "/"
-    }
+  const handleSignOut = () => {
+    console.log('[TopBar] Starting sign out...')
+    // Don't await - signOut clears state immediately, redirect right away
+    // The Supabase network call happens in background with timeout
+    signOut()
+    // Use window.location for a full page reload to clear all state
+    window.location.href = "/"
   }
 
   return (
