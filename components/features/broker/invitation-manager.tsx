@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,78 +40,67 @@ interface InvitationManagerProps {
 }
 
 export function InvitationManager({ applicationId }: InvitationManagerProps) {
-  const [invitations, setInvitations] = useState<Invitation[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
   const [showEmailDialog, setShowEmailDialog] = useState(false)
   const [showClaimLinkDialog, setShowClaimLinkDialog] = useState(false)
   const [email, setEmail] = useState('')
-  const [sending, setSending] = useState(false)
   const [claimLink, setClaimLink] = useState<string | null>(null)
-  const [generatingLink, setGeneratingLink] = useState(false)
 
-  const loadInvitations = useCallback(async () => {
-    try {
+  // Use React Query to fetch invitations - eliminates double fetch from useCallback dependency
+  const { data: invitations = [], isLoading: loading } = useQuery({
+    queryKey: ['invitations', applicationId],
+    queryFn: async () => {
       const response = await fetch(`/api/invitations?application_id=${applicationId}`, {
         credentials: 'include',
       })
       const data = await response.json()
 
-      if (data.success) {
-        setInvitations(data.invitations)
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load invitations')
       }
-    } catch (err) {
-      console.error('Error loading invitations:', err)
-      toast.error('Failed to load invitations')
-    } finally {
-      setLoading(false)
-    }
-  }, [applicationId])
 
-  useEffect(() => {
-    loadInvitations()
-  }, [applicationId, loadInvitations])
+      return data.invitations || []
+    },
+    enabled: !!applicationId,
+  })
 
-  const handleSendEmailInvitation = async () => {
-    if (!email) {
-      toast.error('Please enter an email address')
-      return
-    }
-
-    setSending(true)
-
-    try {
+  // Mutation for sending email invitations
+  const sendInvitationMutation = useMutation({
+    mutationFn: async (invitationEmail: string) => {
       const response = await fetch('/api/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           application_id: applicationId,
-          email,
+          email: invitationEmail,
         }),
         credentials: 'include',
       })
 
       const data = await response.json()
 
-      if (response.ok) {
-        toast.success('Invitation sent successfully')
-        setEmail('')
-        setShowEmailDialog(false)
-        loadInvitations() // Reload invitations
-      } else {
-        toast.error(data.error || 'Failed to send invitation')
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send invitation')
       }
-    } catch (err) {
-      console.error('Error sending invitation:', err)
-      toast.error('Failed to send invitation')
-    } finally {
-      setSending(false)
-    }
-  }
 
-  const handleGenerateClaimLink = async () => {
-    setGeneratingLink(true)
+      return data
+    },
+    onSuccess: () => {
+      toast.success('Invitation sent successfully')
+      setEmail('')
+      setShowEmailDialog(false)
+      // Invalidate and refetch invitations
+      queryClient.invalidateQueries({ queryKey: ['invitations', applicationId] })
+    },
+    onError: (error) => {
+      console.error('Error sending invitation:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to send invitation')
+    },
+  })
 
-    try {
+  // Mutation for generating claim links
+  const generateClaimLinkMutation = useMutation({
+    mutationFn: async () => {
       const response = await fetch(`/api/applications/${applicationId}/claim-link`, {
         method: 'POST',
         credentials: 'include',
@@ -118,21 +108,35 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
 
       const data = await response.json()
 
-      if (response.ok) {
-        setClaimLink(data.claim_url)
-        toast.success('Claim link generated successfully')
-        loadInvitations() // Reload invitations
-      } else {
-        toast.error(data.error || 'Failed to generate claim link')
-        setShowClaimLinkDialog(false)
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate claim link')
       }
-    } catch (err) {
-      console.error('Error generating claim link:', err)
-      toast.error('Failed to generate claim link')
+
+      return data
+    },
+    onSuccess: (data) => {
+      setClaimLink(data.claim_url)
+      toast.success('Claim link generated successfully')
+      // Invalidate and refetch invitations
+      queryClient.invalidateQueries({ queryKey: ['invitations', applicationId] })
+    },
+    onError: (error) => {
+      console.error('Error generating claim link:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to generate claim link')
       setShowClaimLinkDialog(false)
-    } finally {
-      setGeneratingLink(false)
+    },
+  })
+
+  const handleSendEmailInvitation = () => {
+    if (!email) {
+      toast.error('Please enter an email address')
+      return
     }
+    sendInvitationMutation.mutate(email)
+  }
+
+  const handleGenerateClaimLink = () => {
+    generateClaimLinkMutation.mutate()
   }
 
   const handleCopyClaimLink = () => {
@@ -224,7 +228,7 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
                         placeholder="applicant@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        disabled={sending}
+                        disabled={sendInvitationMutation.isPending}
                       />
                     </div>
                     <Alert>
@@ -234,10 +238,10 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
                     </Alert>
                     <Button
                       onClick={handleSendEmailInvitation}
-                      disabled={sending || !email}
+                      disabled={sendInvitationMutation.isPending || !email}
                       className="w-full"
                     >
-                      {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {sendInvitationMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Send Invitation
                     </Button>
                   </div>
@@ -272,10 +276,10 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
                         </Alert>
                         <Button
                           onClick={handleGenerateClaimLink}
-                          disabled={generatingLink}
+                          disabled={generateClaimLinkMutation.isPending}
                           className="w-full"
                         >
-                          {generatingLink && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          {generateClaimLinkMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                           Generate Claim Link
                         </Button>
                       </>
@@ -321,7 +325,7 @@ export function InvitationManager({ applicationId }: InvitationManagerProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {invitations.map((invitation) => (
+              {invitations.map((invitation: Invitation) => (
                 <div
                   key={invitation.id}
                   className="flex items-center justify-between p-3 border rounded-lg"

@@ -3,10 +3,16 @@
  *
  * Provides client-side validation with Zod schemas
  * Supports validation on blur and submit
+ *
+ * Features:
+ * - Type-safe field names based on schema keys
+ * - Validation on blur and change events
+ * - Error management with summary support
+ * - Focus management for accessibility
  */
 
 import { useState, useCallback, useRef } from "react"
-import { z, ZodError } from "zod"
+import { z, ZodError, ZodObject } from "zod"
 
 export interface ValidationError {
   field: string
@@ -24,11 +30,45 @@ interface UseFormValidationOptions<T extends z.ZodType> {
   validateOnChange?: boolean
 }
 
+/**
+ * Extract field names from a Zod schema for type-safe validation
+ *
+ * For ZodObject schemas, this extracts all top-level keys.
+ * For nested schemas, use dot notation (e.g., "address.street").
+ */
+type ExtractFieldNames<T extends z.ZodType> = T extends ZodObject<infer Shape>
+  ? keyof Shape extends string
+    ? keyof Shape
+    : string
+  : string
+
+/**
+ * Form validation hook with type-safe field names
+ *
+ * @example
+ * ```typescript
+ * const schema = z.object({
+ *   firstName: z.string(),
+ *   lastName: z.string(),
+ *   email: z.string().email(),
+ * })
+ *
+ * const { validateField, handleBlur } = useFormValidation({ schema })
+ *
+ * // TypeScript will suggest: 'firstName' | 'lastName' | 'email'
+ * validateField('firstName', value)
+ *
+ * // TypeScript error: Argument of type '"fistName"' is not assignable
+ * validateField('fistName', value) // Typo caught!
+ * ```
+ */
 export function useFormValidation<T extends z.ZodType>({
   schema,
   validateOnBlur = true,
   validateOnChange = false,
 }: UseFormValidationOptions<T>) {
+  // Type for field names based on schema
+  type FieldName = ExtractFieldNames<T> | (string & {})
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const errorSummaryRef = useRef<HTMLDivElement>(null)
@@ -79,9 +119,12 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Validate a single field
+   * @param fieldName - Type-safe field name from schema
+   * @param value - Value to validate
+   * @param fullData - Optional full form data for cross-field validation
    */
   const validateField = useCallback(
-    (fieldName: string, value: unknown, fullData?: unknown): string | null => {
+    (fieldName: FieldName, value: unknown, fullData?: unknown): string | null => {
       try {
         // If we have full data, validate against the entire schema
         // to catch cross-field validation errors
@@ -124,9 +167,12 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Handle field blur event
+   * @param fieldName - Type-safe field name from schema
+   * @param value - Current field value
+   * @param fullData - Optional full form data for cross-field validation
    */
   const handleBlur = useCallback(
-    (fieldName: string, value: unknown, fullData?: unknown) => {
+    (fieldName: FieldName, value: unknown, fullData?: unknown) => {
       if (!validateOnBlur) return
 
       // Mark field as touched
@@ -147,9 +193,12 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Handle field change event
+   * @param fieldName - Type-safe field name from schema
+   * @param value - New field value
+   * @param fullData - Optional full form data for cross-field validation
    */
   const handleChange = useCallback(
-    (fieldName: string, value: unknown, fullData?: unknown) => {
+    (fieldName: FieldName, value: unknown, fullData?: unknown) => {
       if (!validateOnChange) return
 
       // Only validate if field has been touched
@@ -173,8 +222,9 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Clear error for specific field
+   * @param fieldName - Type-safe field name from schema
    */
-  const clearFieldError = useCallback((fieldName: string) => {
+  const clearFieldError = useCallback((fieldName: FieldName) => {
     setErrors((prev) => {
       const newErrors = { ...prev }
       delete newErrors[fieldName]
@@ -184,8 +234,10 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Set custom error for a field
+   * @param fieldName - Type-safe field name from schema
+   * @param message - Error message to display
    */
-  const setFieldError = useCallback((fieldName: string, message: string) => {
+  const setFieldError = useCallback((fieldName: FieldName, message: string) => {
     setErrors((prev) => ({
       ...prev,
       [fieldName]: message,
@@ -194,9 +246,10 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Get error for specific field
+   * @param fieldName - Type-safe field name from schema
    */
   const getFieldError = useCallback(
-    (fieldName: string): string | undefined => {
+    (fieldName: FieldName): string | undefined => {
       return errors[fieldName]
     },
     [errors]
@@ -204,9 +257,10 @@ export function useFormValidation<T extends z.ZodType>({
 
   /**
    * Check if field has error
+   * @param fieldName - Type-safe field name from schema
    */
   const hasFieldError = useCallback(
-    (fieldName: string): boolean => {
+    (fieldName: FieldName): boolean => {
       return !!errors[fieldName]
     },
     [errors]

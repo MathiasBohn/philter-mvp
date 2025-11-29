@@ -411,12 +411,104 @@ export type Disclosure = {
   documentUploadId?: string; // For signed form uploads
 };
 
-export type ApplicationSection = {
-  key: string;
-  label: string;
-  isComplete: boolean;
-  data?: unknown;
+// =============================================================================
+// Section-Specific Data Types for ApplicationSection (Type Safety Fix 3.6)
+// =============================================================================
+
+/**
+ * Profile section data
+ */
+export type ProfileSectionData = {
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  dob?: Date | string;
+  ssnLast4?: string;
 };
+
+/**
+ * Parties (deal parties) section data
+ */
+export type PartiesSectionData = {
+  participants: Participant[];
+};
+
+/**
+ * Lease terms section data
+ */
+export type LeaseTermsSectionData = {
+  monthlyRent?: number;
+  annualRent?: number;
+  securityDeposit?: number;
+  leaseLengthYears?: number;
+  leaseStartDate?: Date | string;
+  leaseEndDate?: Date | string;
+  moveInDate?: Date | string;
+  specialConditions?: string;
+};
+
+/**
+ * Building policies section data
+ */
+export type BuildingPoliciesSectionData = {
+  acknowledgedAt?: Date | string;
+  policies?: string[];
+  maxFinancePercent?: number;
+  allowGuarantors?: boolean;
+  allowCorpOwnership?: boolean;
+  allowPiedATerre?: boolean;
+  allowTrustOwnership?: boolean;
+};
+
+/**
+ * Cover letter section data
+ */
+export type CoverLetterSectionData = {
+  content: string;
+};
+
+/**
+ * Review section data
+ */
+export type ReviewSectionData = {
+  isReady: boolean;
+  submittedAt?: Date | string;
+};
+
+/**
+ * Discriminated union for ApplicationSection - provides type-safe data access
+ * based on section key
+ */
+export type ApplicationSection =
+  | { key: 'profile'; label: string; isComplete: boolean; data?: ProfileSectionData }
+  | { key: 'parties'; label: string; isComplete: boolean; data?: PartiesSectionData }
+  | { key: 'people'; label: string; isComplete: boolean; data?: Person[] }
+  | { key: 'income'; label: string; isComplete: boolean; data?: EmploymentRecord[] }
+  | { key: 'financials'; label: string; isComplete: boolean; data?: FinancialEntry[] }
+  | { key: 'real-estate'; label: string; isComplete: boolean; data?: RealEstateProperty[] }
+  | { key: 'lease-terms'; label: string; isComplete: boolean; data?: LeaseTermsSectionData }
+  | { key: 'building-policies'; label: string; isComplete: boolean; data?: BuildingPoliciesSectionData }
+  | { key: 'documents'; label: string; isComplete: boolean; data?: Document[] }
+  | { key: 'disclosures'; label: string; isComplete: boolean; data?: Disclosure[] }
+  | { key: 'cover-letter'; label: string; isComplete: boolean; data?: CoverLetterSectionData }
+  | { key: 'review'; label: string; isComplete: boolean; data?: ReviewSectionData };
+
+/**
+ * Type guard to narrow ApplicationSection to a specific key type
+ */
+export function isSectionKey<K extends ApplicationSection['key']>(
+  section: ApplicationSection,
+  key: K
+): section is Extract<ApplicationSection, { key: K }> {
+  return section.key === key;
+}
+
+/**
+ * All valid section keys
+ */
+export type ApplicationSectionKey = ApplicationSection['key'];
 
 export type Application = {
   id: string;

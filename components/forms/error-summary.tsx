@@ -3,6 +3,7 @@
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useEffect, useRef, forwardRef } from "react"
+import { toast } from "sonner"
 
 export interface ErrorItem {
   field: string
@@ -53,6 +54,7 @@ export const ErrorSummary = forwardRef<HTMLDivElement, ErrorSummaryProps>(
 
     /**
      * Handle clicking an error link to navigate to the field
+     * Uses multiple strategies to find the element, with toast fallback
      */
     const handleErrorClick = (field: string, anchor?: string) => {
       // Try multiple strategies to find the element
@@ -92,6 +94,14 @@ export const ErrorSummary = forwardRef<HTMLDivElement, ErrorSummaryProps>(
         setTimeout(() => {
           element?.classList.remove("highlight-error")
         }, 2000)
+      } else {
+        // Fallback: Show toast notification when field cannot be found
+        const fieldLabel = getFieldLabel(field)
+        console.warn(`[ErrorSummary] Could not find field element: ${field}`)
+        toast.info(`Please locate the "${fieldLabel}" field and correct the error.`, {
+          description: "The field may be in a collapsed section or different tab.",
+          duration: 5000,
+        })
       }
     }
 
@@ -127,8 +137,8 @@ export const ErrorSummary = forwardRef<HTMLDivElement, ErrorSummaryProps>(
         className={className}
       >
         <AlertCircle className="h-4 w-4" aria-hidden="true" />
-        <AlertTitle>
-          <span id="error-summary-title">{title}</span>
+        <AlertTitle className="text-base font-semibold" id="error-summary-title">
+          {title}
         </AlertTitle>
         <AlertDescription>
           <p className="text-sm mb-2" aria-describedby="error-summary-title">

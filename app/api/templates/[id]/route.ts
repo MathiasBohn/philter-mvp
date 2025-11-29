@@ -12,6 +12,7 @@ import {
   updateTemplate,
   type CreateTemplateInput,
 } from '@/lib/api/templates'
+import { validateRouteUUID } from '@/lib/api/validate'
 import { z } from 'zod'
 import { DocumentCategory, DisclosureType } from '@/lib/types'
 
@@ -45,7 +46,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
+
     const supabase = await createClient()
 
     // Get current user
@@ -90,7 +97,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
+
     const supabase = await createClient()
 
     // Get current user

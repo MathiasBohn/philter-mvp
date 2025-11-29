@@ -6,8 +6,9 @@
  * before processing.
  */
 
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z, ZodSchema, ZodError } from 'zod'
+import DOMPurify from 'isomorphic-dompurify'
 import { ValidationError } from './errors'
 
 /**
@@ -168,6 +169,84 @@ export function validatePartial<T extends z.ZodObject<z.ZodRawShape>>(
 }
 
 /**
+ * UUID validation result type
+ */
+export type UUIDValidationResult =
+  | { valid: true; id: string }
+  | { valid: false; error: string }
+
+/**
+ * Validate a UUID string
+ *
+ * @param id - The string to validate as UUID
+ * @returns Validation result with typed id if valid
+ *
+ * @example
+ * ```typescript
+ * const result = validateUUID(id)
+ * if (!result.valid) {
+ *   return NextResponse.json({ error: result.error }, { status: 400 })
+ * }
+ * // Use result.id (typed as string)
+ * ```
+ */
+export function validateUUID(id: string): UUIDValidationResult {
+  const uuidSchema = z.string().uuid('Invalid ID format')
+  const result = uuidSchema.safeParse(id)
+
+  if (result.success) {
+    return { valid: true, id: result.data }
+  }
+
+  // Zod v4 uses issues instead of errors
+  const issues = result.error.issues || []
+  return {
+    valid: false,
+    error: issues[0]?.message || 'Invalid ID format',
+  }
+}
+
+/**
+ * Validate route params containing an ID
+ * Returns a NextResponse if validation fails, null if valid
+ *
+ * @param params - Route params (can be Promise for Next.js 15+)
+ * @returns Validated ID or error response
+ *
+ * @example
+ * ```typescript
+ * export async function GET(
+ *   request: NextRequest,
+ *   { params }: { params: Promise<{ id: string }> }
+ * ) {
+ *   const validationResult = await validateRouteUUID(params)
+ *   if (validationResult.error) {
+ *     return validationResult.error
+ *   }
+ *   const { id } = validationResult
+ *   // id is now validated as a UUID
+ * }
+ * ```
+ */
+export async function validateRouteUUID(
+  params: Promise<{ id: string }> | { id: string }
+): Promise<{ id: string; error?: never } | { error: NextResponse; id?: never }> {
+  const resolvedParams = params instanceof Promise ? await params : params
+  const validation = validateUUID(resolvedParams.id)
+
+  if (!validation.valid) {
+    return {
+      error: NextResponse.json(
+        { error: validation.error, code: 'INVALID_UUID' },
+        { status: 400 }
+      ),
+    }
+  }
+
+  return { id: validation.id }
+}
+
+/**
  * Common validation schemas for reuse
  */
 export const commonSchemas = {
@@ -253,13 +332,27 @@ export function composeSchemas<T extends z.ZodObject<z.ZodRawShape>[]>(...schema
 }
 
 /**
- * Sanitize string input to prevent XSS
- * Note: This is a basic sanitization. For rich text, use DOMPurify.
+ * Sanitize string input to prevent XSS attacks.
+ * Uses DOMPurify to remove all HTML/script content.
  */
 export function sanitizeString(input: string): string {
-  return input
-    .replace(/[<>]/g, '') // Remove < and > characters
-    .trim()
+  // Remove all HTML/script content using DOMPurify
+  const clean = DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: [], // No HTML allowed
+    ALLOWED_ATTR: []
+  })
+  return clean.trim()
+}
+
+/**
+ * Sanitize rich text input where some HTML is allowed.
+ * Use this for fields that explicitly support formatting.
+ */
+export function sanitizeRichText(input: string): string {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li'],
+    ALLOWED_ATTR: []
+  }).trim()
 }
 
 /**

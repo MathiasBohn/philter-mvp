@@ -8,6 +8,7 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Database, Json } from '@/lib/database.types'
 
+type EmploymentRecordRow = Database['public']['Tables']['employment_records']['Row']
 type EmploymentRecordInsert = Database['public']['Tables']['employment_records']['Insert']
 
 /**
@@ -18,26 +19,41 @@ function nullToUndefined<T>(value: T | null): T | undefined {
 }
 
 /**
+ * Type guard for address JSON structure
+ */
+function isAddressJson(json: Json | null): json is {
+  street: string
+  unit?: string
+  city: string
+  state: string
+  zip: string
+  country?: string
+} {
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) return false
+  const obj = json as Record<string, unknown>
+  return typeof obj.street === 'string' && typeof obj.city === 'string'
+}
+
+/**
  * Map database record to EmploymentRecord type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapToEmploymentRecord(data: any): EmploymentRecord {
+function mapToEmploymentRecord(data: EmploymentRecordRow): EmploymentRecord {
   return {
     id: data.id,
     application_id: data.application_id,
     person_id: nullToUndefined(data.person_id),
     employer_name: data.employer_name,
     job_title: nullToUndefined(data.job_title),
-    employment_status: data.employment_status,
+    employment_status: data.employment_status as EmploymentStatus,
     start_date: data.start_date,
     end_date: nullToUndefined(data.end_date),
     is_current: data.is_current,
     annual_income: nullToUndefined(data.annual_income),
-    pay_cadence: nullToUndefined(data.pay_cadence),
+    pay_cadence: nullToUndefined(data.pay_cadence) as PayCadence | undefined,
     supervisor_name: nullToUndefined(data.supervisor_name),
     supervisor_phone: nullToUndefined(data.supervisor_phone),
     supervisor_email: nullToUndefined(data.supervisor_email),
-    address: data.address as EmploymentRecord['address'],
+    address: isAddressJson(data.address) ? data.address : undefined,
     created_at: data.created_at,
     updated_at: data.updated_at,
   }

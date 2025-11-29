@@ -6,27 +6,49 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { Template, DocumentCategory, DisclosureType, BuildingPolicies } from '@/lib/types'
+import type { Database, Json } from '@/lib/database.types'
+
+type TemplateRow = Database['public']['Tables']['templates']['Row']
+
+/**
+ * Type guard to check if JSON is a sections object
+ */
+function isSectionsJson(json: Json | null): json is { required?: string[]; optional?: string[] } {
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) return false
+  return true
+}
+
+/**
+ * Type guard to check if JSON is an array of strings
+ */
+function isStringArray(json: Json | null): json is string[] {
+  if (!Array.isArray(json)) return false
+  return json.every(item => typeof item === 'string')
+}
 
 /**
  * Map database record to Template type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapToTemplate(template: any): Template {
-  const sections = template.sections as { required?: string[]; optional?: string[] } | null
+function mapToTemplate(template: TemplateRow & { building?: unknown }): Template {
+  const sections = isSectionsJson(template.sections) ? template.sections : null
   return {
     id: template.id,
     buildingId: template.building_id,
     name: template.name,
-    description: template.description,
-    version: template.version || 1,
+    description: undefined, // Not in DB schema
+    version: 1, // Not in DB schema
     requiredSections: sections?.required || [],
     optionalSections: sections?.optional || [],
-    requiredDocuments: (template.required_documents as DocumentCategory[] | null) || [],
-    optionalDocuments: (template.optional_documents as DocumentCategory[] | null) || [],
-    enabledDisclosures: (template.custom_disclosures as DisclosureType[] | null) || [],
-    buildingPolicies: template.building_policies as BuildingPolicies | undefined,
+    requiredDocuments: isStringArray(template.required_documents)
+      ? template.required_documents as DocumentCategory[]
+      : [],
+    optionalDocuments: [], // Not in DB schema
+    enabledDisclosures: isStringArray(template.custom_disclosures)
+      ? template.custom_disclosures as DisclosureType[]
+      : [],
+    buildingPolicies: undefined, // Not in DB schema
     createdAt: new Date(template.created_at),
-    publishedAt: template.published_at ? new Date(template.published_at) : undefined,
+    publishedAt: undefined, // Not in DB schema
     isPublished: template.is_published,
   }
 }

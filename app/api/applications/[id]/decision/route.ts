@@ -12,6 +12,7 @@ import {
   createDecision,
   type CreateDecisionInput,
 } from '@/lib/api/decisions'
+import { validateRouteUUID } from '@/lib/api/validate'
 import { z } from 'zod'
 import { Decision } from '@/lib/types'
 import { logActivity, logDecision } from '@/lib/api/audit'
@@ -34,7 +35,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
+
     const supabase = await createClient()
 
     // Get current user
@@ -87,7 +94,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
+
     const supabase = await createClient()
 
     // Get current user

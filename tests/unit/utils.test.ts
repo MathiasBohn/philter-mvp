@@ -15,7 +15,15 @@ import {
   calculateNetWorth,
   calculateCompletionPercentage,
 } from '@/lib/utils'
-import { FinancialEntryType, type FinancialEntry, type ApplicationSection } from '@/lib/types'
+import {
+  FinancialEntryType,
+  AssetCategory,
+  LiabilityCategory,
+  IncomeCategory,
+  ExpenseCategory,
+  type FinancialEntry,
+  type ApplicationSection,
+} from '@/lib/types'
 
 describe('cn (class name merger)', () => {
   it('merges multiple class names', () => {
@@ -195,10 +203,10 @@ describe('calculateDTI', () => {
 describe('calculateNetWorth', () => {
   it('calculates net worth from assets and liabilities', () => {
     const entries: FinancialEntry[] = [
-      { id: '1', entryType: FinancialEntryType.ASSET, category: 'Savings', amount: 50000 },
-      { id: '2', entryType: FinancialEntryType.ASSET, category: 'Investment', amount: 30000 },
-      { id: '3', entryType: FinancialEntryType.LIABILITY, category: 'Mortgage', amount: 200000 },
-      { id: '4', entryType: FinancialEntryType.LIABILITY, category: 'Car Loan', amount: 15000 },
+      { id: '1', entryType: FinancialEntryType.ASSET, category: AssetCategory.SAVINGS, amount: 50000 },
+      { id: '2', entryType: FinancialEntryType.ASSET, category: AssetCategory.INVESTMENT, amount: 30000 },
+      { id: '3', entryType: FinancialEntryType.LIABILITY, category: LiabilityCategory.MORTGAGE, amount: 200000 },
+      { id: '4', entryType: FinancialEntryType.LIABILITY, category: LiabilityCategory.AUTO_LOAN, amount: 15000 },
     ]
 
     // Assets: 80,000 - Liabilities: 215,000 = -135,000
@@ -207,8 +215,8 @@ describe('calculateNetWorth', () => {
 
   it('returns positive net worth when assets exceed liabilities', () => {
     const entries: FinancialEntry[] = [
-      { id: '1', entryType: FinancialEntryType.ASSET, category: 'Savings', amount: 100000 },
-      { id: '2', entryType: FinancialEntryType.LIABILITY, category: 'Credit Card', amount: 5000 },
+      { id: '1', entryType: FinancialEntryType.ASSET, category: AssetCategory.SAVINGS, amount: 100000 },
+      { id: '2', entryType: FinancialEntryType.LIABILITY, category: LiabilityCategory.CREDIT_CARD, amount: 5000 },
     ]
 
     expect(calculateNetWorth(entries)).toBe(95000)
@@ -220,7 +228,7 @@ describe('calculateNetWorth', () => {
 
   it('handles only assets', () => {
     const entries: FinancialEntry[] = [
-      { id: '1', entryType: FinancialEntryType.ASSET, category: 'Savings', amount: 10000 },
+      { id: '1', entryType: FinancialEntryType.ASSET, category: AssetCategory.SAVINGS, amount: 10000 },
     ]
 
     expect(calculateNetWorth(entries)).toBe(10000)
@@ -228,7 +236,7 @@ describe('calculateNetWorth', () => {
 
   it('handles only liabilities', () => {
     const entries: FinancialEntry[] = [
-      { id: '1', entryType: FinancialEntryType.LIABILITY, category: 'Debt', amount: 5000 },
+      { id: '1', entryType: FinancialEntryType.LIABILITY, category: LiabilityCategory.OTHER, amount: 5000 },
     ]
 
     expect(calculateNetWorth(entries)).toBe(-5000)
@@ -236,9 +244,9 @@ describe('calculateNetWorth', () => {
 
   it('ignores MONTHLY_INCOME and MONTHLY_EXPENSE types', () => {
     const entries: FinancialEntry[] = [
-      { id: '1', entryType: FinancialEntryType.ASSET, category: 'Savings', amount: 10000 },
-      { id: '2', entryType: FinancialEntryType.MONTHLY_INCOME, category: 'Salary', amount: 5000 },
-      { id: '3', entryType: FinancialEntryType.MONTHLY_EXPENSE, category: 'Rent', amount: 2000 },
+      { id: '1', entryType: FinancialEntryType.ASSET, category: AssetCategory.SAVINGS, amount: 10000 },
+      { id: '2', entryType: FinancialEntryType.MONTHLY_INCOME, category: IncomeCategory.EMPLOYMENT, amount: 5000 },
+      { id: '3', entryType: FinancialEntryType.MONTHLY_EXPENSE, category: ExpenseCategory.RENT_MORTGAGE, amount: 2000 },
     ]
 
     expect(calculateNetWorth(entries)).toBe(10000)
@@ -248,10 +256,10 @@ describe('calculateNetWorth', () => {
 describe('calculateCompletionPercentage', () => {
   it('calculates percentage of completed sections', () => {
     const sections: ApplicationSection[] = [
-      { id: '1', title: 'Profile', isComplete: true, path: '/profile' },
-      { id: '2', title: 'Income', isComplete: true, path: '/income' },
-      { id: '3', title: 'Documents', isComplete: false, path: '/documents' },
-      { id: '4', title: 'Review', isComplete: false, path: '/review' },
+      { key: 'profile', label: 'Profile', isComplete: true },
+      { key: 'income', label: 'Income', isComplete: true },
+      { key: 'documents', label: 'Documents', isComplete: false },
+      { key: 'review', label: 'Review', isComplete: false },
     ]
 
     expect(calculateCompletionPercentage(sections)).toBe(50)
@@ -259,8 +267,8 @@ describe('calculateCompletionPercentage', () => {
 
   it('returns 100 for all completed', () => {
     const sections: ApplicationSection[] = [
-      { id: '1', title: 'Profile', isComplete: true, path: '/profile' },
-      { id: '2', title: 'Income', isComplete: true, path: '/income' },
+      { key: 'profile', label: 'Profile', isComplete: true },
+      { key: 'income', label: 'Income', isComplete: true },
     ]
 
     expect(calculateCompletionPercentage(sections)).toBe(100)
@@ -268,8 +276,8 @@ describe('calculateCompletionPercentage', () => {
 
   it('returns 0 for none completed', () => {
     const sections: ApplicationSection[] = [
-      { id: '1', title: 'Profile', isComplete: false, path: '/profile' },
-      { id: '2', title: 'Income', isComplete: false, path: '/income' },
+      { key: 'profile', label: 'Profile', isComplete: false },
+      { key: 'income', label: 'Income', isComplete: false },
     ]
 
     expect(calculateCompletionPercentage(sections)).toBe(0)
@@ -281,9 +289,9 @@ describe('calculateCompletionPercentage', () => {
 
   it('rounds to nearest integer', () => {
     const sections: ApplicationSection[] = [
-      { id: '1', title: 'Profile', isComplete: true, path: '/profile' },
-      { id: '2', title: 'Income', isComplete: false, path: '/income' },
-      { id: '3', title: 'Documents', isComplete: false, path: '/documents' },
+      { key: 'profile', label: 'Profile', isComplete: true },
+      { key: 'income', label: 'Income', isComplete: false },
+      { key: 'documents', label: 'Documents', isComplete: false },
     ]
 
     // 1/3 = 33.33... -> rounds to 33

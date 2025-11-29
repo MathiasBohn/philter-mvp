@@ -21,7 +21,7 @@ export async function POST(
   { params }: { params: Promise<{ token: string }> }
 ) {
   // Apply rate limiting to prevent brute force token guessing
-  const { isLimited, remaining, resetTime } = checkRateLimit(request, {
+  const { isLimited, remaining, resetTime } = await checkRateLimit(request, {
     ...RATE_LIMITS.auth,
     identifier: 'invitation-accept',
   })

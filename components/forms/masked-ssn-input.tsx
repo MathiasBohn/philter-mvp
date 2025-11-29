@@ -48,11 +48,12 @@ export const MaskedSSNInput = forwardRef<HTMLInputElement, MaskedSSNInputProps>(
             type="button"
             variant="ghost"
             size="icon"
-            className="absolute right-0 top-0 h-full px-3"
+            className="absolute right-0 top-0 h-full px-3 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             onClick={() => setShowSSN(!showSSN)}
             aria-label={showSSN ? "Hide SSN" : "Show SSN"}
+            aria-pressed={showSSN}
           >
-            {showSSN ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showSSN ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
           </Button>
         </div>
         {error && (

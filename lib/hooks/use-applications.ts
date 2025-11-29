@@ -7,9 +7,87 @@ import {
   type UseQueryResult,
   type UseMutationResult,
 } from '@tanstack/react-query'
+import { z } from 'zod'
 import { queryKeys } from '@/lib/query-client'
 import type { Application } from '@/lib/types'
 import { toast } from '@/lib/hooks/use-toast'
+
+// =============================================================================
+// API Response Schemas (Type Safety Fix 3.9)
+// =============================================================================
+
+/**
+ * Schema for validating individual application response
+ * Validates the essential fields we expect from the API
+ */
+const applicationResponseSchema = z.object({
+  id: z.string().uuid(),
+  building_id: z.string().uuid().nullable().optional(),
+  buildingId: z.string().uuid().nullable().optional(),
+  transaction_type: z.string().optional(),
+  transactionType: z.string().optional(),
+  status: z.string(),
+  created_by: z.string().uuid().optional(),
+  createdBy: z.string().uuid().optional(),
+  created_at: z.string().optional(),
+  createdAt: z.string().or(z.date()).optional(),
+}).passthrough() // Allow additional fields
+
+/**
+ * Schema for validating applications list response
+ */
+const applicationsListResponseSchema = z.object({
+  applications: z.array(applicationResponseSchema),
+})
+
+/**
+ * Schema for validating single application response
+ */
+const singleApplicationResponseSchema = z.object({
+  application: applicationResponseSchema,
+})
+
+/**
+ * Validates and extracts applications from API response
+ * Logs warnings for invalid responses but attempts graceful degradation
+ */
+function validateApplicationsResponse(data: unknown): Application[] {
+  const result = applicationsListResponseSchema.safeParse(data)
+
+  if (!result.success) {
+    console.warn('Invalid applications API response:', result.error.issues)
+    // Attempt graceful degradation - check if it's an array directly
+    if (Array.isArray(data)) {
+      return data as Application[]
+    }
+    // Check if it has an applications property even if validation failed
+    if (data && typeof data === 'object' && 'applications' in data) {
+      return (data as { applications: unknown[] }).applications as Application[]
+    }
+    throw new Error('Invalid response format from server')
+  }
+
+  return result.data.applications as Application[]
+}
+
+/**
+ * Validates and extracts single application from API response
+ * Logs warnings for invalid responses but attempts graceful degradation
+ */
+function validateSingleApplicationResponse(data: unknown): Application {
+  const result = singleApplicationResponseSchema.safeParse(data)
+
+  if (!result.success) {
+    console.warn('Invalid application API response:', result.error.issues)
+    // Attempt graceful degradation
+    if (data && typeof data === 'object' && 'application' in data) {
+      return (data as { application: unknown }).application as Application
+    }
+    throw new Error('Invalid response format from server')
+  }
+
+  return result.data.application as Application
+}
 
 /**
  * React Query hooks for application data management
@@ -30,7 +108,7 @@ import { toast } from '@/lib/hooks/use-toast'
 export function useApplications(): UseQueryResult<Application[], Error> {
   return useQuery({
     queryKey: queryKeys.applications.all,
-    queryFn: async () => {
+    queryFn: async (): Promise<Application[]> => {
       const response = await fetch('/api/applications', {
         credentials: 'include',
       })
@@ -41,8 +119,8 @@ export function useApplications(): UseQueryResult<Application[], Error> {
         throw new Error(errorMessage)
       }
       const data = await response.json()
-      // API returns { applications: [] }, extract the array
-      return data.applications || []
+      // Validate response shape (Type Safety Fix 3.9)
+      return validateApplicationsResponse(data)
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
@@ -61,7 +139,7 @@ export function useApplication(
 ): UseQueryResult<Application, Error> {
   return useQuery({
     queryKey: queryKeys.applications.detail(id),
-    queryFn: async () => {
+    queryFn: async (): Promise<Application> => {
       const response = await fetch(`/api/applications/${id}`, {
         credentials: 'include',
       })
@@ -72,7 +150,8 @@ export function useApplication(
         throw new Error(errorMessage)
       }
       const result = await response.json()
-      return result.application
+      // Validate response shape (Type Safety Fix 3.9)
+      return validateSingleApplicationResponse(result)
     },
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -7,7 +7,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { Database } from '@/lib/database.types'
+import { isNotFoundError } from '@/lib/constants/supabase-errors'
 
+type FinancialEntryRow = Database['public']['Tables']['financial_entries']['Row']
 type FinancialEntryInsert = Database['public']['Tables']['financial_entries']['Insert']
 
 /**
@@ -20,12 +22,11 @@ function nullToUndefined<T>(value: T | null): T | undefined {
 /**
  * Map database record to FinancialEntryRecord type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapToFinancialEntryRecord(data: any): FinancialEntryRecord {
+function mapToFinancialEntryRecord(data: FinancialEntryRow): FinancialEntryRecord {
   return {
     id: data.id,
     application_id: data.application_id,
-    entry_type: data.entry_type,
+    entry_type: data.entry_type as FinancialEntryType,
     category: data.category,
     amount: data.amount,
     institution: nullToUndefined(data.institution),
@@ -185,7 +186,7 @@ export async function getFinancialEntry(
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
+    if (isNotFoundError(error)) {
       return null
     }
     console.error('Error fetching financial entry:', error)

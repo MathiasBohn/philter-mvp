@@ -89,20 +89,26 @@ export class StorageService {
 
   /**
    * Subscribe to changes for a specific key
+   * Type Safety Fix 3.10: Removed non-null assertion
    */
   subscribe<T>(key: StorageKey, listener: Listener<T>): () => void {
-    if (!this.listeners.has(key)) {
-      this.listeners.set(key, new Set());
+    // Get or create the listener set for this key
+    let keyListeners = this.listeners.get(key);
+
+    if (!keyListeners) {
+      keyListeners = new Set();
+      this.listeners.set(key, keyListeners);
     }
 
-    this.listeners.get(key)!.add(listener as Listener<unknown>);
+    // Now keyListeners is guaranteed to exist
+    keyListeners.add(listener as Listener<unknown>);
 
     // Return unsubscribe function
     return () => {
-      const keyListeners = this.listeners.get(key);
-      if (keyListeners) {
-        keyListeners.delete(listener as Listener<unknown>);
-        if (keyListeners.size === 0) {
+      const currentListeners = this.listeners.get(key);
+      if (currentListeners) {
+        currentListeners.delete(listener as Listener<unknown>);
+        if (currentListeners.size === 0) {
           this.listeners.delete(key);
         }
       }

@@ -31,105 +31,93 @@ interface ApplicationTableProps {
   isAllSelected?: boolean;
 }
 
-function getDaysSinceSubmission(submittedAt?: Date): number {
-  if (!submittedAt) return 0;
-  const now = new Date();
-  const submitted = new Date(submittedAt);
-  const diffTime = Math.abs(now.getTime() - submitted.getTime());
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-}
-
-function getAgeColorClass(days: number): string {
-  if (days > 14) return "text-red-600 font-semibold";
-  if (days > 7) return "text-yellow-600 font-semibold";
-  return "";
-}
-
-const columns: Column<Application>[] = [
-  {
-    key: "createdAt",
-    label: "Applicant(s)",
-    sortable: true,
-    render: (_, application) => (
-      <span className="font-medium">
-        {application.people.length > 0
-          ? application.people.map((p) => p.fullName).join(", ")
-          : "New Application"}
-      </span>
-    ),
-  },
-  {
-    key: "buildingId",
-    label: "Building",
-    sortable: true,
-    render: (_, application) => (
-      <div>
-        <p className="font-medium">{application.building?.name || "Unknown Building"}</p>
-        <p className="text-xs text-muted-foreground">
-          {application.building?.address?.street || "Address not available"}
-        </p>
-      </div>
-    ),
-  },
-  {
-    key: "transactionType",
-    label: "Transaction Type",
-    sortable: true,
-    render: (value) => value ? String(value).replace(/_/g, " ") : "—",
-  },
-  {
-    key: "completionPercentage",
-    label: "Completion",
-    sortable: true,
-    render: (value) => {
-      const percentage = typeof value === "number" ? value : 0;
-      return (
-        <div className="space-y-1">
-          <Progress value={percentage} className="h-2" />
-          <p className="text-xs text-muted-foreground">{percentage}%</p>
-        </div>
-      );
-    },
-  },
-  {
-    key: "submittedAt",
-    label: "Time",
-    sortable: true,
-    render: (_, application) => {
-      const age = getDaysSinceSubmission(application.submittedAt);
-      const colorClass = getAgeColorClass(age);
-      return application.submittedAt ? (
-        <span className={colorClass}>
-          {age} day{age === 1 ? "" : "s"}
+// Helper to create columns with memoized age data
+function createColumns(applicationAges: Record<string, { days: number; colorClass: string }>): Column<Application>[] {
+  return [
+    {
+      key: "createdAt",
+      label: "Applicant(s)",
+      sortable: true,
+      render: (_, application) => (
+        <span className="font-medium">
+          {application.people.length > 0
+            ? application.people.map((p) => p.fullName).join(", ")
+            : "New Application"}
         </span>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      );
+      ),
     },
-  },
-  {
-    key: "lastActivityAt",
-    label: "Last Activity",
-    sortable: true,
-    className: "text-muted-foreground",
-    render: (value) => formatDate(value as string, "relative"),
-  },
-  {
-    key: "status",
-    label: "Status",
-    sortable: true,
-    render: (value, application) => (
-      <div className="flex flex-col gap-1.5">
-        <StatusTag status={value as Application["status"]} />
-        <InvitationStatusBadge
-          status={getInvitationStatus(application)}
-          email={application.primaryApplicantEmail}
-        />
-      </div>
-    ),
-  },
-];
+    {
+      key: "buildingId",
+      label: "Building",
+      sortable: true,
+      render: (_, application) => (
+        <div>
+          <p className="font-medium">{application.building?.name || "Unknown Building"}</p>
+          <p className="text-xs text-muted-foreground">
+            {application.building?.address?.street || "Address not available"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "transactionType",
+      label: "Transaction Type",
+      sortable: true,
+      render: (value) => value ? String(value).replace(/_/g, " ") : "—",
+    },
+    {
+      key: "completionPercentage",
+      label: "Completion",
+      sortable: true,
+      render: (value) => {
+        const percentage = typeof value === "number" ? value : 0;
+        return (
+          <div className="space-y-1">
+            <Progress value={percentage} className="h-2" />
+            <p className="text-xs text-muted-foreground">{percentage}%</p>
+          </div>
+        );
+      },
+    },
+    {
+      key: "submittedAt",
+      label: "Time",
+      sortable: true,
+      render: (_, application) => {
+        // Use pre-calculated memoized values
+        const ageData = applicationAges[application.id];
+        return ageData ? (
+          <span className={ageData.colorClass}>
+            {ageData.days} day{ageData.days === 1 ? "" : "s"}
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        );
+      },
+    },
+    {
+      key: "lastActivityAt",
+      label: "Last Activity",
+      sortable: true,
+      className: "text-muted-foreground",
+      render: (value) => formatDate(value as string, "relative"),
+    },
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      render: (value, application) => (
+        <div className="flex flex-col gap-1.5">
+          <StatusTag status={value as Application["status"]} />
+          <InvitationStatusBadge
+            status={getInvitationStatus(application)}
+            email={application.primaryApplicantEmail}
+          />
+        </div>
+      ),
+    },
+  ];
+}
 
 export function ApplicationTable({
   applications,
@@ -139,6 +127,26 @@ export function ApplicationTable({
   isAllSelected = false,
 }: ApplicationTableProps) {
   const [showInviteModal, setShowInviteModal] = useState(false);
+
+  // Memoize application age calculations to avoid recalculating on every render
+  const applicationAges = useMemo(() => {
+    const now = new Date();
+    return applications.reduce((acc, app) => {
+      if (app.submittedAt) {
+        const submitted = new Date(app.submittedAt);
+        const diffTime = Math.abs(now.getTime() - submitted.getTime());
+        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        acc[app.id] = {
+          days,
+          colorClass: days > 14 ? "text-red-600 font-semibold" : days > 7 ? "text-yellow-600 font-semibold" : "",
+        };
+      }
+      return acc;
+    }, {} as Record<string, { days: number; colorClass: string }>);
+  }, [applications]);
+
+  // Create columns with memoized age data
+  const columns = useMemo(() => createColumns(applicationAges), [applicationAges]);
 
   const emptyState = useMemo(() => (
     <EmptyState

@@ -41,14 +41,21 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get user profile to verify broker role
-    const { data: profile } = await supabase
+    // Get user profile to verify broker role and get broker details (single query)
+    const { data: userProfile, error: profileError } = await supabase
       .from('users')
-      .select('role')
+      .select('role, first_name, last_name, email')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'BROKER') {
+    if (profileError || !userProfile) {
+      return NextResponse.json(
+        { error: 'Profile not found' },
+        { status: 404 }
+      )
+    }
+
+    if (userProfile.role !== 'BROKER') {
       return NextResponse.json(
         { error: 'Only brokers can create broker-owned applications' },
         { status: 403 }
@@ -151,17 +158,8 @@ export async function POST(request: NextRequest) {
           console.log(`Invitation created with token: ${invitation.token}`)
           console.log(`Invite URL: ${process.env.NEXT_PUBLIC_APP_URL}/accept-invitation/${invitation.token}`)
 
-          // Get broker's name for the email
-          const { data: brokerProfile } = await supabase
-            .from('users')
-            .select('first_name, last_name, email')
-            .eq('id', user.id)
-            .single()
-
-          // Send the email
-          const brokerName = brokerProfile
-            ? [brokerProfile.first_name, brokerProfile.last_name].filter(Boolean).join(' ') || brokerProfile.email
-            : 'Your broker'
+          // Use broker's name from the already-fetched profile (no second query needed)
+          const brokerName = [userProfile.first_name, userProfile.last_name].filter(Boolean).join(' ') || userProfile.email || 'Your broker'
           // Format building address from JSON object
           const buildingAddress = application.building?.address
             ? typeof application.building.address === 'object' && application.building.address !== null

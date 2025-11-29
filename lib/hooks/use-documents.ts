@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   useQuery,
   useMutation,
@@ -185,12 +185,39 @@ export function useUpdateDocumentStatus(
  * @param id - Document ID
  * @param applicationId - Application ID (for cache updates)
  * @returns Mutation result
- * @deprecated Use useDeleteDocumentMutation for more flexibility
+ *
+ * @deprecated Use useDeleteDocumentMutation instead for more flexibility.
+ *
+ * **Migration guide:**
+ * ```typescript
+ * // Before (deprecated)
+ * const deleteDoc = useDeleteDocument(documentId, applicationId)
+ * await deleteDoc.mutateAsync()
+ *
+ * // After (recommended)
+ * const deleteMutation = useDeleteDocumentMutation(applicationId)
+ * await deleteMutation.mutateAsync(documentId)
+ * ```
+ *
+ * Key differences:
+ * - useDeleteDocumentMutation allows deleting any document by passing ID to mutateAsync
+ * - Fixes document ID at mutation time rather than hook creation
+ * - More flexible for lists where you need to delete different documents
+ *
+ * This hook will be removed in v2.0
  */
 export function useDeleteDocument(
   id: string,
   applicationId: string
 ): UseMutationResult<void, Error, void> {
+  // Log deprecation warning in development
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(
+      '[useDeleteDocument] This hook is deprecated. Use useDeleteDocumentMutation instead. ' +
+      'See migration guide in JSDoc comments.'
+    )
+  }
+
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -367,7 +394,14 @@ export function useUploadDocument(applicationId: string) {
     } catch (error: unknown) {
       // Clean up - try to delete the file from storage if metadata creation fails
       // (This is a best-effort cleanup, errors are logged but not thrown)
-      console.error('Upload failed:', error)
+      console.error('Upload failed:', {
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        applicationId,
+        category,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
       throw error
     }
   }
@@ -380,12 +414,74 @@ export function useUploadDocument(applicationId: string) {
 }
 
 /**
+ * Signed URL data structure
+ */
+interface SignedURLData {
+  url: string
+  expiresAt: Date
+}
+
+/**
+ * Batch fetch signed URLs from the API
+ * This is extracted to be reusable for initial fetch and refresh
+ */
+async function batchFetchSignedURLs(
+  documentIds: string[],
+  signal?: AbortSignal
+): Promise<Map<string, SignedURLData>> {
+  const newUrlMap = new Map<string, SignedURLData>()
+
+  if (documentIds.length === 0) {
+    return newUrlMap
+  }
+
+  try {
+    const response = await fetch('/api/documents/signed-urls', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ documentIds }),
+      signal,
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch signed URLs')
+    }
+
+    const { urls } = await response.json()
+
+    for (const urlData of urls) {
+      if (urlData.url) {
+        newUrlMap.set(urlData.id, {
+          url: urlData.url,
+          expiresAt: new Date(urlData.expiresAt),
+        })
+      }
+    }
+  } catch (error) {
+    // Only log if not aborted
+    if (!(error instanceof Error && error.name === 'AbortError')) {
+      console.error('Error fetching signed URLs:', {
+        documentCount: documentIds.length,
+        documentIds: documentIds.slice(0, 5), // Log first 5 IDs for debugging
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
+    }
+    throw error
+  }
+
+  return newUrlMap
+}
+
+/**
  * Hook to fetch and manage signed URLs for documents with automatic expiration handling
  *
  * Features:
- * - Fetches signed URLs for all documents on mount
+ * - Fetches signed URLs for all documents in a single batch request (not N+1)
  * - Automatically refreshes URLs before they expire (5 minutes before expiration)
  * - Provides manual refresh function for individual documents
+ * - Proper cleanup with AbortController
+ * - Error state exposed for UI handling
  *
  * @param documents - Array of documents to fetch URLs for
  * @param options - Configuration options
@@ -400,77 +496,103 @@ export function useDocumentSignedURLs(
     autoRefresh?: boolean
   }
 ) {
-  const [urlMap, setUrlMap] = useState<Map<string, { url: string; expiresAt: Date }>>(new Map())
+  const [urlMap, setUrlMap] = useState<Map<string, SignedURLData>>(new Map())
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
 
   const refreshBuffer = options?.refreshBuffer ?? 5 * 60 * 1000 // 5 minutes default
   const autoRefresh = options?.autoRefresh ?? true
 
-  // Fetch all signed URLs on mount or when documents change
+  // Store options in ref to avoid dependency issues in callbacks
+  const refreshBufferRef = useRef(refreshBuffer)
+  refreshBufferRef.current = refreshBuffer
+
+  /**
+   * Refresh expired URLs using batch endpoint
+   * Extracted to avoid code duplication
+   */
+  const refreshExpiredURLs = useCallback(async (
+    currentUrlMap: Map<string, SignedURLData>,
+    buffer: number,
+    signal?: AbortSignal
+  ): Promise<void> => {
+    const now = Date.now()
+    const threshold = new Date(now + buffer)
+    const expiredIds: string[] = []
+
+    currentUrlMap.forEach((urlData, id) => {
+      if (urlData.expiresAt <= threshold) {
+        expiredIds.push(id)
+      }
+    })
+
+    if (expiredIds.length === 0) return
+
+    try {
+      const refreshedUrls = await batchFetchSignedURLs(expiredIds, signal)
+
+      if (!signal?.aborted) {
+        setUrlMap((prev) => {
+          const newMap = new Map(prev)
+          refreshedUrls.forEach((urlData, id) => {
+            newMap.set(id, urlData)
+          })
+          return newMap
+        })
+      }
+    } catch (err) {
+      // Silently ignore abort errors
+      if (!(err instanceof Error && err.name === 'AbortError')) {
+        console.error('Error refreshing expired URLs:', {
+          expiredCount: expiredIds.length,
+          expiredIds: expiredIds.slice(0, 5), // Log first 5 IDs for debugging
+          error: err instanceof Error ? err.message : 'Unknown error',
+        })
+      }
+    }
+  }, [])
+
+  // Fetch all signed URLs on mount or when documents change (single batch request)
   useEffect(() => {
     if (!documents || documents.length === 0) {
       setUrlMap(new Map())
+      setError(null)
       return
     }
 
+    const abortController = new AbortController()
+
     const fetchSignedURLs = async () => {
       setIsLoading(true)
-      const newUrlMap = new Map<string, { url: string; expiresAt: Date }>()
+      setError(null)
 
       try {
-        await Promise.all(
-          documents.map(async (doc) => {
-            try {
-              const response = await fetch(`/api/documents/${doc.id}`, {
-                credentials: 'include',
-              })
-              if (response.ok) {
-                const data = await response.json()
-                newUrlMap.set(doc.id, {
-                  url: data.url,
-                  expiresAt: new Date(data.expiresAt),
-                })
-              } else {
-                console.error(`Failed to fetch signed URL for document ${doc.id}`)
-              }
-            } catch (error) {
-              console.error(`Error fetching signed URL for document ${doc.id}:`, error)
-            }
-          })
-        )
+        const documentIds = documents.map((doc) => doc.id)
+        const newUrlMap = await batchFetchSignedURLs(documentIds, abortController.signal)
 
-        setUrlMap(newUrlMap)
-      } catch (error) {
-        console.error('Error fetching signed URLs:', error)
+        if (!abortController.signal.aborted) {
+          setUrlMap(newUrlMap)
+        }
+      } catch (err) {
+        if (!abortController.signal.aborted) {
+          const errorObj = err instanceof Error ? err : new Error('Failed to fetch signed URLs')
+          setError(errorObj)
+        }
       } finally {
-        setIsLoading(false)
+        if (!abortController.signal.aborted) {
+          setIsLoading(false)
+        }
       }
     }
 
     fetchSignedURLs()
+
+    return () => {
+      abortController.abort()
+    }
   }, [documents])
 
-  /**
-   * Refresh all URLs that are expired or about to expire
-   */
-  const refreshExpiredURLs = async () => {
-    const now = new Date()
-    const expirationThreshold = new Date(now.getTime() + refreshBuffer)
-
-    const expiredDocs: string[] = []
-    urlMap.forEach((urlData, docId) => {
-      if (urlData.expiresAt <= expirationThreshold) {
-        expiredDocs.push(docId)
-      }
-    })
-
-    if (expiredDocs.length === 0) return
-
-    // Refresh all expired URLs in parallel
-    await Promise.all(expiredDocs.map((docId) => refreshURL(docId)))
-  }
-
-  // Auto-refresh URLs before they expire
+  // Auto-refresh URLs before they expire (single timer approach)
   useEffect(() => {
     if (!autoRefresh || urlMap.size === 0) {
       return
@@ -478,146 +600,88 @@ export function useDocumentSignedURLs(
 
     // Find the earliest expiration time
     let earliestExpiration: Date | null = null
-    let documentToRefresh: string | null = null
 
-    urlMap.forEach((urlData, docId) => {
+    urlMap.forEach((urlData) => {
       if (!earliestExpiration || urlData.expiresAt < earliestExpiration) {
         earliestExpiration = urlData.expiresAt
-        documentToRefresh = docId
       }
     })
 
-    if (!earliestExpiration || !documentToRefresh) {
+    if (!earliestExpiration) {
       return
     }
 
     // Calculate time until we need to refresh (refresh before expiration)
-    const now = new Date()
-    // TypeScript needs help here since the narrowing from null check doesn't persist
-    const expirationTime = earliestExpiration as Date
-    const timeUntilRefresh = expirationTime.getTime() - now.getTime() - refreshBuffer
+    const now = Date.now()
+    // Copy to const to help TypeScript narrowing after the null check above
+    const expiration: Date = earliestExpiration
+    const expirationTime = expiration.getTime()
+    const timeUntilRefresh = expirationTime - now - refreshBufferRef.current
 
     // If already expired or about to expire, refresh immediately
     if (timeUntilRefresh <= 0) {
-      // Use inline refresh logic to avoid dependency issues
-      const refreshNow = async () => {
-        const threshold = new Date(Date.now() + refreshBuffer)
-        const expiredDocs: string[] = []
-        urlMap.forEach((urlData, docId) => {
-          if (urlData.expiresAt <= threshold) {
-            expiredDocs.push(docId)
-          }
-        })
-        if (expiredDocs.length > 0) {
-          for (const docId of expiredDocs) {
-            try {
-              const response = await fetch(`/api/documents/${docId}`, {
-                credentials: 'include',
-              })
-              if (response.ok) {
-                const data = await response.json()
-                setUrlMap((prev) => {
-                  const newMap = new Map(prev)
-                  newMap.set(docId, {
-                    url: data.url,
-                    expiresAt: new Date(data.expiresAt),
-                  })
-                  return newMap
-                })
-              }
-            } catch (error) {
-              console.error(`Error refreshing signed URL for document ${docId}:`, error)
-            }
-          }
-        }
-      }
-      refreshNow()
+      refreshExpiredURLs(urlMap, refreshBufferRef.current)
       return
     }
 
     // Set timer to refresh before expiration
     const timerId = setTimeout(() => {
-      // Use inline refresh logic in timeout to avoid stale closure
-      const refreshOnTimeout = async () => {
-        const threshold = new Date(Date.now() + refreshBuffer)
-        const expiredDocs: string[] = []
-        urlMap.forEach((urlData, docId) => {
-          if (urlData.expiresAt <= threshold) {
-            expiredDocs.push(docId)
-          }
-        })
-        if (expiredDocs.length > 0) {
-          for (const docId of expiredDocs) {
-            try {
-              const response = await fetch(`/api/documents/${docId}`, {
-                credentials: 'include',
-              })
-              if (response.ok) {
-                const data = await response.json()
-                setUrlMap((prev) => {
-                  const newMap = new Map(prev)
-                  newMap.set(docId, {
-                    url: data.url,
-                    expiresAt: new Date(data.expiresAt),
-                  })
-                  return newMap
-                })
-              }
-            } catch (error) {
-              console.error(`Error refreshing signed URL for document ${docId}:`, error)
-            }
-          }
-        }
-      }
-      refreshOnTimeout()
+      refreshExpiredURLs(urlMap, refreshBufferRef.current)
     }, timeUntilRefresh)
 
     return () => clearTimeout(timerId)
-  }, [urlMap, autoRefresh, refreshBuffer])
+  }, [urlMap, autoRefresh, refreshExpiredURLs])
 
   /**
    * Refresh a single document's signed URL (e.g., when it expires or on error)
    */
-  const refreshURL = async (documentId: string): Promise<boolean> => {
+  const refreshURL = useCallback(async (documentId: string): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/documents/${documentId}`, {
-        credentials: 'include',
-      })
-      if (response.ok) {
-        const data = await response.json()
+      const refreshedUrls = await batchFetchSignedURLs([documentId])
+      const urlData = refreshedUrls.get(documentId)
+
+      if (urlData) {
         setUrlMap((prev) => {
           const newMap = new Map(prev)
-          newMap.set(documentId, {
-            url: data.url,
-            expiresAt: new Date(data.expiresAt),
-          })
+          newMap.set(documentId, urlData)
           return newMap
         })
         return true
       }
       return false
-    } catch (error) {
-      console.error(`Error refreshing signed URL for document ${documentId}:`, error)
+    } catch (err) {
+      console.error('Error refreshing signed URL for document:', {
+        documentId,
+        error: err instanceof Error ? err.message : 'Unknown error',
+      })
       return false
     }
-  }
+  }, [])
+
+  /**
+   * Manually trigger refresh of all expired URLs
+   */
+  const manualRefreshExpired = useCallback(async (): Promise<void> => {
+    await refreshExpiredURLs(urlMap, refreshBufferRef.current)
+  }, [urlMap, refreshExpiredURLs])
 
   /**
    * Check if a URL is expired or about to expire
    */
-  const isURLExpired = (documentId: string): boolean => {
+  const isURLExpired = useCallback((documentId: string): boolean => {
     const urlData = urlMap.get(documentId)
     if (!urlData) return true
 
-    const now = new Date()
-    return urlData.expiresAt <= new Date(now.getTime() + refreshBuffer)
-  }
+    const now = Date.now()
+    return urlData.expiresAt.getTime() <= now + refreshBufferRef.current
+  }, [urlMap])
 
   return {
     urlMap,
     isLoading,
+    error,
     refreshURL,
-    refreshExpiredURLs,
+    refreshExpiredURLs: manualRefreshExpired,
     isURLExpired,
   }
 }

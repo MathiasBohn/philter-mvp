@@ -13,6 +13,146 @@ import type {
   Role,
   TransactionType,
 } from '@/lib/types'
+import type { Json } from '@/lib/database.types'
+import { isNotFoundError } from '@/lib/constants/supabase-errors'
+
+// =============================================================================
+// Strict Metadata Types (3.5)
+// =============================================================================
+
+/**
+ * Person data from metadata or database
+ */
+interface PersonData {
+  id?: string
+  fullName?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  role?: string
+}
+
+/**
+ * Employment record data
+ */
+interface EmploymentData {
+  id?: string
+  employer?: string
+  employer_name?: string
+  title?: string
+  job_title?: string
+  annualIncome?: number
+  annual_income?: number
+}
+
+/**
+ * Financial entry data
+ */
+interface FinancialEntryData {
+  id?: string
+  entry_type?: string
+  category?: string
+  amount?: number
+}
+
+/**
+ * Document data
+ */
+interface DocumentData {
+  id?: string
+  category?: string
+  filename?: string
+}
+
+/**
+ * Disclosure data
+ */
+interface DisclosureData {
+  id?: string
+  type?: string
+  acknowledged?: boolean
+}
+
+/**
+ * Participant data for deal parties
+ */
+interface ParticipantData {
+  id?: string
+  role?: string
+  name?: string
+  email?: string
+}
+
+/**
+ * Lease terms metadata
+ */
+interface LeaseTermsData {
+  monthlyRent?: number
+  leaseDuration?: number
+  startDate?: string
+}
+
+/**
+ * Building policies metadata
+ */
+interface BuildingPoliciesData {
+  acknowledgedAt?: string
+  policies?: string[]
+}
+
+/**
+ * Real estate property data
+ */
+interface RealEstatePropertyData {
+  id?: string
+  address?: object
+  propertyType?: string
+  marketValue?: number
+}
+
+/**
+ * Application metadata structure
+ */
+export interface ApplicationMetadata {
+  participants?: ParticipantData[]
+  disclosures?: DisclosureData[]
+  coverLetter?: string
+  leaseTerms?: LeaseTermsData
+  buildingPolicies?: BuildingPoliciesData
+  people?: PersonData[]
+  realEstateProperties?: RealEstatePropertyData[]
+}
+
+// =============================================================================
+// Type Guards for Safe Array Handling (3.4)
+// =============================================================================
+
+/**
+ * Type guard to check if value is an array
+ */
+function isArray<T>(value: unknown): value is T[] {
+  return Array.isArray(value)
+}
+
+/**
+ * Safely extract array from unknown data with type coercion
+ */
+function safeArray<T>(value: unknown): T[] {
+  if (isArray<T>(value)) {
+    return value
+  }
+  return []
+}
+
+/**
+ * Safely extract metadata from JSON
+ */
+function safeMetadata(json: Json | null | undefined): ApplicationMetadata {
+  if (json === null || json === undefined) return {}
+  if (typeof json !== 'object' || Array.isArray(json)) return {}
+  return json as unknown as ApplicationMetadata
+}
 
 /**
  * Default sections for applications
@@ -31,25 +171,28 @@ const DEFAULT_SECTIONS = [
   { key: 'cover-letter', label: 'Cover Letter' },
   { key: 'disclosures', label: 'Disclosures' },
   { key: 'review', label: 'Review & Submit' },
-]
+] as const
 
 /**
  * Compute section completion status from application data
  */
 function computeSections(app: Record<string, unknown>): ApplicationSection[] {
-  const people = (app.people as Array<Record<string, unknown>>) || []
-  const employmentRecords = (app.employment_records as Array<Record<string, unknown>>) || []
-  const financialEntries = (app.financial_entries as Array<Record<string, unknown>>) || []
-  const realEstateProperties = (app.real_estate_properties as Array<Record<string, unknown>>) || []
-  const documents = (app.documents as Array<Record<string, unknown>>) || []
-  const disclosures = (app.disclosures as Array<Record<string, unknown>>) || []
-  const metadata = (app.metadata as Record<string, unknown>) || {}
-  const participants = (metadata.participants as Array<Record<string, unknown>>) || []
-  const metadataDisclosures = (metadata.disclosures as Array<Record<string, unknown>>) || []
-  const coverLetter = (metadata.coverLetter as string) || ''
-  const leaseTerms = metadata.leaseTerms as Record<string, unknown> | undefined
-  const buildingPolicies = metadata.buildingPolicies as Record<string, unknown> | undefined
-  const status = app.status as string
+  // Safely extract arrays with proper typing
+  const people = safeArray<PersonData>(app.people)
+  const employmentRecords = safeArray<EmploymentData>(app.employment_records)
+  const financialEntries = safeArray<FinancialEntryData>(app.financial_entries)
+  const realEstateProperties = safeArray<RealEstatePropertyData>(app.real_estate_properties)
+  const documents = safeArray<DocumentData>(app.documents)
+  const disclosures = safeArray<DisclosureData>(app.disclosures)
+
+  // Safely extract metadata with proper typing
+  const metadata = safeMetadata(app.metadata as Json)
+  const participants = safeArray<ParticipantData>(metadata.participants)
+  const metadataDisclosures = safeArray<DisclosureData>(metadata.disclosures)
+  const coverLetter = typeof metadata.coverLetter === 'string' ? metadata.coverLetter : ''
+  const leaseTerms = metadata.leaseTerms
+  const buildingPolicies = metadata.buildingPolicies
+  const status = typeof app.status === 'string' ? app.status : ''
 
   return DEFAULT_SECTIONS.map(section => {
     let isComplete = false
@@ -58,7 +201,9 @@ function computeSections(app: Record<string, unknown>): ApplicationSection[] {
       case 'profile':
         if (people.length > 0) {
           const primary = people[0]
-          isComplete = !!(primary.fullName && primary.email && primary.phone)
+          // Check both camelCase and database field naming conventions
+          const hasName = primary.fullName || (primary.firstName && primary.lastName)
+          isComplete = !!(hasName && primary.email && primary.phone)
         }
         break
       case 'parties':
@@ -70,7 +215,12 @@ function computeSections(app: Record<string, unknown>): ApplicationSection[] {
         break
       case 'income':
         isComplete = employmentRecords.some(
-          (r: Record<string, unknown>) => r.employer && r.title && r.annualIncome
+          (r) => {
+            const hasEmployer = r.employer || r.employer_name
+            const hasTitle = r.title || r.job_title
+            const hasIncome = r.annualIncome || r.annual_income
+            return hasEmployer && hasTitle && hasIncome
+          }
         )
         break
       case 'financials':
@@ -86,23 +236,25 @@ function computeSections(app: Record<string, unknown>): ApplicationSection[] {
       case 'building-policies':
         isComplete = !!(buildingPolicies && buildingPolicies.acknowledgedAt)
         break
-      case 'documents':
+      case 'documents': {
         // Check for required document categories
         const requiredCategories = ['GOVERNMENT_ID', 'BANK_STATEMENT', 'TAX_RETURN']
         const uploadedCategories = new Set(
-          documents.map((doc: Record<string, unknown>) => doc.category)
+          documents.map((doc) => doc.category).filter(Boolean)
         )
         isComplete = requiredCategories.every(cat => uploadedCategories.has(cat))
         break
+      }
       case 'cover-letter':
         // Optional section - complete if there's meaningful content
         isComplete = coverLetter.length >= 100
         break
-      case 'disclosures':
+      case 'disclosures': {
         // Must have acknowledged all required disclosures
         const allDisclosures = metadataDisclosures.length > 0 ? metadataDisclosures : disclosures
         isComplete = allDisclosures.length >= 8
         break
+      }
       case 'review':
         isComplete = ['SUBMITTED', 'IN_REVIEW', 'RFI', 'APPROVED', 'CONDITIONAL', 'DENIED'].includes(status)
         break
@@ -207,13 +359,69 @@ export async function getApplications(
   return applications as unknown as Application[]
 }
 
+// =============================================================================
+// Explicit Return Types for Helper Functions (Type Safety Fix 3.7)
+// =============================================================================
+
+/**
+ * Address entry in address history
+ */
+interface TransformedAddressEntry {
+  id?: unknown
+  street: string
+  unit?: string
+  city: string
+  state: string
+  zip: string
+  fromDate: Date
+  toDate?: Date
+  isCurrent: boolean
+}
+
+/**
+ * Emergency contact entry
+ */
+interface TransformedEmergencyContact {
+  id?: unknown
+  name?: unknown
+  relationship?: unknown
+  phone?: unknown
+  email?: unknown
+}
+
+/**
+ * Transformed person record from database to frontend format
+ */
+interface TransformedPerson {
+  id?: unknown
+  fullName: string
+  firstName: string
+  lastName: string
+  email?: unknown
+  phone?: unknown
+  dob?: unknown
+  ssnLast4?: unknown
+  ssnFull?: undefined
+  addressHistory: TransformedAddressEntry[]
+  emergencyContacts: TransformedEmergencyContact[]
+  role?: unknown
+  [key: string]: unknown // Allow additional properties from dbPerson spread
+}
+
 /**
  * Transform a database person record to the frontend Person format
  */
-function transformPersonRecord(dbPerson: Record<string, unknown>): Record<string, unknown> {
-  // If already has fullName (from metadata), return as-is
+function transformPersonRecord(dbPerson: Record<string, unknown>): TransformedPerson {
+  // If already has fullName (from metadata), return with type coercion
   if (dbPerson.fullName) {
-    return dbPerson
+    return {
+      ...dbPerson,
+      fullName: dbPerson.fullName as string,
+      firstName: (dbPerson.firstName as string) || '',
+      lastName: (dbPerson.lastName as string) || '',
+      addressHistory: (dbPerson.addressHistory as TransformedAddressEntry[]) || [],
+      emergencyContacts: (dbPerson.emergencyContacts as TransformedEmergencyContact[]) || [],
+    }
   }
 
   // Transform database snake_case to frontend camelCase
@@ -233,17 +441,20 @@ function transformPersonRecord(dbPerson: Record<string, unknown>): Record<string
     ssnFull: dbPerson.ssn_encrypted ? undefined : undefined, // Don't expose encrypted SSN
     // Transform address history if present
     addressHistory: dbPerson.address_history
-      ? (dbPerson.address_history as Array<Record<string, unknown>>).map(addr => ({
-          id: addr.id,
-          street: (addr.address as Record<string, unknown>)?.street || '',
-          unit: (addr.address as Record<string, unknown>)?.unit,
-          city: (addr.address as Record<string, unknown>)?.city || '',
-          state: (addr.address as Record<string, unknown>)?.state || '',
-          zip: (addr.address as Record<string, unknown>)?.zip || '',
-          fromDate: addr.move_in_date ? new Date(addr.move_in_date as string) : new Date(),
-          toDate: addr.move_out_date ? new Date(addr.move_out_date as string) : undefined,
-          isCurrent: addr.is_current || false,
-        }))
+      ? (dbPerson.address_history as Array<Record<string, unknown>>).map(addr => {
+          const addrData = addr.address as Record<string, unknown> | undefined
+          return {
+            id: addr.id,
+            street: String(addrData?.street || ''),
+            unit: addrData?.unit !== undefined ? String(addrData.unit) : undefined,
+            city: String(addrData?.city || ''),
+            state: String(addrData?.state || ''),
+            zip: String(addrData?.zip || ''),
+            fromDate: addr.move_in_date ? new Date(addr.move_in_date as string) : new Date(),
+            toDate: addr.move_out_date ? new Date(addr.move_out_date as string) : undefined,
+            isCurrent: Boolean(addr.is_current),
+          }
+        })
       : [],
     // Transform emergency contacts if present
     emergencyContacts: dbPerson.emergency_contacts
@@ -289,8 +500,7 @@ export async function getApplication(id: string): Promise<Application | null> {
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // Not found
+    if (isNotFoundError(error)) {
       return null
     }
     console.error('Error fetching application:', error)
@@ -306,8 +516,17 @@ export async function getApplication(id: string): Promise<Application | null> {
   const databasePeople = (data.people || []).map(transformPersonRecord)
 
   // Merge: database people (primary applicant from Profile) + metadata people (co-applicants from People page)
+  // Type Safety Fix 3.12: Added null safety to ID comparison
   const allPeople = metadataPeople && metadataPeople.length > 0
-    ? [...databasePeople, ...metadataPeople.filter(mp => !databasePeople.some((dp: { id?: string }) => dp.id === mp.id))]
+    ? [
+        ...databasePeople,
+        ...metadataPeople.filter(mp => {
+          // If metadata person has no ID, include it (new person)
+          if (!mp.id) return true
+          // Only exclude if database person with same ID exists
+          return !databasePeople.some(dp => dp.id && dp.id === mp.id)
+        })
+      ]
     : databasePeople
 
   // Get disclosures - prefer metadata (with acknowledgments) over database table
@@ -624,8 +843,17 @@ export async function updateApplication(
   // Transform database people to frontend format
   const metadataPeople = metadata.people as Array<Record<string, unknown>> | undefined
   const databasePeople = (app.people || []).map(transformPersonRecord)
+  // Type Safety Fix 3.12: Added null safety to ID comparison
   const allPeople = metadataPeople && metadataPeople.length > 0
-    ? [...databasePeople, ...metadataPeople.filter(mp => !databasePeople.some((dp: { id?: string }) => dp.id === mp.id))]
+    ? [
+        ...databasePeople,
+        ...metadataPeople.filter(mp => {
+          // If metadata person has no ID, include it (new person)
+          if (!mp.id) return true
+          // Only exclude if database person with same ID exists
+          return !databasePeople.some(dp => dp.id && dp.id === mp.id)
+        })
+      ]
     : databasePeople
 
   // Get disclosures - prefer metadata (with acknowledgments) over database table

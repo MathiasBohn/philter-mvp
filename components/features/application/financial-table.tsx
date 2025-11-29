@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -37,7 +38,11 @@ export function FinancialTable({
   entryType,
   categories,
 }: FinancialTableProps) {
-  const filteredEntries = entries.filter((e) => e.entryType === entryType)
+  // Memoize filtered entries to avoid recalculating on every render
+  const filteredEntries = useMemo(
+    () => entries.filter((e) => e.entryType === entryType),
+    [entries, entryType]
+  )
 
   // Determine if we should show the institution column for this entry type
   // Only show for Assets where some categories need it

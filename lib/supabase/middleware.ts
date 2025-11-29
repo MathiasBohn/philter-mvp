@@ -100,7 +100,8 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Optional: Add user info to request headers for easy access in Server Components
-  if (user) {
+  // SECURITY: Only expose in development to prevent user ID enumeration attacks
+  if (process.env.NODE_ENV === 'development' && user) {
     supabaseResponse.headers.set('x-user-id', user.id)
   }
 

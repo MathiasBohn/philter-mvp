@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import {
   getApplications,
   createApplication,
@@ -45,46 +45,26 @@ export const GET = withErrorHandler(async (_request: NextRequest) => {
   // Assert user is authenticated (throws AuthenticationError if not)
   assertAuthenticated(user?.id)
 
-  // Try to get user profile with standard client first (respects RLS)
-  // RLS policy should allow users to read their own profile
+  // Get user profile (respects RLS)
   const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('role')
     .eq('id', user.id)
     .single()
 
-  // If profile doesn't exist, create it with admin client as fallback
-  // This handles the case where the database trigger failed to create the profile
+  // If profile doesn't exist, direct user to recover their profile
+  // This handles the edge case where the database trigger failed during signup
   if (!profile || profileError) {
-    console.warn(
-      `User profile not found for user ${user.id}. ` +
-      'This may indicate the signup trigger failed. Creating default profile.'
+    console.warn(`User profile not found for user ${user.id}. Profile recovery required.`)
+
+    return NextResponse.json(
+      {
+        error: 'PROFILE_NOT_FOUND',
+        message: 'User profile not found. Please try refreshing the page or contact support.',
+        recoveryUrl: '/api/admin/recover-profile',
+      },
+      { status: 404 }
     )
-
-    // Use admin client ONLY for profile creation (bypasses RLS INSERT restriction)
-    // This is intentional - users can read their own profile but new profiles
-    // should only be created via signup trigger or this fallback
-    const adminClient = createAdminClient()
-    const { data: newProfile, error: createError } = await adminClient
-      .from('users')
-      .insert({
-        id: user.id,
-        role: 'APPLICANT',
-        first_name: user.user_metadata?.first_name || '',
-        last_name: user.user_metadata?.last_name || '',
-        phone: user.user_metadata?.phone || null,
-      })
-      .select('role')
-      .single()
-
-    if (createError || !newProfile) {
-      console.error('Failed to create user profile:', createError)
-      throw new Error('User profile not found and could not be created')
-    }
-
-    // Use newly created profile
-    const applications = await getApplications(user.id, newProfile.role as Role)
-    return NextResponse.json({ applications }, { status: 200 })
   }
 
   // Fetch applications using data access layer

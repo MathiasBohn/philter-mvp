@@ -20,6 +20,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ApplicationSection, Role } from "@/lib/types";
 import { useState } from "react";
+import { useCreateRFI } from "@/lib/hooks/use-rfis";
+import { Loader2 } from "lucide-react";
 
 interface RequestInfoDialogProps {
   open: boolean;
@@ -31,23 +33,41 @@ interface RequestInfoDialogProps {
 export function RequestInfoDialog({
   open,
   onOpenChange,
+  applicationId,
   sections,
 }: RequestInfoDialogProps) {
   const [selectedSection, setSelectedSection] = useState("");
   const [message, setMessage] = useState("");
   const [assignTo, setAssignTo] = useState<Role.APPLICANT | Role.BROKER>(Role.APPLICANT);
 
-  const handleSubmit = () => {
-    // In a real app, this would create an RFI in the database
-    // RFI created for applicationId, section, with message assigned to role
+  const createRFI = useCreateRFI(applicationId);
 
-    // Reset form
-    setSelectedSection("");
-    setMessage("");
-    setAssignTo(Role.APPLICANT);
+  const handleSubmit = async () => {
+    try {
+      await createRFI.mutateAsync({
+        section_key: selectedSection,
+        assignee_role: assignTo,
+        title: sections.find((s) => s.key === selectedSection)?.label || "Information Request",
+        description: message,
+      });
 
-    // Close dialog
-    onOpenChange(false);
+      // Reset form on success
+      setSelectedSection("");
+      setMessage("");
+      setAssignTo(Role.APPLICANT);
+
+      // Close dialog
+      onOpenChange(false);
+    } catch (error) {
+      // Error toast is handled by the mutation's onError callback
+      // Log with context for debugging
+      console.error("Failed to create RFI:", {
+        applicationId,
+        section: selectedSection,
+        assignTo,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
   };
 
   const isValid = selectedSection && message.trim().length > 0;
@@ -111,11 +131,25 @@ export function RequestInfoDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={createRFI.isPending}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={!isValid}>
-            Send Request
+          <Button
+            onClick={handleSubmit}
+            disabled={!isValid || createRFI.isPending}
+          >
+            {createRFI.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              "Send Request"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

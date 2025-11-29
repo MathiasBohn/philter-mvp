@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPeople, upsertPerson, type PersonInput } from '@/lib/api/people'
+import { validateRouteUUID } from '@/lib/api/validate'
 
 /**
  * GET /api/applications/[id]/people
@@ -18,7 +19,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
 
     // Verify authentication
     const supabase = await createClient()
@@ -53,7 +59,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
 
     // Verify authentication
     const supabase = await createClient()
@@ -105,7 +116,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
 
     // Verify authentication
     const supabase = await createClient()

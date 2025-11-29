@@ -312,3 +312,357 @@ export const errorMessages = {
   minAge: "You must be at least 18 years old to apply.",
   addressHistory: "Address history must cover at least 2 years.",
 };
+
+// =============================================================================
+// Enum Validation Functions (Type Safety)
+// =============================================================================
+
+import {
+  TransactionType,
+  ApplicationStatus,
+  DocumentCategory,
+  DocumentStatus,
+  Role,
+  DisclosureType,
+  FinancialEntryType,
+  AssetCategory,
+  LiabilityCategory,
+  IncomeCategory,
+  ExpenseCategory,
+  EmploymentStatus,
+  PayCadence,
+  PropertyType,
+  RFIStatus,
+} from '@/lib/types'
+
+/**
+ * Validates and returns a TransactionType enum value
+ * @throws Error if value is not a valid TransactionType
+ */
+export function validateTransactionType(value: unknown): TransactionType {
+  const validTypes = Object.values(TransactionType)
+  if (typeof value === 'string' && validTypes.includes(value as TransactionType)) {
+    return value as TransactionType
+  }
+  throw new Error(`Invalid transaction type: ${value}. Expected one of: ${validTypes.join(', ')}`)
+}
+
+/**
+ * Validates and returns an ApplicationStatus enum value
+ * @throws Error if value is not a valid ApplicationStatus
+ */
+export function validateApplicationStatus(value: unknown): ApplicationStatus {
+  const validStatuses = Object.values(ApplicationStatus)
+  if (typeof value === 'string' && validStatuses.includes(value as ApplicationStatus)) {
+    return value as ApplicationStatus
+  }
+  throw new Error(`Invalid application status: ${value}. Expected one of: ${validStatuses.join(', ')}`)
+}
+
+/**
+ * Validates and returns a DocumentCategory enum value
+ * @throws Error if value is not a valid DocumentCategory
+ */
+export function validateDocumentCategory(value: unknown): DocumentCategory {
+  const validCategories = Object.values(DocumentCategory)
+  if (typeof value === 'string' && validCategories.includes(value as DocumentCategory)) {
+    return value as DocumentCategory
+  }
+  throw new Error(`Invalid document category: ${value}. Expected one of: ${validCategories.join(', ')}`)
+}
+
+/**
+ * Validates and returns a DocumentStatus enum value
+ * @throws Error if value is not a valid DocumentStatus
+ */
+export function validateDocumentStatus(value: unknown): DocumentStatus {
+  const validStatuses = Object.values(DocumentStatus)
+  if (typeof value === 'string' && validStatuses.includes(value as DocumentStatus)) {
+    return value as DocumentStatus
+  }
+  throw new Error(`Invalid document status: ${value}. Expected one of: ${validStatuses.join(', ')}`)
+}
+
+/**
+ * Validates and returns a Role enum value
+ * @throws Error if value is not a valid Role
+ */
+export function validateRole(value: unknown): Role {
+  const validRoles = Object.values(Role)
+  if (typeof value === 'string' && validRoles.includes(value as Role)) {
+    return value as Role
+  }
+  throw new Error(`Invalid role: ${value}. Expected one of: ${validRoles.join(', ')}`)
+}
+
+/**
+ * Validates and returns a DisclosureType enum value
+ * @throws Error if value is not a valid DisclosureType
+ */
+export function validateDisclosureType(value: unknown): DisclosureType {
+  const validTypes = Object.values(DisclosureType)
+  if (typeof value === 'string' && validTypes.includes(value as DisclosureType)) {
+    return value as DisclosureType
+  }
+  throw new Error(`Invalid disclosure type: ${value}. Expected one of: ${validTypes.join(', ')}`)
+}
+
+/**
+ * Validates and returns a FinancialEntryType enum value
+ * @throws Error if value is not a valid FinancialEntryType
+ */
+export function validateFinancialEntryType(value: unknown): FinancialEntryType {
+  const validTypes = Object.values(FinancialEntryType)
+  if (typeof value === 'string' && validTypes.includes(value as FinancialEntryType)) {
+    return value as FinancialEntryType
+  }
+  throw new Error(`Invalid financial entry type: ${value}. Expected one of: ${validTypes.join(', ')}`)
+}
+
+/**
+ * Validates and returns an EmploymentStatus enum value
+ * @throws Error if value is not a valid EmploymentStatus
+ */
+export function validateEmploymentStatus(value: unknown): EmploymentStatus {
+  const validStatuses = Object.values(EmploymentStatus)
+  if (typeof value === 'string' && validStatuses.includes(value as EmploymentStatus)) {
+    return value as EmploymentStatus
+  }
+  throw new Error(`Invalid employment status: ${value}. Expected one of: ${validStatuses.join(', ')}`)
+}
+
+/**
+ * Validates and returns a PayCadence enum value
+ * @throws Error if value is not a valid PayCadence
+ */
+export function validatePayCadence(value: unknown): PayCadence {
+  const validCadences = Object.values(PayCadence)
+  if (typeof value === 'string' && validCadences.includes(value as PayCadence)) {
+    return value as PayCadence
+  }
+  throw new Error(`Invalid pay cadence: ${value}. Expected one of: ${validCadences.join(', ')}`)
+}
+
+/**
+ * Validates and returns a PropertyType enum value
+ * @throws Error if value is not a valid PropertyType
+ */
+export function validatePropertyType(value: unknown): PropertyType {
+  const validTypes = Object.values(PropertyType)
+  if (typeof value === 'string' && validTypes.includes(value as PropertyType)) {
+    return value as PropertyType
+  }
+  throw new Error(`Invalid property type: ${value}. Expected one of: ${validTypes.join(', ')}`)
+}
+
+/**
+ * Validates and returns an RFIStatus enum value
+ * @throws Error if value is not a valid RFIStatus
+ */
+export function validateRFIStatus(value: unknown): RFIStatus {
+  const validStatuses = Object.values(RFIStatus)
+  if (typeof value === 'string' && validStatuses.includes(value as RFIStatus)) {
+    return value as RFIStatus
+  }
+  throw new Error(`Invalid RFI status: ${value}. Expected one of: ${validStatuses.join(', ')}`)
+}
+
+// =============================================================================
+// Safe Enum Validation (returns null instead of throwing)
+// =============================================================================
+
+/**
+ * Generic safe enum validator that returns null on invalid values
+ * @param value - The value to validate
+ * @param validValues - Array of valid enum values
+ * @param defaultValue - Optional default value to return on invalid input
+ * @returns The validated value, default value, or null
+ */
+export function safeValidateEnum<T extends string>(
+  value: unknown,
+  validValues: readonly T[],
+  defaultValue?: T
+): T | null {
+  if (typeof value === 'string' && validValues.includes(value as T)) {
+    return value as T
+  }
+  return defaultValue ?? null
+}
+
+/**
+ * Safe version of validateTransactionType that returns null instead of throwing
+ */
+export function safeValidateTransactionType(value: unknown): TransactionType | null {
+  return safeValidateEnum(value, Object.values(TransactionType) as TransactionType[])
+}
+
+/**
+ * Safe version of validateApplicationStatus that returns null instead of throwing
+ */
+export function safeValidateApplicationStatus(value: unknown): ApplicationStatus | null {
+  return safeValidateEnum(value, Object.values(ApplicationStatus) as ApplicationStatus[])
+}
+
+/**
+ * Safe version of validateDocumentCategory that returns null instead of throwing
+ */
+export function safeValidateDocumentCategory(value: unknown): DocumentCategory | null {
+  return safeValidateEnum(value, Object.values(DocumentCategory) as DocumentCategory[])
+}
+
+/**
+ * Safe version of validateDocumentStatus that returns null instead of throwing
+ */
+export function safeValidateDocumentStatus(value: unknown): DocumentStatus | null {
+  return safeValidateEnum(value, Object.values(DocumentStatus) as DocumentStatus[])
+}
+
+/**
+ * Safe version of validateRole that returns null instead of throwing
+ */
+export function safeValidateRole(value: unknown): Role | null {
+  return safeValidateEnum(value, Object.values(Role) as Role[])
+}
+
+// =============================================================================
+// Zod Native Enum Schemas (Type Safety Fix 3.11)
+// These ensure Zod schemas stay in sync with TypeScript enums
+// =============================================================================
+
+/**
+ * Zod schema for TransactionType enum
+ * Use this in form validation to ensure values match the TypeScript enum
+ */
+export const transactionTypeEnumSchema = z.nativeEnum(TransactionType)
+
+/**
+ * Zod schema for ApplicationStatus enum
+ */
+export const applicationStatusEnumSchema = z.nativeEnum(ApplicationStatus)
+
+/**
+ * Zod schema for DocumentCategory enum
+ */
+export const documentCategoryEnumSchema = z.nativeEnum(DocumentCategory)
+
+/**
+ * Zod schema for DocumentStatus enum
+ */
+export const documentStatusEnumSchema = z.nativeEnum(DocumentStatus)
+
+/**
+ * Zod schema for Role enum
+ */
+export const roleEnumSchema = z.nativeEnum(Role)
+
+/**
+ * Zod schema for DisclosureType enum
+ */
+export const disclosureTypeEnumSchema = z.nativeEnum(DisclosureType)
+
+/**
+ * Zod schema for FinancialEntryType enum
+ */
+export const financialEntryTypeEnumSchema = z.nativeEnum(FinancialEntryType)
+
+/**
+ * Zod schema for AssetCategory enum
+ */
+export const assetCategoryEnumSchema = z.nativeEnum(AssetCategory)
+
+/**
+ * Zod schema for LiabilityCategory enum
+ */
+export const liabilityCategoryEnumSchema = z.nativeEnum(LiabilityCategory)
+
+/**
+ * Zod schema for IncomeCategory enum
+ */
+export const incomeCategoryEnumSchema = z.nativeEnum(IncomeCategory)
+
+/**
+ * Zod schema for ExpenseCategory enum
+ */
+export const expenseCategoryEnumSchema = z.nativeEnum(ExpenseCategory)
+
+/**
+ * Zod schema for PayCadence enum
+ */
+export const payCadenceEnumSchema = z.nativeEnum(PayCadence)
+
+/**
+ * Zod schema for EmploymentStatus enum
+ */
+export const employmentStatusEnumSchema = z.nativeEnum(EmploymentStatus)
+
+/**
+ * Zod schema for PropertyType enum
+ */
+export const propertyTypeEnumSchema = z.nativeEnum(PropertyType)
+
+/**
+ * Zod schema for RFIStatus enum
+ */
+export const rfiStatusEnumSchema = z.nativeEnum(RFIStatus)
+
+// =============================================================================
+// Type-Safe Document Schema (using native enum)
+// =============================================================================
+
+/**
+ * Document validation schema with proper enum types
+ * This ensures category and status match the TypeScript enums exactly
+ */
+export const typeSafeDocumentSchema = z.object({
+  id: z.string().uuid(),
+  category: documentCategoryEnumSchema,
+  filename: z.string().min(1),
+  size: z.number().positive(),
+  mimeType: z.string(),
+  status: documentStatusEnumSchema.optional(),
+  uploadedAt: z.date().or(z.string()).optional(),
+  uploadedBy: z.string().uuid().optional(),
+  notes: z.string().optional(),
+})
+
+/**
+ * Financial entry schema with proper enum types
+ */
+export const typeSafeFinancialEntrySchema = z.object({
+  id: z.string().uuid().optional(),
+  entryType: financialEntryTypeEnumSchema,
+  category: z.union([
+    assetCategoryEnumSchema,
+    liabilityCategoryEnumSchema,
+    incomeCategoryEnumSchema,
+    expenseCategoryEnumSchema,
+    z.string(), // Fallback for unknown categories
+  ]),
+  institution: z.string().optional(),
+  description: z.string().optional(),
+  amount: z.coerce.number().min(0, "Amount must be 0 or greater"),
+})
+
+/**
+ * Employment record schema with proper enum types
+ */
+export const typeSafeEmploymentSchema = z.object({
+  id: z.string().uuid().optional(),
+  employer: z.string().min(1, "Employer name is required"),
+  title: z.string().min(1, "Job title is required"),
+  startDate: z.coerce.date({ message: "Start date is required" }),
+  endDate: z.coerce.date().optional().nullable(),
+  payCadence: payCadenceEnumSchema,
+  annualIncome: z.coerce.number().min(0, "Income must be 0 or greater"),
+  isCurrent: z.boolean(),
+  employmentStatus: employmentStatusEnumSchema.optional(),
+})
+
+/**
+ * Disclosure schema with proper enum types
+ */
+export const typeSafeDisclosureSchema = z.object({
+  type: disclosureTypeEnumSchema,
+  acknowledged: z.boolean().refine((val) => val === true, "You must acknowledge this disclosure"),
+  documentUploadId: z.string().optional(),
+})

@@ -8,9 +8,71 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Document, DocumentCategory, DocumentStatus } from '@/lib/types'
 import type { Database } from '@/lib/database.types'
+import { isNotFoundError } from '@/lib/constants/supabase-errors'
 
 type DbDocumentCategory = Database['public']['Enums']['document_category_enum']
 type DbDocumentStatus = Database['public']['Enums']['document_status_enum']
+
+/**
+ * Valid database document categories
+ */
+const VALID_DB_CATEGORIES: readonly DbDocumentCategory[] = [
+  'GOVERNMENT_ID',
+  'BANK_STATEMENT',
+  'TAX_RETURN',
+  'PAY_STUB',
+  'EMPLOYMENT_LETTER',
+  'REFERENCE_LETTER',
+  'OTHER_FINANCIAL',
+  'OTHER',
+] as const
+
+/**
+ * Valid database document statuses
+ */
+const VALID_DB_STATUSES: readonly DbDocumentStatus[] = [
+  'UPLOADING',
+  'PROCESSING',
+  'COMPLETE',
+  'ERROR',
+] as const
+
+/**
+ * Map application DocumentCategory to database category
+ * Falls back to 'OTHER' for categories not in the database enum
+ */
+function toDbCategory(category: DocumentCategory): DbDocumentCategory {
+  const categoryStr = category as string
+  if (VALID_DB_CATEGORIES.includes(categoryStr as DbDocumentCategory)) {
+    return categoryStr as DbDocumentCategory
+  }
+  // Map application-specific categories to database equivalents
+  const categoryMapping: Record<string, DbDocumentCategory> = {
+    'PAYSTUB': 'PAY_STUB',
+    'W2': 'OTHER_FINANCIAL',
+    'BUILDING_FORM': 'OTHER',
+  }
+  return categoryMapping[categoryStr] || 'OTHER'
+}
+
+/**
+ * Map application DocumentStatus to database status
+ * Falls back to 'PROCESSING' for unknown statuses
+ */
+function toDbStatus(status: DocumentStatus): DbDocumentStatus {
+  const statusStr = status as string
+  // Map from application status to DB status
+  const statusMapping: Record<string, DbDocumentStatus> = {
+    'PENDING': 'PROCESSING',
+    'UPLOADED': 'COMPLETE',
+    'VERIFIED': 'COMPLETE',
+    'REJECTED': 'ERROR',
+  }
+  if (VALID_DB_STATUSES.includes(statusStr as DbDocumentStatus)) {
+    return statusStr as DbDocumentStatus
+  }
+  return statusMapping[statusStr] || 'PROCESSING'
+}
 
 /**
  * Input type for creating a new document record
@@ -46,7 +108,7 @@ export async function createDocument(
     .insert({
       application_id: metadata.applicationId,
       filename: metadata.filename,
-      category: metadata.category as unknown as DbDocumentCategory,
+      category: toDbCategory(metadata.category),
       size: metadata.size,
       mime_type: metadata.mimeType,
       storage_path: metadata.storagePath,
@@ -124,7 +186,7 @@ export async function getDocument(id: string): Promise<Document | null> {
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
+    if (isNotFoundError(error)) {
       return null
     }
     console.error('Error fetching document:', error)
@@ -158,7 +220,7 @@ export async function updateDocumentStatus(
 
   const { data, error } = await supabase
     .from('documents')
-    .update({ status: status as unknown as DbDocumentStatus })
+    .update({ status: toDbStatus(status) })
     .eq('id', id)
     .select()
     .single()
@@ -217,7 +279,7 @@ export async function getDocumentStoragePath(id: string): Promise<string | null>
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
+    if (isNotFoundError(error)) {
       return null
     }
     console.error('Error fetching document storage path:', error)

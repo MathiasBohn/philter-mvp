@@ -6,10 +6,12 @@ import { Input } from "@/components/ui/input"
 interface MoneyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'value'> {
   value?: string | number
   onChange?: (value: string) => void
+  /** Label text used to generate accessible aria-label (e.g., "Monthly Rent" becomes "Monthly Rent in US dollars") */
+  label?: string
 }
 
 export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
-  ({ value = "", onChange, ...props }, ref) => {
+  ({ value = "", onChange, label, ...props }, ref) => {
     const formatCurrency = (val: string) => {
       // Remove non-digits and non-decimals
       let digits = val.replace(/[^\d.]/g, "")
@@ -41,6 +43,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
 
     const displayValue = numericValue ? `$${numericValue}` : ""
 
+    // Generate accessible aria-label with currency context
+    const ariaLabel = props['aria-label'] || (label ? `${label} in US dollars` : 'Amount in US dollars')
+
     return (
       <Input
         ref={ref}
@@ -49,6 +54,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
         onChange={handleChange}
         placeholder="$0.00"
         inputMode="decimal"
+        aria-label={ariaLabel}
         {...props}
       />
     )

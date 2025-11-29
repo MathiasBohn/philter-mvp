@@ -4,12 +4,14 @@
  * Tracks online users viewing an application using Supabase Realtime Presence.
  * Shows who else is currently viewing or editing the same application.
  *
+ * Uses useReducer for cleaner state management and to avoid complex ref patterns.
+ *
  * @module lib/hooks/use-presence
  */
 
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useReducer, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { RealtimeChannel, RealtimePresenceState } from '@supabase/supabase-js'
 
@@ -66,6 +68,49 @@ interface UsePresenceReturn {
   updatePresence: (updates: Partial<Pick<PresenceUser, 'currentSection'>>) => Promise<void>
 }
 
+// ============================================================================
+// Reducer State Management
+// ============================================================================
+
+interface PresenceState {
+  presentUsers: PresenceUser[]
+  isConnected: boolean
+  error: Error | null
+}
+
+type PresenceAction =
+  | { type: 'CONNECTING' }
+  | { type: 'CONNECTED' }
+  | { type: 'DISCONNECTED' }
+  | { type: 'SYNC'; users: PresenceUser[] }
+  | { type: 'ERROR'; error: Error }
+  | { type: 'RESET' }
+
+const initialState: PresenceState = {
+  presentUsers: [],
+  isConnected: false,
+  error: null,
+}
+
+function presenceReducer(state: PresenceState, action: PresenceAction): PresenceState {
+  switch (action.type) {
+    case 'CONNECTING':
+      return { ...state, error: null }
+    case 'CONNECTED':
+      return { ...state, isConnected: true, error: null }
+    case 'DISCONNECTED':
+      return { ...state, isConnected: false }
+    case 'SYNC':
+      return { ...state, presentUsers: action.users }
+    case 'ERROR':
+      return { ...state, isConnected: false, error: action.error }
+    case 'RESET':
+      return initialState
+    default:
+      return state
+  }
+}
+
 /**
  * Hook to track presence of users viewing an application
  *
@@ -116,9 +161,9 @@ export function usePresence(
     onSync
   } = options
 
-  const [presentUsers, setPresentUsers] = useState<PresenceUser[]>([])
-  const [isConnected, setIsConnected] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
+  // Use reducer for cleaner state management
+  const [state, dispatch] = useReducer(presenceReducer, initialState)
+  const { presentUsers, isConnected, error } = state
 
   const channelRef = useRef<RealtimeChannel | null>(null)
   const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null)
@@ -135,18 +180,10 @@ export function usePresence(
     onSyncRef.current = onSync
   }, [onJoin, onLeave, onSync])
 
-  // Store stable user reference - only update when user ID changes
+  // Store stable user reference - only changes when user ID changes
   // This prevents re-subscriptions when parent component re-renders with same user
-  const currentUserRef = useRef(currentUser)
-  const currentUserIdRef = useRef(currentUser?.id)
-
-  // Only update the ref when user ID actually changes
-  if (currentUser?.id !== currentUserIdRef.current) {
-    currentUserRef.current = currentUser
-    currentUserIdRef.current = currentUser?.id
-  }
-
-  const stableCurrentUser = currentUserRef.current
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableCurrentUser = useMemo(() => currentUser, [currentUser?.id])
 
   // Track if we're currently subscribed to prevent state updates after unmount
   const isSubscribedRef = useRef(false)
@@ -229,9 +266,9 @@ export function usePresence(
     channel.on('presence', { event: 'sync' }, () => {
       if (!isSubscribedRef.current) return
 
-      const state = channel.presenceState()
-      const users = parsePresenceState(state)
-      setPresentUsers(users)
+      const presenceState = channel.presenceState()
+      const users = parsePresenceState(presenceState)
+      dispatch({ type: 'SYNC', users })
 
       if (onSyncRef.current) {
         onSyncRef.current(users)
@@ -265,8 +302,7 @@ export function usePresence(
       if (!isSubscribedRef.current) return
 
       if (status === 'SUBSCRIBED') {
-        setIsConnected(true)
-        setError(null)
+        dispatch({ type: 'CONNECTED' })
 
         // Track our presence
         await channel.track({
@@ -279,15 +315,13 @@ export function usePresence(
           currentSection: currentSectionRef.current
         })
       } else if (status === 'CHANNEL_ERROR') {
-        setIsConnected(false)
-        setError(new Error('Failed to connect to presence channel'))
+        dispatch({ type: 'ERROR', error: new Error('Could not connect to real-time updates. Please refresh the page to try again.') })
       } else if (status === 'TIMED_OUT') {
-        setIsConnected(false)
-        setError(new Error('Connection timed out'))
+        dispatch({ type: 'ERROR', error: new Error('Connection timed out. Check your internet connection and refresh.') })
       } else if (status === 'CLOSED') {
         // Only update state if we're still subscribed (not during cleanup)
         if (isSubscribedRef.current) {
-          setIsConnected(false)
+          dispatch({ type: 'DISCONNECTED' })
         }
       }
     })

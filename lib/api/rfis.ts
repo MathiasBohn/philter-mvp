@@ -6,6 +6,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { RFI, RFIMessage, RFIStatus, Role } from '@/lib/types'
+import { isNotFoundError } from '@/lib/constants/supabase-errors'
 
 /**
  * Input type for creating a new RFI
@@ -173,7 +174,7 @@ export async function getRFI(id: string): Promise<RFI | null> {
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
+    if (isNotFoundError(error)) {
       return null
     }
     console.error('Error fetching RFI:', error)

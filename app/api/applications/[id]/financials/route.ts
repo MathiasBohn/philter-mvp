@@ -16,6 +16,7 @@ import {
   type FinancialEntryInput,
   type FinancialEntryType,
 } from '@/lib/api/financials'
+import { validateRouteUUID } from '@/lib/api/validate'
 
 /**
  * GET /api/applications/[id]/financials
@@ -27,7 +28,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
 
     // Verify authentication
     const supabase = await createClient()
@@ -77,7 +83,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
 
     // Verify authentication
     const supabase = await createClient()
@@ -124,7 +135,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
 
     // Verify authentication
     const supabase = await createClient()

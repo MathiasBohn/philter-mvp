@@ -10,7 +10,16 @@ import type { Role } from '@/lib/types'
 import type { Database, Json } from '@/lib/database.types'
 import CryptoJS from 'crypto-js'
 
+type PersonRow = Database['public']['Tables']['people']['Row']
 type PersonInsert = Database['public']['Tables']['people']['Insert']
+type AddressHistoryRow = Database['public']['Tables']['address_history']['Row']
+type EmergencyContactRow = Database['public']['Tables']['emergency_contacts']['Row']
+
+/** Person row with optional related entities from joins */
+type PersonRowWithRelations = PersonRow & {
+  address_history?: AddressHistoryRow[]
+  emergency_contacts?: EmergencyContactRow[]
+}
 
 /**
  * Helper to convert null to undefined for optional fields
@@ -20,10 +29,25 @@ function nullToUndefined<T>(value: T | null): T | undefined {
 }
 
 /**
+ * Type guard for address JSON structure
+ */
+function isAddressJson(json: Json | null): json is {
+  street: string
+  unit?: string
+  city: string
+  state: string
+  zip: string
+  country?: string
+} {
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) return false
+  const obj = json as Record<string, unknown>
+  return typeof obj.street === 'string' && typeof obj.city === 'string'
+}
+
+/**
  * Map database record to PersonRecord type
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapToPersonRecord(data: any): PersonRecord {
+function mapToPersonRecord(data: PersonRowWithRelations): PersonRecord {
   return {
     id: data.id,
     application_id: data.application_id,
@@ -35,30 +59,30 @@ function mapToPersonRecord(data: any): PersonRecord {
     date_of_birth: nullToUndefined(data.date_of_birth),
     ssn_encrypted: nullToUndefined(data.ssn_encrypted),
     ssn_last4: nullToUndefined(data.ssn_last4),
-    current_address: data.current_address as PersonRecord['current_address'],
+    current_address: isAddressJson(data.current_address) ? data.current_address : undefined,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    address_history: data.address_history?.map((ah: Record<string, unknown>) => ({
+    address_history: data.address_history?.map((ah) => ({
       id: ah.id,
       person_id: ah.person_id,
-      address: ah.address as AddressHistoryRecord['address'],
+      address: isAddressJson(ah.address) ? ah.address : { street: '', city: '', state: '', zip: '' },
       move_in_date: ah.move_in_date,
-      move_out_date: nullToUndefined(ah.move_out_date as string | null),
+      move_out_date: nullToUndefined(ah.move_out_date),
       is_current: ah.is_current,
-      landlord_name: nullToUndefined(ah.landlord_name as string | null),
-      landlord_phone: nullToUndefined(ah.landlord_phone as string | null),
-      landlord_email: nullToUndefined(ah.landlord_email as string | null),
-      monthly_rent: nullToUndefined(ah.monthly_rent as number | null),
+      landlord_name: nullToUndefined(ah.landlord_name),
+      landlord_phone: nullToUndefined(ah.landlord_phone),
+      landlord_email: nullToUndefined(ah.landlord_email),
+      monthly_rent: nullToUndefined(ah.monthly_rent),
       created_at: ah.created_at,
       updated_at: ah.updated_at,
     })),
-    emergency_contacts: data.emergency_contacts?.map((ec: Record<string, unknown>) => ({
+    emergency_contacts: data.emergency_contacts?.map((ec) => ({
       id: ec.id,
       person_id: ec.person_id,
       name: ec.name,
       relationship: ec.relationship,
       phone: ec.phone,
-      email: nullToUndefined(ec.email as string | null),
+      email: nullToUndefined(ec.email),
       created_at: ec.created_at,
       updated_at: ec.updated_at,
     })),
@@ -66,10 +90,25 @@ function mapToPersonRecord(data: any): PersonRecord {
 }
 
 /**
+ * Get encryption key from environment with validation.
+ * Throws if the key is missing or too short.
+ */
+function getEncryptionKey(): string {
+  const key = process.env.ENCRYPTION_KEY
+  if (!key) {
+    throw new Error('ENCRYPTION_KEY environment variable is required for SSN encryption')
+  }
+  if (key.length < 32) {
+    throw new Error('ENCRYPTION_KEY must be at least 32 characters for secure encryption')
+  }
+  return key
+}
+
+/**
  * Encrypt SSN for storage
  */
 function encryptSSN(ssn: string): string {
-  const key = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production'
+  const key = getEncryptionKey()
   return CryptoJS.AES.encrypt(ssn, key).toString()
 }
 
@@ -78,11 +117,12 @@ function encryptSSN(ssn: string): string {
  */
 function decryptSSN(encryptedSSN: string): string {
   try {
-    const key = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production'
+    const key = getEncryptionKey()
     const bytes = CryptoJS.AES.decrypt(encryptedSSN, key)
     return bytes.toString(CryptoJS.enc.Utf8)
-  } catch (error) {
-    console.error('Failed to decrypt SSN:', error)
+  } catch {
+    // Log without exposing sensitive details
+    console.error('SSN decryption failed')
     return ''
   }
 }

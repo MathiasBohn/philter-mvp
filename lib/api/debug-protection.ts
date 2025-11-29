@@ -1,8 +1,10 @@
 /**
  * Debug Endpoint Protection Utility
  *
- * Restricts access to debug endpoints in production to ADMIN users only.
- * In development, all authenticated users can access debug endpoints.
+ * SECURITY: Debug endpoints are completely disabled in production.
+ * They return 404 to avoid revealing their existence.
+ *
+ * In development, authenticated users can access debug endpoints.
  */
 
 import { NextResponse } from 'next/server'
@@ -25,12 +27,25 @@ export interface DebugProtectionResult {
 /**
  * Check if the current user is allowed to access debug endpoints.
  *
- * - In development: Any authenticated user can access
- * - In production: Only ADMIN users can access
+ * SECURITY:
+ * - In production: Always returns 404 (endpoints don't exist in production)
+ * - In development: Authenticated users can access
  *
  * @returns Object containing allowed status, optional error response, and user info
  */
 export async function checkDebugAccess(): Promise<DebugProtectionResult> {
+  // CRITICAL SECURITY: Completely disable debug endpoints in production
+  // Return 404 to avoid revealing endpoint existence
+  if (process.env.NODE_ENV === 'production') {
+    return {
+      allowed: false,
+      response: NextResponse.json(
+        { error: 'Not found' },
+        { status: 404 }
+      ),
+    }
+  }
+
   const supabase = await createClient()
 
   // Check authentication
@@ -50,51 +65,9 @@ export async function checkDebugAccess(): Promise<DebugProtectionResult> {
   }
 
   // In development, allow all authenticated users
-  if (process.env.NODE_ENV !== 'production') {
-    return {
-      allowed: true,
-      user: { id: user.id, email: user.email },
-    }
-  }
-
-  // In production, check if user is ADMIN
-  const { data: profile, error: profileError } = await supabase
-    .from('users')
-    .select('role, first_name, last_name')
-    .eq('id', user.id)
-    .single()
-
-  if (profileError || !profile) {
-    return {
-      allowed: false,
-      response: NextResponse.json(
-        { error: 'Forbidden', message: 'User profile not found' },
-        { status: 403 }
-      ),
-    }
-  }
-
-  if (profile.role !== 'ADMIN') {
-    return {
-      allowed: false,
-      response: NextResponse.json(
-        {
-          error: 'Forbidden',
-          message: 'Debug endpoints are restricted to administrators in production',
-        },
-        { status: 403 }
-      ),
-    }
-  }
-
   return {
     allowed: true,
     user: { id: user.id, email: user.email },
-    profile: {
-      role: profile.role,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-    },
   }
 }
 

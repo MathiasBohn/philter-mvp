@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { submitApplication } from '@/lib/api/applications'
+import { validateRouteUUID } from '@/lib/api/validate'
 
 /**
  * POST /api/applications/[id]/submit
@@ -17,7 +18,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
+    // Validate UUID format
+    const validation = await validateRouteUUID(params)
+    if (validation.error) {
+      return validation.error
+    }
+    const { id } = validation
+
     const supabase = await createClient()
 
     // Get current user
