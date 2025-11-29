@@ -8,14 +8,18 @@ import { log } from "@/lib/logger"
 
 // Auth timing configuration - all timeouts in milliseconds
 const AUTH_CONFIG = {
-  /** Timeout for fetching user profile from database */
-  PROFILE_FETCH_TIMEOUT_MS: 5000,
+  /** Timeout for fetching user profile from database (increased for Vercel cold starts) */
+  PROFILE_FETCH_TIMEOUT_MS: 15000,
   /** Delay to wait for SIGNED_IN event after INITIAL_SESSION */
   AUTH_SETTLE_DELAY_MS: 1000,
   /** Additional delay before concluding no user exists */
   FINAL_CHECK_DELAY_MS: 500,
   /** Fallback timeout if onAuthStateChange doesn't settle */
-  FALLBACK_TIMEOUT_MS: 3000,
+  FALLBACK_TIMEOUT_MS: 5000,
+  /** Number of retries for profile fetch */
+  PROFILE_FETCH_RETRIES: 2,
+  /** Delay between retries */
+  PROFILE_FETCH_RETRY_DELAY_MS: 1000,
 } as const
 
 interface UserProfile {
@@ -89,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Fetch user profile from database with timeout
+  // Fetch user profile from database with timeout and retry
   const fetchUserProfile = useCallback(async (userId: string): Promise<UserProfile | null> => {
     const supabase = getSupabaseClient()
     if (!supabase) {
@@ -97,53 +101,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null
     }
 
-    try {
-      log.debug('[AuthContext] Fetching profile')
+    // Retry wrapper for profile fetch
+    const attemptFetch = async (attempt: number): Promise<UserProfile | null> => {
+      try {
+        log.debug('[AuthContext] Fetching profile', { attempt: attempt + 1 })
 
-      // Add timeout to prevent hanging indefinitely
-      let timeoutId: NodeJS.Timeout | null = null
-      let didTimeout = false
+        // Add timeout to prevent hanging indefinitely
+        let timeoutId: NodeJS.Timeout | null = null
+        let didTimeout = false
 
-      const timeoutPromise = new Promise<null>((resolve) => {
-        timeoutId = setTimeout(() => {
-          didTimeout = true
-          log.warn('[AuthContext] Profile fetch timed out')
-          resolve(null)
-        }, AUTH_CONFIG.PROFILE_FETCH_TIMEOUT_MS)
-      })
+        const timeoutPromise = new Promise<null>((resolve) => {
+          timeoutId = setTimeout(() => {
+            didTimeout = true
+            log.warn('[AuthContext] Profile fetch timed out', { attempt: attempt + 1 })
+            resolve(null)
+          }, AUTH_CONFIG.PROFILE_FETCH_TIMEOUT_MS)
+        })
 
-      const fetchPromise = (async () => {
-        const { data, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", userId)
-          .single()
+        const fetchPromise = (async () => {
+          const { data, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", userId)
+            .single()
 
-        // Clear the timeout since fetch completed
-        if (timeoutId) {
-          clearTimeout(timeoutId)
-        }
+          // Clear the timeout since fetch completed
+          if (timeoutId) {
+            clearTimeout(timeoutId)
+          }
 
-        if (error) {
-          log.error('[AuthContext] Error fetching profile', { errorMessage: error.message })
-          return null
-        }
+          if (error) {
+            log.error('[AuthContext] Error fetching profile', { errorMessage: error.message, attempt: attempt + 1 })
+            return null
+          }
 
-        // Only log success if we didn't timeout
-        if (!didTimeout) {
-          log.debug('[AuthContext] Profile fetched', { hasRole: !!data?.role })
-        }
-        return data as UserProfile
-      })()
+          // Only log success if we didn't timeout
+          if (!didTimeout) {
+            log.debug('[AuthContext] Profile fetched', { hasRole: !!data?.role, role: data?.role })
+          }
+          return data as UserProfile
+        })()
 
-      const result = await Promise.race([fetchPromise, timeoutPromise])
-      return result
-    } catch (error) {
-      log.error('[AuthContext] Exception fetching profile', {
-        error: error instanceof Error ? error.message : 'Unknown error'
-      })
-      return null
+        const result = await Promise.race([fetchPromise, timeoutPromise])
+        return result
+      } catch (error) {
+        log.error('[AuthContext] Exception fetching profile', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          attempt: attempt + 1
+        })
+        return null
+      }
     }
+
+    // Try fetching with retries
+    for (let attempt = 0; attempt <= AUTH_CONFIG.PROFILE_FETCH_RETRIES; attempt++) {
+      const result = await attemptFetch(attempt)
+      if (result) {
+        return result
+      }
+
+      // Wait before retrying (unless this was the last attempt)
+      if (attempt < AUTH_CONFIG.PROFILE_FETCH_RETRIES) {
+        log.debug('[AuthContext] Retrying profile fetch...', { nextAttempt: attempt + 2 })
+        await new Promise(resolve => setTimeout(resolve, AUTH_CONFIG.PROFILE_FETCH_RETRY_DELAY_MS))
+      }
+    }
+
+    log.warn('[AuthContext] All profile fetch attempts failed')
+    return null
   }, [])
 
   // Load user and set up auth state
