@@ -409,6 +409,110 @@ interface TransformedPerson {
 }
 
 /**
+ * Transform a database employment record to frontend format
+ */
+function transformEmploymentRecord(dbRecord: Record<string, unknown>) {
+  return {
+    id: dbRecord.id,
+    applicationId: dbRecord.application_id,
+    personId: dbRecord.person_id,
+    // Map snake_case to camelCase for UI components
+    employer: dbRecord.employer_name || dbRecord.employer,
+    employerName: dbRecord.employer_name,
+    title: dbRecord.job_title || dbRecord.title,
+    jobTitle: dbRecord.job_title,
+    employmentStatus: dbRecord.employment_status,
+    startDate: dbRecord.start_date,
+    endDate: dbRecord.end_date,
+    isCurrent: dbRecord.is_current,
+    annualIncome: dbRecord.annual_income ? Number(dbRecord.annual_income) : 0,
+    payCadence: dbRecord.pay_cadence,
+    supervisorName: dbRecord.supervisor_name,
+    supervisorPhone: dbRecord.supervisor_phone,
+    supervisorEmail: dbRecord.supervisor_email,
+    address: dbRecord.address,
+    // Keep snake_case for backward compatibility
+    employer_name: dbRecord.employer_name,
+    job_title: dbRecord.job_title,
+    employment_status: dbRecord.employment_status,
+    start_date: dbRecord.start_date,
+    end_date: dbRecord.end_date,
+    is_current: dbRecord.is_current,
+    annual_income: dbRecord.annual_income,
+    pay_cadence: dbRecord.pay_cadence,
+  }
+}
+
+/**
+ * Transform a database financial entry to frontend format
+ */
+function transformFinancialEntry(dbEntry: Record<string, unknown>) {
+  return {
+    id: dbEntry.id,
+    applicationId: dbEntry.application_id,
+    // Map snake_case to camelCase for UI components
+    entryType: dbEntry.entry_type,
+    category: dbEntry.category,
+    amount: dbEntry.amount ? Number(dbEntry.amount) : 0,
+    institution: dbEntry.institution,
+    accountNumberLast4: dbEntry.account_number_last4,
+    description: dbEntry.description,
+    isLiquid: dbEntry.is_liquid,
+    monthlyPayment: dbEntry.monthly_payment ? Number(dbEntry.monthly_payment) : undefined,
+    // Keep snake_case for backward compatibility
+    entry_type: dbEntry.entry_type,
+    account_number_last4: dbEntry.account_number_last4,
+    is_liquid: dbEntry.is_liquid,
+    monthly_payment: dbEntry.monthly_payment,
+  }
+}
+
+/**
+ * Transform a database document to frontend format
+ */
+function transformDocument(dbDoc: Record<string, unknown>) {
+  return {
+    id: dbDoc.id,
+    applicationId: dbDoc.application_id,
+    // Map snake_case to camelCase for UI components
+    filename: dbDoc.filename,
+    storagePath: dbDoc.storage_path,
+    category: dbDoc.category,
+    size: dbDoc.size ? Number(dbDoc.size) : 0,
+    mimeType: dbDoc.mime_type,
+    status: dbDoc.status,
+    uploadedBy: dbDoc.uploaded_by,
+    uploadedAt: dbDoc.uploaded_at || dbDoc.created_at,
+    // Keep snake_case for backward compatibility
+    storage_path: dbDoc.storage_path,
+    mime_type: dbDoc.mime_type,
+    uploaded_by: dbDoc.uploaded_by,
+    uploaded_at: dbDoc.uploaded_at,
+  }
+}
+
+/**
+ * Transform a database disclosure to frontend format
+ */
+function transformDisclosure(dbDisc: Record<string, unknown>) {
+  return {
+    id: dbDisc.id,
+    applicationId: dbDisc.application_id,
+    // Map snake_case to camelCase for UI components
+    type: dbDisc.disclosure_type || dbDisc.type,
+    disclosureType: dbDisc.disclosure_type,
+    acknowledged: dbDisc.acknowledged,
+    acknowledgedAt: dbDisc.acknowledged_at,
+    acknowledgedBy: dbDisc.acknowledged_by,
+    metadata: dbDisc.metadata,
+    // Keep snake_case for backward compatibility
+    disclosure_type: dbDisc.disclosure_type,
+    acknowledged_at: dbDisc.acknowledged_at,
+    acknowledged_by: dbDisc.acknowledged_by,
+  }
+}
+
+/**
  * Transform a database person record to the frontend Person format
  */
 function transformPersonRecord(dbPerson: Record<string, unknown>): TransformedPerson {
@@ -573,18 +677,18 @@ export async function getApplication(id: string): Promise<Application | null> {
     current_section: data.current_section,
     is_locked: data.is_locked,
     deleted_at: data.deleted_at,
-    // Related entities with camelCase names
+    // Related entities with camelCase names - transformed from snake_case
     people: allPeople,
-    employmentRecords: data.employment_records || [],
-    employment_records: data.employment_records || [],
-    financialEntries: data.financial_entries || [],
-    financial_entries: data.financial_entries || [],
+    employmentRecords: (data.employment_records || []).map((r: Record<string, unknown>) => transformEmploymentRecord(r)),
+    employment_records: (data.employment_records || []).map((r: Record<string, unknown>) => transformEmploymentRecord(r)),
+    financialEntries: (data.financial_entries || []).map((e: Record<string, unknown>) => transformFinancialEntry(e)),
+    financial_entries: (data.financial_entries || []).map((e: Record<string, unknown>) => transformFinancialEntry(e)),
     // Use metadata realEstateProperties if available, otherwise use database table
     realEstateProperties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || data.real_estate_properties || [],
     real_estate_properties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || data.real_estate_properties || [],
-    documents: data.documents || [],
-    // Use metadata disclosures if available (they have acknowledgment data)
-    disclosures: metadataDisclosures || data.disclosures || [],
+    documents: (data.documents || []).map((d: Record<string, unknown>) => transformDocument(d)),
+    // Use metadata disclosures if available (they have acknowledgment data), otherwise transform from database
+    disclosures: metadataDisclosures || (data.disclosures || []).map((disc: Record<string, unknown>) => transformDisclosure(disc)),
     rfis: data.rfis || [],
     application_participants: data.application_participants || [],
     // Always use computed sections for accurate completion status
@@ -916,18 +1020,18 @@ export async function updateApplication(
     current_section: app.current_section,
     is_locked: app.is_locked,
     deleted_at: app.deleted_at,
-    // Related entities with camelCase names
+    // Related entities with camelCase names - transformed from snake_case
     people: allPeople,
-    employmentRecords: app.employment_records || [],
-    employment_records: app.employment_records || [],
-    financialEntries: app.financial_entries || [],
-    financial_entries: app.financial_entries || [],
+    employmentRecords: (app.employment_records || []).map((r: Record<string, unknown>) => transformEmploymentRecord(r)),
+    employment_records: (app.employment_records || []).map((r: Record<string, unknown>) => transformEmploymentRecord(r)),
+    financialEntries: (app.financial_entries || []).map((e: Record<string, unknown>) => transformFinancialEntry(e)),
+    financial_entries: (app.financial_entries || []).map((e: Record<string, unknown>) => transformFinancialEntry(e)),
     // Use metadata realEstateProperties if available, otherwise use database table
     realEstateProperties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || app.real_estate_properties || [],
     real_estate_properties: (metadata.realEstateProperties as Array<Record<string, unknown>>) || app.real_estate_properties || [],
-    documents: app.documents || [],
-    // Use metadata disclosures if available (they have acknowledgment data)
-    disclosures: metadataDisclosures || app.disclosures || [],
+    documents: (app.documents || []).map((d: Record<string, unknown>) => transformDocument(d)),
+    // Use metadata disclosures if available (they have acknowledgment data), otherwise transform from database
+    disclosures: metadataDisclosures || (app.disclosures || []).map((disc: Record<string, unknown>) => transformDisclosure(disc)),
     rfis: app.rfis || [],
     // Always use computed sections for accurate completion status
     sections: computedSections,

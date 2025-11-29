@@ -24,11 +24,19 @@ const AUTH_CONFIG = {
   QUICK_ROLE_TIMEOUT_MS: 8000,
 } as const
 
-// Role caching utilities to prevent timeout-based fallback issues
+// User data caching utilities to prevent timeout-based fallback issues
 const ROLE_CACHE_KEY = 'philter_user_role_cache'
+const USER_CACHE_KEY = 'philter_user_data_cache'
 
 interface CachedRole {
   userId: string
+  role: Role
+  timestamp: number
+}
+
+interface CachedUserData {
+  userId: string
+  name: string
   role: Role
   timestamp: number
 }
@@ -66,6 +74,44 @@ function clearCachedRole(): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.removeItem(ROLE_CACHE_KEY)
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function getCachedUserData(userId: string): CachedUserData | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = localStorage.getItem(USER_CACHE_KEY)
+    if (!cached) return null
+    const data: CachedUserData = JSON.parse(cached)
+    // Only use cache if it's for the same user and less than 1 hour old
+    const ONE_HOUR_MS = 60 * 60 * 1000
+    if (data.userId === userId && Date.now() - data.timestamp < ONE_HOUR_MS) {
+      log.debug('[AuthContext] Using cached user data', { name: data.name, role: data.role })
+      return data
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function setCachedUserData(userId: string, name: string, role: Role): void {
+  if (typeof window === 'undefined') return
+  try {
+    const data: CachedUserData = { userId, name, role, timestamp: Date.now() }
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data))
+    log.debug('[AuthContext] Cached user data', { name, role })
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function clearCachedUserData(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(USER_CACHE_KEY)
   } catch {
     // Ignore localStorage errors
   }
@@ -302,21 +348,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // First, try quick role fetch (this should be fast, with caching as fallback)
     const role = await fetchUserRole(authUser.id)
 
+    // Check for cached user data (includes name and role)
+    const cachedUserData = getCachedUserData(authUser.id)
+    const cachedRole = getCachedRole(authUser.id)
+
     // Determine the role to use:
     // 1. Use fetched role if available
-    // 2. Fall back to cached role (already checked in fetchUserRole)
-    // 3. Only use APPLICANT as absolute last resort
-    const cachedRole = getCachedRole(authUser.id)
-    const effectiveRole = role || cachedRole || ('APPLICANT' as Role)
+    // 2. Fall back to cached user data role
+    // 3. Fall back to cached role
+    // 4. Only use APPLICANT as absolute last resort
+    const effectiveRole = role || cachedUserData?.role || cachedRole || ('APPLICANT' as Role)
 
-    if (!role && !cachedRole) {
+    // Determine the name to use:
+    // 1. Use cached name if available (from previous profile fetch)
+    // 2. Fall back to email prefix
+    const effectiveName = cachedUserData?.name || authUser.email?.split('@')[0] || 'User'
+
+    if (!role && !cachedUserData?.role && !cachedRole) {
       log.warn('[AuthContext] No role available, using APPLICANT fallback - this may cause redirect issues')
     }
 
-    // Create user with role
+    // Create user with role and name
     const userWithRole: User = {
       id: authUser.id,
-      name: authUser.email?.split('@')[0] || 'User',
+      name: effectiveName,
       email: authUser.email!,
       role: effectiveRole,
       createdAt: new Date(authUser.created_at),
@@ -326,7 +381,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
     // Mark profile as loading so RouteGuard knows to wait
     setIsProfileLoading(true)
-    log.debug('[AuthContext] User set with role, starting profile fetch', { role: userWithRole.role, roleSource: role ? 'fetched' : cachedRole ? 'cached' : 'fallback' })
+    log.debug('[AuthContext] User set with role', {
+      role: userWithRole.role,
+      name: userWithRole.name,
+      roleSource: role ? 'fetched' : cachedUserData?.role ? 'cachedUserData' : cachedRole ? 'cachedRole' : 'fallback',
+      nameSource: cachedUserData?.name ? 'cached' : 'email'
+    })
 
     // Fetch full profile in background (for additional data like name)
     try {
@@ -337,9 +397,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fullUser = createUserObject(authUser, userProfile)
         log.debug('[AuthContext] Full profile loaded', { name: fullUser?.name, role: fullUser?.role })
         setUser(fullUser)
-        // Cache the role from the profile (authoritative source)
-        if (userProfile.role) {
+        // Cache both role and full user data from the profile (authoritative source)
+        if (userProfile.role && fullUser) {
           setCachedRole(authUser.id, userProfile.role)
+          setCachedUserData(authUser.id, fullUser.name, userProfile.role)
         }
       }
     } catch (error) {
@@ -360,8 +421,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null)
     setIsLoading(false)
     setIsProfileLoading(false)
-    // Clear cached role on sign out
+    // Clear all cached user data on sign out
     clearCachedRole()
+    clearCachedUserData()
   }, [])
 
   // Initialize auth on mount
@@ -501,20 +563,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Add timeout to prevent hanging on slow network
-      const timeoutPromise = new Promise<void>((resolve) => {
-        setTimeout(() => {
-          log.warn('[AuthContext] Sign out timed out after 5s, continuing anyway')
-          resolve()
-        }, 5000)
-      })
-
-      const signOutPromise = supabase.auth.signOut().then(() => {
-        log.debug('[AuthContext] Supabase sign out completed')
-      })
-
-      // Race: either complete sign out or timeout
-      await Promise.race([signOutPromise, timeoutPromise])
+      // Use scope: 'local' to only clear the local session without network call
+      // This is much faster and won't be interrupted by page navigation
+      // The session remains valid on the server but cookies are cleared locally
+      log.debug('[AuthContext] Signing out with local scope...')
+      await supabase.auth.signOut({ scope: 'local' })
+      log.debug('[AuthContext] Supabase sign out completed')
     } catch (error) {
       log.error('[AuthContext] Error signing out', {
         error: error instanceof Error ? error.message : 'Unknown error'

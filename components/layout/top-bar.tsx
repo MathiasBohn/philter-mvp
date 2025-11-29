@@ -29,11 +29,11 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, signOut, isLoading } = useAuth()
   const router = useRouter()
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     console.log('[TopBar] Starting sign out...')
-    // Don't await - signOut clears state immediately, redirect right away
-    // The Supabase network call happens in background with timeout
-    signOut()
+    // Await signOut to ensure cookies are cleared before navigation
+    // signOut now uses scope: 'local' which is fast and doesn't make network calls
+    await signOut()
     // Use window.location for a full page reload to clear all state
     window.location.href = "/"
   }

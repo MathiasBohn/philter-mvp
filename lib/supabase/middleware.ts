@@ -85,10 +85,11 @@ export async function updateSession(request: NextRequest) {
   // Refreshing the auth token is important for keeping the user's session alive
   // This should be called before any auth-dependent operations
   // Add timeout to prevent hanging on invalid credentials
+  // Increased timeout to 15 seconds to handle Vercel cold starts and slow connections
   let user: { id: string } | null = null
   try {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 5000)
+      setTimeout(() => reject(new Error('Auth timeout')), 15000)
     )
     const authPromise = supabase.auth.getUser()
 

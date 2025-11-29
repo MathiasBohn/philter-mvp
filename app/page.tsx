@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAuth } from "@/lib/contexts/auth-context";
 import { Role } from "@/lib/types";
 import { PhilterLogo } from "@/components/brand/philter-logo";
+import { getDashboardForRole, getDashboardLabel } from "@/lib/routing";
 
 export default function Home() {
   const router = useRouter();
@@ -101,23 +102,9 @@ export default function Home() {
     "Condo Lease"
   ];
 
-  // Get the appropriate dashboard based on user role
-  const getRoleDashboard = (role: Role): string => {
-    switch (role) {
-      case Role.APPLICANT:
-      case Role.CO_APPLICANT:
-      case Role.GUARANTOR:
-        return '/my-applications';
-      case Role.BROKER:
-        return '/broker';
-      case Role.ADMIN:
-        return '/agent/inbox';
-      case Role.BOARD:
-        return '/board';
-      default:
-        return '/my-applications';
-    }
-  };
+  // Get the user's dashboard URL using centralized routing
+  const userDashboard = user ? getDashboardForRole(user.role) : '/my-applications';
+  const userDashboardLabel = user ? getDashboardLabel(user.role) : 'Dashboard';
 
   // Check if the flow matches the user's role
   const isUserRole = (flowRole: Role): boolean => {
@@ -135,8 +122,8 @@ export default function Home() {
       if (isUserRole(flow.role)) {
         router.push(flow.href);
       } else {
-        // Otherwise, redirect to their own dashboard
-        router.push(getRoleDashboard(user.role));
+        // Otherwise, redirect to their own dashboard using centralized routing
+        router.push(userDashboard);
       }
     } else {
       if (typeof window !== 'undefined') {
@@ -167,8 +154,8 @@ export default function Home() {
                 </Link>
               </>
             ) : (
-              <Link href="/my-applications">
-                <Button variant="outline" size="sm">My Applications</Button>
+              <Link href={userDashboard}>
+                <Button variant="outline" size="sm">{userDashboardLabel}</Button>
               </Link>
             )}
           </div>

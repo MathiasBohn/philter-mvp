@@ -16,11 +16,19 @@ import { Loader2, Mail } from 'lucide-react'
 import { PhilterLogo } from '@/components/brand/philter-logo'
 import { getDashboardForRole } from '@/lib/routing'
 
-// Role caching - must match auth-context.tsx format
+// Role and user data caching - must match auth-context.tsx format
 const ROLE_CACHE_KEY = 'philter_user_role_cache'
+const USER_CACHE_KEY = 'philter_user_data_cache'
 
 interface CachedRole {
   userId: string
+  role: Role
+  timestamp: number
+}
+
+interface CachedUserData {
+  userId: string
+  name: string
   role: Role
   timestamp: number
 }
@@ -31,6 +39,17 @@ function setCachedRole(userId: string, role: Role): void {
     const data: CachedRole = { userId, role, timestamp: Date.now() }
     localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(data))
     console.log('[SignIn] Cached role to localStorage:', role)
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function setCachedUserData(userId: string, name: string, role: Role): void {
+  if (typeof window === 'undefined') return
+  try {
+    const data: CachedUserData = { userId, name, role, timestamp: Date.now() }
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data))
+    console.log('[SignIn] Cached user data to localStorage:', { name, role })
   } catch {
     // Ignore localStorage errors
   }
@@ -107,10 +126,10 @@ function SignInForm() {
           return
         }
 
-        // Fetch user profile to get role for redirect
-        const { data: profile, error: profileError } = await supabase
+        // Fetch user profile to get role and name for redirect
+        const { data: profileData, error: profileError } = await supabase
           .from('users')
-          .select('role')
+          .select('role, first_name, last_name')
           .eq('id', data.user.id)
           .single()
 
@@ -118,20 +137,24 @@ function SignInForm() {
         if (profileError) {
           console.error('[SignIn] Profile fetch error:', profileError.message)
         }
-        console.log('[SignIn] Profile data:', profile, 'Role:', profile?.role)
+        console.log('[SignIn] Profile data:', profileData)
 
         // Use role-based redirect or fallback
         // Keep loading state true during redirect to prevent double-clicks
         setIsRedirecting(true)
         const redirectTo = searchParams.get('redirectTo')
-        const userRole = (profile?.role as Role) || Role.APPLICANT
+        const userRole = (profileData?.role as Role) || Role.APPLICANT
+        const userName = profileData?.first_name && profileData?.last_name
+          ? `${profileData.first_name} ${profileData.last_name}`
+          : data.user.email?.split('@')[0] || 'User'
         const defaultRoute = getDashboardForRole(userRole)
-        console.log('[SignIn] Redirecting to:', defaultRoute, 'for role:', userRole)
+        console.log('[SignIn] Redirecting to:', defaultRoute, 'for role:', userRole, 'name:', userName)
 
-        // CRITICAL: Cache the role to localStorage BEFORE redirect
-        // This ensures the role is available immediately when auth-context initializes
-        // on the destination page, preventing timeout-based fallback to APPLICANT
+        // CRITICAL: Cache both role and user data to localStorage BEFORE redirect
+        // This ensures the data is available immediately when auth-context initializes
+        // on the destination page, preventing timeout-based fallback to APPLICANT or email prefix
         setCachedRole(data.user.id, userRole)
+        setCachedUserData(data.user.id, userName, userRole)
 
         // Use window.location.href for full page reload to ensure auth state is synced
         window.location.href = redirectTo || defaultRoute

@@ -64,11 +64,17 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users from auth pages to their intended destination (or dashboard)
+  // Redirect authenticated users from auth pages to their intended destination
+  // Note: We don't redirect to a default dashboard here since we don't have the user's role
+  // in the proxy. Instead, we let the client-side handle role-based redirects.
+  // Only redirect if there's an explicit redirectTo parameter.
   if (isAuthRoute && user) {
     const redirectTo = request.nextUrl.searchParams.get('redirectTo')
-    const destination = redirectTo || '/my-applications'
-    return NextResponse.redirect(new URL(destination, request.url))
+    if (redirectTo) {
+      return NextResponse.redirect(new URL(redirectTo, request.url))
+    }
+    // If no redirectTo, let the sign-in page handle the redirect based on role
+    // This allows the client-side auth context to determine the appropriate dashboard
   }
 
   return response
