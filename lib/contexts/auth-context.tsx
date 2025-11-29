@@ -20,7 +20,56 @@ const AUTH_CONFIG = {
   PROFILE_FETCH_RETRIES: 2,
   /** Delay between retries */
   PROFILE_FETCH_RETRY_DELAY_MS: 1000,
+  /** Quick role fetch timeout - reduced since we have caching now */
+  QUICK_ROLE_TIMEOUT_MS: 8000,
 } as const
+
+// Role caching utilities to prevent timeout-based fallback issues
+const ROLE_CACHE_KEY = 'philter_user_role_cache'
+
+interface CachedRole {
+  userId: string
+  role: Role
+  timestamp: number
+}
+
+function getCachedRole(userId: string): Role | null {
+  if (typeof window === 'undefined') return null
+  try {
+    const cached = localStorage.getItem(ROLE_CACHE_KEY)
+    if (!cached) return null
+    const data: CachedRole = JSON.parse(cached)
+    // Only use cache if it's for the same user and less than 1 hour old
+    const ONE_HOUR_MS = 60 * 60 * 1000
+    if (data.userId === userId && Date.now() - data.timestamp < ONE_HOUR_MS) {
+      log.debug('[AuthContext] Using cached role', { role: data.role })
+      return data.role
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function setCachedRole(userId: string, role: Role): void {
+  if (typeof window === 'undefined') return
+  try {
+    const data: CachedRole = { userId, role, timestamp: Date.now() }
+    localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(data))
+    log.debug('[AuthContext] Cached role', { role })
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function clearCachedRole(): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.removeItem(ROLE_CACHE_KEY)
+  } catch {
+    // Ignore localStorage errors
+  }
+}
 
 interface UserProfile {
   id: string
@@ -175,17 +224,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Quick role fetch - fast query with proper timeout using Promise.race
+  // Now includes caching to prevent timeout-based role fallback issues
   const fetchUserRole = useCallback(async (userId: string): Promise<Role | null> => {
     const supabase = getSupabaseClient()
-    if (!supabase) return null
+    if (!supabase) {
+      // If no Supabase client, try to use cached role
+      const cachedRole = getCachedRole(userId)
+      if (cachedRole) return cachedRole
+      return null
+    }
+
+    // Check cached role first - use it immediately if available
+    const cachedRole = getCachedRole(userId)
 
     try {
-      // Create timeout promise
+      // Create timeout promise with increased timeout
+      let timeoutId: NodeJS.Timeout
       const timeoutPromise = new Promise<null>((resolve) => {
-        setTimeout(() => {
-          log.warn('[AuthContext] Quick role fetch timed out after 5s')
+        timeoutId = setTimeout(() => {
+          log.warn('[AuthContext] Quick role fetch timed out after 8s', { hasCachedRole: !!cachedRole })
           resolve(null)
-        }, 5000)
+        }, AUTH_CONFIG.QUICK_ROLE_TIMEOUT_MS)
       })
 
       // Create fetch promise
@@ -196,39 +255,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .eq("id", userId)
           .single()
 
+        // Clear timeout since we got a response
+        clearTimeout(timeoutId!)
+
         if (error) {
           log.error('[AuthContext] Quick role fetch failed', { errorMessage: error.message })
           return null
         }
 
-        return data?.role as Role || null
+        const role = data?.role as Role || null
+        // Cache the successfully fetched role
+        if (role) {
+          setCachedRole(userId, role)
+        }
+        return role
       })()
 
       // Race between fetch and timeout
       const result = await Promise.race([fetchPromise, timeoutPromise])
+
+      // If fetch timed out but we have cached role, use it
+      if (result === null && cachedRole) {
+        log.debug('[AuthContext] Using cached role after timeout', { cachedRole })
+        return cachedRole
+      }
+
       return result
     } catch (error) {
       log.error('[AuthContext] Quick role fetch exception', {
         error: error instanceof Error ? error.message : 'Unknown error'
       })
+      // Fall back to cached role on error
+      if (cachedRole) {
+        log.debug('[AuthContext] Using cached role after error', { cachedRole })
+        return cachedRole
+      }
       return null
     }
   }, [])
 
   // Load user and set up auth state
-  // Strategy: Quick role fetch (5s timeout), then set user. Full profile loads in background.
+  // Strategy: Quick role fetch (8s timeout with caching), then set user. Full profile loads in background.
   const loadUser = useCallback(async (authUser: SupabaseUser) => {
     log.debug('[AuthContext] Loading user')
 
-    // First, try quick role fetch (this should be fast)
+    // First, try quick role fetch (this should be fast, with caching as fallback)
     const role = await fetchUserRole(authUser.id)
 
-    // Create user with role (or fallback to APPLICANT)
+    // Determine the role to use:
+    // 1. Use fetched role if available
+    // 2. Fall back to cached role (already checked in fetchUserRole)
+    // 3. Only use APPLICANT as absolute last resort
+    const cachedRole = getCachedRole(authUser.id)
+    const effectiveRole = role || cachedRole || ('APPLICANT' as Role)
+
+    if (!role && !cachedRole) {
+      log.warn('[AuthContext] No role available, using APPLICANT fallback - this may cause redirect issues')
+    }
+
+    // Create user with role
     const userWithRole: User = {
       id: authUser.id,
       name: authUser.email?.split('@')[0] || 'User',
       email: authUser.email!,
-      role: role || ('APPLICANT' as Role),
+      role: effectiveRole,
       createdAt: new Date(authUser.created_at),
     }
 
@@ -236,7 +326,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false)
     // Mark profile as loading so RouteGuard knows to wait
     setIsProfileLoading(true)
-    log.debug('[AuthContext] User set with role, starting profile fetch', { role: userWithRole.role })
+    log.debug('[AuthContext] User set with role, starting profile fetch', { role: userWithRole.role, roleSource: role ? 'fetched' : cachedRole ? 'cached' : 'fallback' })
 
     // Fetch full profile in background (for additional data like name)
     try {
@@ -247,6 +337,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fullUser = createUserObject(authUser, userProfile)
         log.debug('[AuthContext] Full profile loaded', { name: fullUser?.name, role: fullUser?.role })
         setUser(fullUser)
+        // Cache the role from the profile (authoritative source)
+        if (userProfile.role) {
+          setCachedRole(authUser.id, userProfile.role)
+        }
       }
     } catch (error) {
       log.warn('[AuthContext] Full profile fetch failed, using basic user', {
@@ -266,6 +360,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null)
     setIsLoading(false)
     setIsProfileLoading(false)
+    // Clear cached role on sign out
+    clearCachedRole()
   }, [])
 
   // Initialize auth on mount
