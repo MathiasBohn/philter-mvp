@@ -64,10 +64,10 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect authenticated users from auth pages to home (or their intended destination)
+  // Redirect authenticated users from auth pages to their intended destination (or dashboard)
   if (isAuthRoute && user) {
     const redirectTo = request.nextUrl.searchParams.get('redirectTo')
-    const destination = redirectTo || '/'
+    const destination = redirectTo || '/my-applications'
     return NextResponse.redirect(new URL(destination, request.url))
   }
 
