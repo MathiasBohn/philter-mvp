@@ -11,8 +11,23 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/contexts/auth-context'
+import { Role } from '@/lib/types'
 import { Loader2, Mail } from 'lucide-react'
 import { PhilterLogo } from '@/components/brand/philter-logo'
+
+// Get default route based on user role
+function getDefaultRouteForRole(role: Role): string {
+  switch (role) {
+    case Role.ADMIN:
+      return '/agent/inbox'
+    case Role.BOARD:
+      return '/board'
+    case Role.BROKER:
+      return '/broker'
+    default:
+      return '/my-applications'
+  }
+}
 
 function SignInForm() {
   const router = useRouter()
@@ -32,7 +47,9 @@ function SignInForm() {
   useEffect(() => {
     if (!authLoading && user) {
       const redirectTo = searchParams.get('redirectTo')
-      router.push(redirectTo || '/my-applications')
+      // Use role-based redirect if no specific destination
+      const defaultRoute = getDefaultRouteForRole(user.role)
+      router.push(redirectTo || defaultRoute)
     }
   }, [user, authLoading, searchParams, router])
 
@@ -55,9 +72,18 @@ function SignInForm() {
           setError('Please verify your email before signing in.')
           await supabase.auth.signOut()
         } else {
-          // Redirect to intended destination or default to my applications
+          // Fetch user profile to get role for redirect
+          const { data: profile } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', data.user.id)
+            .single()
+
+          // Use role-based redirect or fallback
           const redirectTo = searchParams.get('redirectTo')
-          router.push(redirectTo || '/my-applications')
+          const userRole = (profile?.role as Role) || Role.APPLICANT
+          const defaultRoute = getDefaultRouteForRole(userRole)
+          router.push(redirectTo || defaultRoute)
           router.refresh()
         }
       }
