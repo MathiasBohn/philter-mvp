@@ -117,14 +117,14 @@ export default function ViewTemplatePage() {
             <div>
               <p className="text-sm text-muted-foreground">Created</p>
               <p className="text-sm">
-                {formatDate(template.createdAt.toISOString(), "long")}
+                {formatDate(template.createdAt, "long")}
               </p>
             </div>
             {template.publishedAt && (
               <div>
                 <p className="text-sm text-muted-foreground">Published</p>
                 <p className="text-sm">
-                  {formatDate(template.publishedAt.toISOString(), "long")}
+                  {formatDate(template.publishedAt, "long")}
                 </p>
               </div>
             )}
