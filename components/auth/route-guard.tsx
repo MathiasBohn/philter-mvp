@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/contexts/auth-context"
 import { Role } from "@/lib/types"
@@ -12,38 +12,35 @@ interface RouteGuardProps {
 }
 
 export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
-  const { user, profile, isLoading } = useAuth()
+  const { user, profile, isLoading, isProfileLoading } = useAuth()
   const router = useRouter()
   const pathname = usePathname()
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const hasRedirectedRef = useRef(false)
+
+  // Determine the effective role - prefer profile role (authoritative), fallback to user.role
+  const effectiveRole = useMemo(() => {
+    if (profile) return profile.role
+    if (user) return user.role
+    return null
+  }, [profile, user])
 
   // Compute whether we should wait for profile
-  // This avoids setState in effect which causes the lint error
   const shouldWaitForProfile = useMemo(() => {
-    // If still loading auth, not waiting yet
+    // If still loading auth, not in "waiting for profile" state yet
     if (isLoading) return false
     // If no user, not waiting (will redirect to sign-in)
     if (!user) return false
     // If profile loaded, not waiting
     if (profile) return false
+    // If profile is actively loading, wait for it
+    if (isProfileLoading) return true
     // If quick role matches, not waiting (optimistic access)
     if (user.role && allowedRoles.includes(user.role)) return false
-    // Quick role doesn't match - need to wait for profile to confirm
-    return true
-  }, [isLoading, user, profile, allowedRoles])
+    // Profile fetch finished but no profile - don't wait anymore
+    return false
+  }, [isLoading, user, profile, isProfileLoading, allowedRoles])
 
   // Handle redirects
   useEffect(() => {
-    // Clear any pending timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
-
-    // Reset redirect flag when dependencies change
-    hasRedirectedRef.current = false
-
     // Still loading auth state - do nothing
     if (isLoading) {
       return
@@ -56,44 +53,23 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
       return
     }
 
-    // If we have the authoritative profile, check role access
-    if (profile) {
-      if (!allowedRoles.includes(profile.role)) {
-        // Redirect to the user's appropriate dashboard based on their actual role
-        const dashboard = getDashboardForRole(profile.role)
-        console.log('[RouteGuard] Profile loaded, redirecting to:', dashboard, 'for role:', profile.role)
-        router.push(dashboard)
-      }
+    // If profile is still loading, wait for it before making redirect decisions
+    if (isProfileLoading) {
+      console.log('[RouteGuard] Profile still loading, waiting...')
       return
     }
 
-    // No profile yet - check if quick role allows access
-    if (user.role && allowedRoles.includes(user.role)) {
-      // Quick role matches - allow access (optimistic)
-      return
+    // Now we can check role access
+    // Use profile.role if available (authoritative), otherwise user.role
+    const roleToCheck = profile?.role || user.role
+
+    if (roleToCheck && !allowedRoles.includes(roleToCheck)) {
+      // Redirect to the user's appropriate dashboard based on their actual role
+      const dashboard = getDashboardForRole(roleToCheck)
+      console.log('[RouteGuard] Role mismatch, redirecting to:', dashboard, 'for role:', roleToCheck)
+      router.push(dashboard)
     }
-
-    // Quick role doesn't match allowed roles
-    // Wait for profile to load, but set a timeout
-    console.log('[RouteGuard] Quick role mismatch, waiting for profile...', { userRole: user.role, allowedRoles })
-
-    timeoutRef.current = setTimeout(() => {
-      // Only redirect if we still don't have profile
-      if (!hasRedirectedRef.current && user.role && !allowedRoles.includes(user.role)) {
-        console.log('[RouteGuard] Profile timeout, redirecting based on user.role:', user.role)
-        hasRedirectedRef.current = true
-        const dashboard = getDashboardForRole(user.role)
-        router.push(dashboard)
-      }
-    }, 5000)
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-        timeoutRef.current = null
-      }
-    }
-  }, [user, profile, isLoading, allowedRoles, router, pathname])
+  }, [user, profile, isLoading, isProfileLoading, allowedRoles, router, pathname])
 
   // Show loading state while checking authentication or waiting for profile
   if (isLoading || shouldWaitForProfile) {
@@ -112,8 +88,8 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
     return null
   }
 
-  // If we have profile and user doesn't have permission, show nothing (redirect happening)
-  if (profile && !allowedRoles.includes(profile.role)) {
+  // If role is not allowed, show nothing (redirect will happen via useEffect)
+  if (effectiveRole && !allowedRoles.includes(effectiveRole)) {
     return null
   }
 

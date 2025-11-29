@@ -36,6 +36,8 @@ interface AuthContextType {
   user: User | null
   profile: UserProfile | null
   isLoading: boolean
+  /** True while profile is being fetched in background (after auth loading completes) */
+  isProfileLoading: boolean
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -63,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isProfileLoading, setIsProfileLoading] = useState(false)
   const initializingRef = useRef(false)
   // Track if we've received the initial auth state - don't set isLoading=false until we're sure there's no session
   const hasReceivedInitialStateRef = useRef(false)
@@ -231,7 +234,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setUser(userWithRole)
     setIsLoading(false)
-    log.debug('[AuthContext] User set with role', { role: userWithRole.role })
+    // Mark profile as loading so RouteGuard knows to wait
+    setIsProfileLoading(true)
+    log.debug('[AuthContext] User set with role, starting profile fetch', { role: userWithRole.role })
 
     // Fetch full profile in background (for additional data like name)
     try {
@@ -247,6 +252,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       log.warn('[AuthContext] Full profile fetch failed, using basic user', {
         error: error instanceof Error ? error.message : 'Unknown error'
       })
+    } finally {
+      // Profile fetch is complete (success or failure)
+      setIsProfileLoading(false)
+      log.debug('[AuthContext] Profile loading complete')
     }
   }, [fetchUserRole, fetchUserProfile, createUserObject])
 
@@ -256,6 +265,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setProfile(null)
     setIsLoading(false)
+    setIsProfileLoading(false)
   }, [])
 
   // Initialize auth on mount
@@ -415,7 +425,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser])
 
   return (
-    <AuthContext.Provider value={{ user, profile, isLoading, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, isLoading, isProfileLoading, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )
