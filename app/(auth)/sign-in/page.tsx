@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,11 +10,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/contexts/auth-context'
 import { Loader2, Mail } from 'lucide-react'
 import { PhilterLogo } from '@/components/brand/philter-logo'
 
 export default function SignInPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const { user, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -24,6 +27,14 @@ export default function SignInPage() {
   const [magicLinkSent, setMagicLinkSent] = useState(false)
 
   const supabase = createClient()
+
+  // Redirect authenticated users away from sign-in page
+  useEffect(() => {
+    if (!authLoading && user) {
+      const redirectTo = searchParams.get('redirectTo')
+      router.push(redirectTo || '/my-applications')
+    }
+  }, [user, authLoading, searchParams, router])
 
   const handlePasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,8 +55,9 @@ export default function SignInPage() {
           setError('Please verify your email before signing in.')
           await supabase.auth.signOut()
         } else {
-          // Redirect to my applications page after successful login
-          router.push('/my-applications')
+          // Redirect to intended destination or default to my applications
+          const redirectTo = searchParams.get('redirectTo')
+          router.push(redirectTo || '/my-applications')
           router.refresh()
         }
       }
