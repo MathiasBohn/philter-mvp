@@ -11,19 +11,19 @@ interface RouteGuardProps {
   redirectTo?: string
 }
 
-export function RouteGuard({ children, allowedRoles, redirectTo = "/" }: RouteGuardProps) {
+export function RouteGuard({ children, allowedRoles, redirectTo = "/my-applications" }: RouteGuardProps) {
   const { user, isLoading } = useUser()
   const router = useRouter()
 
   useEffect(() => {
     if (!isLoading) {
-      // If no user is logged in, redirect to landing page
+      // If no user is logged in, redirect to sign-in page
       if (!user) {
-        router.push(redirectTo)
+        router.push("/sign-in")
         return
       }
 
-      // If user doesn't have permission, redirect to landing page
+      // If user doesn't have permission, redirect to their dashboard
       if (!allowedRoles.includes(user.role)) {
         router.push(redirectTo)
         return
