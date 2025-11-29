@@ -136,9 +136,11 @@ export async function GET(
     // Validate UUID format
     const validation = await validateRouteUUID(params)
     if (validation.error) {
+      console.log('[GET /api/applications/[id]] UUID validation failed')
       return validation.error
     }
     const { id } = validation
+    console.log('[GET /api/applications/[id]] Fetching application:', id)
 
     const supabase = await createClient()
 
@@ -148,23 +150,33 @@ export async function GET(
       error: authError,
     } = await supabase.auth.getUser()
 
+    console.log('[GET /api/applications/[id]] Auth result:', {
+      hasUser: !!user,
+      userId: user?.id,
+      authError: authError?.message,
+    })
+
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      console.log('[GET /api/applications/[id]] Returning 401 - authError:', authError?.message)
+      return NextResponse.json({ error: 'Unauthorized', details: authError?.message }, { status: 401 })
     }
 
     // Fetch application (RLS will ensure user has access)
+    console.log('[GET /api/applications/[id]] Calling getApplication...')
     const application = await getApplication(id)
 
     if (!application) {
+      console.log('[GET /api/applications/[id]] Application not found')
       return NextResponse.json(
         { error: 'Application not found' },
         { status: 404 }
       )
     }
 
+    console.log('[GET /api/applications/[id]] Success - returning application')
     return NextResponse.json({ application }, { status: 200 })
   } catch (error) {
-    console.error('Error in GET /api/applications/[id]:', error)
+    console.error('[GET /api/applications/[id]] Caught error:', error)
     return NextResponse.json(
       {
         error: 'Failed to fetch application',

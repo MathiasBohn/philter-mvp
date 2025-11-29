@@ -186,6 +186,13 @@ export type UUIDValidationResult =
   | { valid: false; error: string }
 
 /**
+ * UUID format regex - matches the general UUID format (8-4-4-4-12 hex digits)
+ * This is more permissive than RFC 4122 as it doesn't enforce version/variant fields.
+ * Zod v4's .uuid() enforces strict RFC 4122 compliance which rejects many valid-looking UUIDs.
+ */
+const UUID_FORMAT_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
  * Validate a UUID string
  *
  * @param id - The string to validate as UUID
@@ -201,18 +208,15 @@ export type UUIDValidationResult =
  * ```
  */
 export function validateUUID(id: string): UUIDValidationResult {
-  const uuidSchema = z.string().uuid('Invalid ID format')
-  const result = uuidSchema.safeParse(id)
-
-  if (result.success) {
-    return { valid: true, id: result.data }
+  // Use regex for format validation instead of Zod's strict RFC 4122 validation
+  // This accepts any 8-4-4-4-12 hex format without enforcing version/variant
+  if (UUID_FORMAT_REGEX.test(id)) {
+    return { valid: true, id }
   }
 
-  // Zod v4 uses issues instead of errors
-  const issues = result.error.issues || []
   return {
     valid: false,
-    error: issues[0]?.message || 'Invalid ID format',
+    error: 'Invalid ID format',
   }
 }
 

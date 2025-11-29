@@ -653,6 +653,24 @@ export async function createApplication(
     throw new Error(`Failed to create application: ${error.message}`)
   }
 
+  // Create application participant record for the creator
+  // This ensures consistent access through RLS policies
+  const participantRole = isBroker ? 'BROKER' : 'APPLICANT'
+  const { error: participantError } = await supabase
+    .from('application_participants')
+    .insert({
+      application_id: application.id,
+      user_id: user.id,
+      role: participantRole,
+      accepted_at: new Date().toISOString(),
+    })
+
+  if (participantError) {
+    console.error('Error creating application participant:', participantError)
+    // Don't fail the whole operation, just log the error
+    // The creator still has access via created_by RLS policy
+  }
+
   // Transform snake_case to camelCase and add empty arrays for related entities
   const enrichedApplication = {
     // Core identification
