@@ -78,11 +78,17 @@ function SignInForm() {
         }
 
         // Fetch user profile to get role for redirect
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('users')
           .select('role')
           .eq('id', data.user.id)
           .single()
+
+        // Log profile fetch result for debugging
+        if (profileError) {
+          console.error('[SignIn] Profile fetch error:', profileError.message)
+        }
+        console.log('[SignIn] Profile data:', profile, 'Role:', profile?.role)
 
         // Use role-based redirect or fallback
         // Keep loading state true during redirect to prevent double-clicks
@@ -90,6 +96,7 @@ function SignInForm() {
         const redirectTo = searchParams.get('redirectTo')
         const userRole = (profile?.role as Role) || Role.APPLICANT
         const defaultRoute = getDashboardForRole(userRole)
+        console.log('[SignIn] Redirecting to:', defaultRoute, 'for role:', userRole)
         // Use window.location.href for full page reload to ensure auth state is synced
         window.location.href = redirectTo || defaultRoute
         // Don't set isLoading to false - keep button disabled during redirect
