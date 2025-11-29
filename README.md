@@ -30,12 +30,23 @@ npm install
 cp .env.example .env.local
 ```
 
-Add your Supabase credentials to `.env.local`:
+Add your credentials to `.env.local`:
 
 ```bash
+# Application
+NEXT_PUBLIC_APP_URL=https://philter-mvp.vercel.app
+
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your-project-url.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Encryption (generate with: openssl rand -base64 32)
+ENCRYPTION_KEY=your-encryption-key
+
+# Email (Resend)
+RESEND_API_KEY=re_your_api_key
+RESEND_FROM_EMAIL=philter <onboarding@resend.dev>
 ```
 
 ### Commands
@@ -69,24 +80,27 @@ npm run test:all     # Run all tests
 | Transaction Agent | Review applications, manage templates, coordinate RFIs |
 | Board Member | Review applications, add private notes, make decisions |
 | Admin | Full system access |
+| Property Manager | Building management access |
+| Building Manager | Building-specific management |
+| Attorney | Legal review access |
+| Accountant | Financial review access |
 
 ### Applicant Workflow
 
-13-section guided application process:
+12-section guided application process:
 
-1. **Overview** - Progress dashboard
-2. **Profile** - Personal information with SSN handling
-3. **Parties** - Co-applicants and guarantors
-4. **People** - Unit owners, brokers, attorneys
-5. **Income** - Employment history
-6. **Financials** - Assets and liabilities (REBNY-aligned)
-7. **Real Estate** - Property ownership history
-8. **Lease Terms** - Move-in preferences
-9. **Building Policies** - Pet, smoking, renovation acknowledgments
-10. **Documents** - File uploads with categorization
-11. **Disclosures** - Legal acknowledgments (Lead Paint, FCRA, etc.)
-12. **Cover Letter** - Personal introduction
-13. **Review** - Final validation and submission
+1. **Profile** - Personal information with SSN handling
+2. **Parties** - Co-applicants and guarantors
+3. **People** - Unit owners, brokers, attorneys
+4. **Income** - Employment history
+5. **Financials** - Assets and liabilities (REBNY-aligned)
+6. **Real Estate** - Property ownership history
+7. **Lease Terms** - Move-in preferences
+8. **Building Policies** - Pet, smoking, renovation acknowledgments
+9. **Documents** - File uploads with categorization
+10. **Disclosures** - Legal acknowledgments (Lead Paint, FCRA, etc.)
+11. **Cover Letter** - Personal introduction
+12. **Review** - Final validation and submission
 
 ### Broker Tools
 
@@ -114,7 +128,7 @@ npm run test:all     # Run all tests
 
 ### Route Structure
 
-```
+```text
 app/
 ├── (auth)/                    # Authentication
 │   ├── sign-in/
@@ -124,37 +138,45 @@ app/
 │   ├── reset-password/
 │   └── accept-invitation/
 ├── (dashboard)/               # Main application
-│   ├── applications/[id]/     # 13-section workflow
+│   ├── applications/[id]/     # 12-section workflow
 │   ├── my-applications/       # User's applications
 │   ├── broker/                # Broker dashboard
 │   ├── agent/                 # Agent tools
 │   ├── board/                 # Board review
 │   ├── settings/
-│   └── notifications/
+│   ├── notifications/
+│   └── help-support/
 ├── api/                       # API routes
-└── claim/[token]/             # Application claim flow
+├── claim/[token]/             # Application claim flow
+├── privacy-policy/
+└── terms-of-service/
 ```
 
 ### Component Organization
 
-```
+```text
 components/
-├── ui/           # 38 shadcn/ui components
+├── ui/           # 37 shadcn/ui components
 ├── forms/        # Specialized inputs (currency, SSN, date)
 ├── layout/       # App shell, sidebar, navigation
 ├── features/     # Role-specific components
 │   ├── application/
+│   ├── applications/
 │   ├── broker/
 │   ├── agent/
-│   └── board/
+│   ├── board/
+│   └── storage/
 ├── shared/       # PDF viewer, filters
-├── auth/         # Sign-in/up forms
+├── auth/         # Route guards
+├── error/        # Error boundaries
+├── loading/      # Loading states
+├── brand/        # Logo, branding
 └── providers/    # Theme, query providers
 ```
 
 ### Database Schema
 
-22 PostgreSQL tables with Row Level Security:
+21 PostgreSQL tables with Row Level Security:
 
 | Table | Purpose |
 |-------|---------|
@@ -183,11 +205,13 @@ components/
 ### Storage
 
 **Supabase Storage Buckets:**
+
 - `documents` - Application documents (private, RLS-protected)
 - `profile-photos` - User photos (private)
 - `building-assets` - Building images (public)
 
 **File Limits:**
+
 - Documents: 25MB
 - Profile photos: 5MB
 
@@ -204,7 +228,7 @@ components/
 
 ### Key Files
 
-```
+```text
 lib/
 ├── types.ts              # TypeScript definitions
 ├── validators.ts         # Zod schemas
@@ -220,11 +244,13 @@ lib/
 ### Testing
 
 **Unit Tests (Vitest):**
+
 - Validators
 - Utilities
 - Component logic
 
 **E2E Tests (Playwright):**
+
 - Authentication flows
 - Applicant workflow
 - Broker workflow
@@ -232,6 +258,7 @@ lib/
 - Edge cases
 
 Run tests:
+
 ```bash
 npm run test:run         # Unit tests
 npm run test:e2e         # E2E tests (headless)
@@ -309,19 +336,16 @@ npx shadcn@latest add <component-name>
 
 | Variable | Required | Description |
 |----------|----------|-------------|
+| NEXT_PUBLIC_APP_URL | Yes | Application URL |
 | NEXT_PUBLIC_SUPABASE_URL | Yes | Supabase project URL |
 | NEXT_PUBLIC_SUPABASE_ANON_KEY | Yes | Supabase anonymous key |
 | SUPABASE_SERVICE_ROLE_KEY | Yes | Supabase service role key |
+| ENCRYPTION_KEY | Yes | Key for encrypting sensitive data |
+| RESEND_API_KEY | Yes | Resend email API key |
+| RESEND_FROM_EMAIL | Yes | Sender email address |
 
 ## Documentation
 
 - **CLAUDE.md** - Development guide for AI assistants
 - **lib/types.ts** - Type definitions
 - **lib/validators.ts** - Validation schemas
-
----
-
-**Version:** 0.1.0
-**Next.js:** 16.0.3
-**React:** 19.2.0
-**Node.js:** 18.17+ required
