@@ -14,25 +14,12 @@ import { useAuth } from '@/lib/contexts/auth-context'
 import { Role } from '@/lib/types'
 import { Loader2, Mail } from 'lucide-react'
 import { PhilterLogo } from '@/components/brand/philter-logo'
-
-// Get default route based on user role
-function getDefaultRouteForRole(role: Role): string {
-  switch (role) {
-    case Role.ADMIN:
-      return '/agent/inbox'
-    case Role.BOARD:
-      return '/board'
-    case Role.BROKER:
-      return '/broker'
-    default:
-      return '/my-applications'
-  }
-}
+import { getDashboardForRole } from '@/lib/routing'
 
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, profile, isLoading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
@@ -40,18 +27,29 @@ function SignInForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [magicLinkSent, setMagicLinkSent] = useState(false)
+  // Track if we're in the middle of a sign-in to prevent duplicate redirects
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const supabase = createClient()
 
   // Redirect authenticated users away from sign-in page
+  // IMPORTANT: Wait for profile to be loaded to get the correct role
+  // The user object has a fallback role of 'APPLICANT' until profile loads
   useEffect(() => {
-    if (!authLoading && user) {
+    // Only redirect if:
+    // 1. Auth loading is complete
+    // 2. User exists
+    // 3. Profile has loaded (so we have the real role, not the fallback)
+    // 4. We're not already in the middle of a redirect
+    if (!authLoading && user && profile && !isRedirecting) {
+      setIsRedirecting(true)
       const redirectTo = searchParams.get('redirectTo')
-      // Use role-based redirect if no specific destination
-      const defaultRoute = getDefaultRouteForRole(user.role)
-      router.push(redirectTo || defaultRoute)
+      // Use the profile role (authoritative) instead of user.role (may be fallback)
+      const defaultRoute = getDashboardForRole(profile.role)
+      // Use window.location.href for full page reload to ensure auth state is synced
+      window.location.href = redirectTo || defaultRoute
     }
-  }, [user, authLoading, searchParams, router])
+  }, [user, profile, authLoading, searchParams, isRedirecting])
 
   const handlePasswordSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,31 +64,43 @@ function SignInForm() {
 
       if (error) {
         setError(error.message)
-      } else if (data.user) {
+        setIsLoading(false)
+        return
+      }
+
+      if (data.user) {
         // Check if email is verified
         if (!data.user.email_confirmed_at) {
           setError('Please verify your email before signing in.')
           await supabase.auth.signOut()
-        } else {
-          // Fetch user profile to get role for redirect
-          const { data: profile } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', data.user.id)
-            .single()
-
-          // Use role-based redirect or fallback
-          const redirectTo = searchParams.get('redirectTo')
-          const userRole = (profile?.role as Role) || Role.APPLICANT
-          const defaultRoute = getDefaultRouteForRole(userRole)
-          router.push(redirectTo || defaultRoute)
-          router.refresh()
+          setIsLoading(false)
+          return
         }
+
+        // Fetch user profile to get role for redirect
+        const { data: profile } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
+
+        // Use role-based redirect or fallback
+        // Keep loading state true during redirect to prevent double-clicks
+        setIsRedirecting(true)
+        const redirectTo = searchParams.get('redirectTo')
+        const userRole = (profile?.role as Role) || Role.APPLICANT
+        const defaultRoute = getDashboardForRole(userRole)
+        // Use window.location.href for full page reload to ensure auth state is synced
+        window.location.href = redirectTo || defaultRoute
+        // Don't set isLoading to false - keep button disabled during redirect
+        return
       }
+
+      // No user data returned
+      setIsLoading(false)
     } catch (err) {
       setError('An unexpected error occurred. Please try again.')
       console.error('Sign in error:', err)
-    } finally {
       setIsLoading(false)
     }
   }
@@ -172,7 +182,7 @@ function SignInForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            disabled={isLoading}
+            disabled={isLoading || isRedirecting}
           />
         </div>
 
@@ -186,7 +196,7 @@ function SignInForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={isLoading}
+              disabled={isLoading || isRedirecting}
             />
           </div>
         )}
@@ -198,7 +208,7 @@ function SignInForm() {
                 id="remember"
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                disabled={isLoading}
+                disabled={isLoading || isRedirecting}
               />
               <Label
                 htmlFor="remember"
@@ -216,9 +226,9 @@ function SignInForm() {
           </div>
         )}
 
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {useMagicLink ? 'Send magic link' : 'Sign in'}
+        <Button type="submit" className="w-full" disabled={isLoading || isRedirecting}>
+          {(isLoading || isRedirecting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isRedirecting ? 'Redirecting...' : useMagicLink ? 'Send magic link' : 'Sign in'}
         </Button>
       </form>
 
@@ -236,7 +246,7 @@ function SignInForm() {
         variant="outline"
         className="w-full"
         onClick={() => setUseMagicLink(!useMagicLink)}
-        disabled={isLoading}
+        disabled={isLoading || isRedirecting}
       >
         {useMagicLink ? 'Sign in with password' : 'Sign in with magic link'}
       </Button>

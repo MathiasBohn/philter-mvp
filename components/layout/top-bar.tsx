@@ -18,6 +18,8 @@ import { useAuth } from "@/lib/contexts/auth-context"
 import { getRoleLabel } from "@/lib/constants/labels"
 import { PhilterLogo } from "@/components/brand/philter-logo"
 import { NotificationBell } from "@/components/layout/notification-bell"
+import { Role } from "@/lib/types"
+import { getDashboardForRole, getDashboardLabel } from "@/lib/routing"
 
 interface TopBarProps {
   onMenuClick: () => void
@@ -93,9 +95,29 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/my-applications')}>
-                  My Applications
+                {/* Role-specific dashboard link - always shown */}
+                <DropdownMenuItem onClick={() => router.push(getDashboardForRole(user.role))}>
+                  {getDashboardLabel(user.role)}
                 </DropdownMenuItem>
+                {/* Broker-specific: Quick link to pipeline (same as dashboard but clearer) */}
+                {user.role === Role.BROKER && (
+                  <DropdownMenuItem onClick={() => router.push('/broker/new')}>
+                    Create Application
+                  </DropdownMenuItem>
+                )}
+                {/* Agent-specific: Templates link */}
+                {user.role === Role.ADMIN && (
+                  <DropdownMenuItem onClick={() => router.push('/agent/templates')}>
+                    Templates
+                  </DropdownMenuItem>
+                )}
+                {/* Board-specific: Decisions link */}
+                {user.role === Role.BOARD && (
+                  <DropdownMenuItem onClick={() => router.push('/board/decisions')}>
+                    Decisions
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                   Settings
                 </DropdownMenuItem>

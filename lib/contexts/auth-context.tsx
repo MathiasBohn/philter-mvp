@@ -171,16 +171,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   }, [])
 
+  // Quick role fetch - fast query with proper timeout using Promise.race
+  const fetchUserRole = useCallback(async (userId: string): Promise<Role | null> => {
+    const supabase = getSupabaseClient()
+    if (!supabase) return null
+
+    try {
+      // Create timeout promise
+      const timeoutPromise = new Promise<null>((resolve) => {
+        setTimeout(() => {
+          log.warn('[AuthContext] Quick role fetch timed out after 5s')
+          resolve(null)
+        }, 5000)
+      })
+
+      // Create fetch promise
+      const fetchPromise = (async () => {
+        const { data, error } = await supabase
+          .from("users")
+          .select("role")
+          .eq("id", userId)
+          .single()
+
+        if (error) {
+          log.error('[AuthContext] Quick role fetch failed', { errorMessage: error.message })
+          return null
+        }
+
+        return data?.role as Role || null
+      })()
+
+      // Race between fetch and timeout
+      const result = await Promise.race([fetchPromise, timeoutPromise])
+      return result
+    } catch (error) {
+      log.error('[AuthContext] Quick role fetch exception', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+      return null
+    }
+  }, [])
+
   // Load user and set up auth state
+  // Strategy: Quick role fetch (5s timeout), then set user. Full profile loads in background.
   const loadUser = useCallback(async (authUser: SupabaseUser) => {
     log.debug('[AuthContext] Loading user')
-    const userProfile = await fetchUserProfile(authUser.id)
-    setProfile(userProfile)
-    const userObj = createUserObject(authUser, userProfile)
-    log.debug('[AuthContext] User object created', { hasUser: !!userObj, hasRole: !!userObj?.role })
-    setUser(userObj)
+
+    // First, try quick role fetch (this should be fast)
+    const role = await fetchUserRole(authUser.id)
+
+    // Create user with role (or fallback to APPLICANT)
+    const userWithRole: User = {
+      id: authUser.id,
+      name: authUser.email?.split('@')[0] || 'User',
+      email: authUser.email!,
+      role: role || ('APPLICANT' as Role),
+      createdAt: new Date(authUser.created_at),
+    }
+
+    setUser(userWithRole)
     setIsLoading(false)
-  }, [fetchUserProfile, createUserObject])
+    log.debug('[AuthContext] User set with role', { role: userWithRole.role })
+
+    // Fetch full profile in background (for additional data like name)
+    try {
+      const userProfile = await fetchUserProfile(authUser.id)
+      if (userProfile) {
+        setProfile(userProfile)
+        // Update user with full profile data
+        const fullUser = createUserObject(authUser, userProfile)
+        log.debug('[AuthContext] Full profile loaded', { name: fullUser?.name, role: fullUser?.role })
+        setUser(fullUser)
+      }
+    } catch (error) {
+      log.warn('[AuthContext] Full profile fetch failed, using basic user', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+    }
+  }, [fetchUserRole, fetchUserProfile, createUserObject])
 
   // Clear user state
   const clearUser = useCallback(() => {

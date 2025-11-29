@@ -64,18 +64,36 @@ export function ValidationAssistant({
     }
 
     // 2. Check for incomplete sections
+    // Define which sections are required vs optional
+    const requiredSectionKeys = ['profile', 'income', 'financials', 'documents', 'disclosures'];
+    const optionalSectionKeys = ['parties', 'people', 'real-estate', 'lease-terms', 'building-policies', 'cover-letter', 'review'];
+
     const incompleteSections = application.sections?.filter(
-      (section) => !section.isComplete
-    );
-    if (incompleteSections && incompleteSections.length > 0) {
-      incompleteSections.forEach((section) => {
-        issues.push({
-          id: `incomplete-${section.key}`,
-          severity: "warning",
-          category: "Sections",
-          title: `Incomplete Section: ${section.label}`,
-          description: `The ${section.label} section has not been completed`,
-        });
+      (section) => !section.isComplete && section.key && section.label
+    ) || [];
+
+    // Group required incomplete sections as errors
+    const requiredIncomplete = incompleteSections.filter(s => requiredSectionKeys.includes(s.key));
+    if (requiredIncomplete.length > 0) {
+      issues.push({
+        id: "incomplete-required-sections",
+        severity: "error",
+        category: "Sections",
+        title: `${requiredIncomplete.length} Required Section${requiredIncomplete.length > 1 ? 's' : ''} Incomplete`,
+        description: `Missing: ${requiredIncomplete.map(s => s.label).join(', ')}`,
+        suggestedRFI: `Please complete the following required sections: ${requiredIncomplete.map(s => s.label).join(', ')}.`,
+      });
+    }
+
+    // Group optional incomplete sections as info (not warnings)
+    const optionalIncomplete = incompleteSections.filter(s => optionalSectionKeys.includes(s.key));
+    if (optionalIncomplete.length > 0) {
+      issues.push({
+        id: "incomplete-optional-sections",
+        severity: "info",
+        category: "Sections",
+        title: `${optionalIncomplete.length} Optional Section${optionalIncomplete.length > 1 ? 's' : ''} Not Completed`,
+        description: `Optional: ${optionalIncomplete.map(s => s.label).join(', ')}`,
       });
     }
 
@@ -313,29 +331,30 @@ export function ValidationAssistant({
                 key={issue.id}
                 className={cn(
                   "border rounded-lg p-3 space-y-2",
-                  issue.severity === "error" && "border-destructive/50 bg-destructive/5",
-                  issue.severity === "warning" && "border-amber-500/50 bg-amber-50/50",
-                  issue.severity === "info" && "border-blue-500/50 bg-blue-50/50"
+                  issue.severity === "error" && "border-destructive/50 bg-destructive/5 dark:bg-destructive/10",
+                  issue.severity === "warning" && "border-amber-500/50 bg-amber-50 dark:bg-amber-950/30",
+                  issue.severity === "info" && "border-blue-500/50 bg-blue-50 dark:bg-blue-950/30"
                 )}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <Checkbox
                     checked={checkedIssues.has(issue.id)}
                     onCheckedChange={() => handleToggleIssue(issue.id)}
+                    className="mt-0.5 flex-shrink-0"
                   />
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
                       {getSeverityIcon(issue.severity)}
                       {getCategoryIcon(issue.category)}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-semibold">{issue.title}</p>
-                        <Badge variant="outline" className="text-xs">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1">
+                        <p className="text-sm font-semibold break-words">{issue.title}</p>
+                        <Badge variant="outline" className="text-xs flex-shrink-0">
                           {issue.category}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1 break-words">
                         {issue.description}
                       </p>
                     </div>
@@ -343,10 +362,10 @@ export function ValidationAssistant({
                 </div>
 
                 {issue.suggestedRFI && (
-                  <div className="pl-9 space-y-2">
-                    <div className="text-xs bg-background/50 rounded p-2 border">
+                  <div className="pl-9 space-y-2 overflow-hidden">
+                    <div className="text-xs bg-background/50 rounded p-2 border overflow-hidden">
                       <p className="font-semibold mb-1">Suggested RFI:</p>
-                      <p className="text-muted-foreground">{issue.suggestedRFI}</p>
+                      <p className="text-muted-foreground break-words whitespace-normal">{issue.suggestedRFI}</p>
                     </div>
                     <Button
                       size="sm"
