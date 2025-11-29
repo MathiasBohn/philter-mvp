@@ -16,6 +16,26 @@ import { Loader2, Mail } from 'lucide-react'
 import { PhilterLogo } from '@/components/brand/philter-logo'
 import { getDashboardForRole } from '@/lib/routing'
 
+// Role caching - must match auth-context.tsx format
+const ROLE_CACHE_KEY = 'philter_user_role_cache'
+
+interface CachedRole {
+  userId: string
+  role: Role
+  timestamp: number
+}
+
+function setCachedRole(userId: string, role: Role): void {
+  if (typeof window === 'undefined') return
+  try {
+    const data: CachedRole = { userId, role, timestamp: Date.now() }
+    localStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(data))
+    console.log('[SignIn] Cached role to localStorage:', role)
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
 function SignInForm() {
   const searchParams = useSearchParams()
   const { user, profile, isLoading: authLoading } = useAuth()
@@ -107,6 +127,12 @@ function SignInForm() {
         const userRole = (profile?.role as Role) || Role.APPLICANT
         const defaultRoute = getDashboardForRole(userRole)
         console.log('[SignIn] Redirecting to:', defaultRoute, 'for role:', userRole)
+
+        // CRITICAL: Cache the role to localStorage BEFORE redirect
+        // This ensures the role is available immediately when auth-context initializes
+        // on the destination page, preventing timeout-based fallback to APPLICANT
+        setCachedRole(data.user.id, userRole)
+
         // Use window.location.href for full page reload to ensure auth state is synced
         window.location.href = redirectTo || defaultRoute
         // Don't set isLoading to false - keep button disabled during redirect
