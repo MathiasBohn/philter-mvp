@@ -8,8 +8,18 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { z, ZodSchema, ZodError } from 'zod'
-import DOMPurify from 'isomorphic-dompurify'
 import { ValidationError } from './errors'
+
+// Lazy load DOMPurify to avoid serverless cold start issues
+let DOMPurify: typeof import('isomorphic-dompurify').default | null = null
+
+async function getDOMPurify() {
+  if (!DOMPurify) {
+    const module = await import('isomorphic-dompurify')
+    DOMPurify = module.default
+  }
+  return DOMPurify
+}
 
 /**
  * Validate request body against a Zod schema
@@ -335,9 +345,10 @@ export function composeSchemas<T extends z.ZodObject<z.ZodRawShape>[]>(...schema
  * Sanitize string input to prevent XSS attacks.
  * Uses DOMPurify to remove all HTML/script content.
  */
-export function sanitizeString(input: string): string {
+export async function sanitizeString(input: string): Promise<string> {
+  const purify = await getDOMPurify()
   // Remove all HTML/script content using DOMPurify
-  const clean = DOMPurify.sanitize(input, {
+  const clean = purify.sanitize(input, {
     ALLOWED_TAGS: [], // No HTML allowed
     ALLOWED_ATTR: []
   })
@@ -348,8 +359,9 @@ export function sanitizeString(input: string): string {
  * Sanitize rich text input where some HTML is allowed.
  * Use this for fields that explicitly support formatting.
  */
-export function sanitizeRichText(input: string): string {
-  return DOMPurify.sanitize(input, {
+export async function sanitizeRichText(input: string): Promise<string> {
+  const purify = await getDOMPurify()
+  return purify.sanitize(input, {
     ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'p', 'br', 'ul', 'ol', 'li'],
     ALLOWED_ATTR: []
   }).trim()
@@ -358,20 +370,22 @@ export function sanitizeRichText(input: string): string {
 /**
  * Sanitize object by applying sanitizeString to all string values
  */
-export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
+export async function sanitizeObject<T extends Record<string, unknown>>(obj: T): Promise<T> {
   const sanitized = { ...obj }
 
   for (const key in sanitized) {
     const value = sanitized[key]
 
     if (typeof value === 'string') {
-      sanitized[key] = sanitizeString(value) as T[typeof key]
+      sanitized[key] = await sanitizeString(value) as T[typeof key]
     } else if (Array.isArray(value)) {
-      sanitized[key] = value.map((item: unknown) =>
-        typeof item === 'string' ? sanitizeString(item) : item
+      sanitized[key] = await Promise.all(
+        value.map(async (item: unknown) =>
+          typeof item === 'string' ? await sanitizeString(item) : item
+        )
       ) as T[typeof key]
     } else if (value !== null && typeof value === 'object') {
-      sanitized[key] = sanitizeObject(value as Record<string, unknown>) as T[typeof key]
+      sanitized[key] = await sanitizeObject(value as Record<string, unknown>) as T[typeof key]
     }
   }
 
