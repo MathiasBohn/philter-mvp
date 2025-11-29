@@ -31,10 +31,16 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
     if (!user) return false
     // If profile loaded, not waiting
     if (profile) return false
-    // If profile is actively loading, wait for it
+    // IMPORTANT: Check role BEFORE checking isProfileLoading
+    // If user already has a role that matches allowed roles, allow access immediately
+    // This prevents waiting for slow profile fetches when we already have what we need
+    if (user.role && allowedRoles.includes(user.role)) {
+      console.log('[RouteGuard] Role matches, allowing optimistic access', { role: user.role })
+      return false
+    }
+    // If profile is actively loading and role doesn't match, wait for it
+    // (profile might have the correct role)
     if (isProfileLoading) return true
-    // If quick role matches, not waiting (optimistic access)
-    if (user.role && allowedRoles.includes(user.role)) return false
     // Profile fetch finished but no profile - don't wait anymore
     return false
   }, [isLoading, user, profile, isProfileLoading, allowedRoles])
@@ -53,16 +59,23 @@ export function RouteGuard({ children, allowedRoles }: RouteGuardProps) {
       return
     }
 
-    // If profile is still loading, wait for it before making redirect decisions
-    if (isProfileLoading) {
-      console.log('[RouteGuard] Profile still loading, waiting...')
-      return
-    }
-
-    // Now we can check role access
     // Use profile.role if available (authoritative), otherwise user.role
     const roleToCheck = profile?.role || user.role
 
+    // If role matches allowed roles, no need to wait for profile
+    if (roleToCheck && allowedRoles.includes(roleToCheck)) {
+      console.log('[RouteGuard] Role allowed, granting access', { role: roleToCheck })
+      return
+    }
+
+    // If profile is still loading and role doesn't match, wait
+    // (the profile might have a different/correct role)
+    if (isProfileLoading) {
+      console.log('[RouteGuard] Role mismatch but profile still loading, waiting...', { currentRole: roleToCheck })
+      return
+    }
+
+    // Profile is done loading, role still doesn't match - redirect
     if (roleToCheck && !allowedRoles.includes(roleToCheck)) {
       // Redirect to the user's appropriate dashboard based on their actual role
       const dashboard = getDashboardForRole(roleToCheck)
