@@ -36,6 +36,16 @@ function SignInForm() {
   // IMPORTANT: Wait for profile to be loaded to get the correct role
   // The user object has a fallback role of 'APPLICANT' until profile loads
   useEffect(() => {
+    // Debug logging
+    console.log('[SignIn useEffect] State:', {
+      authLoading,
+      hasUser: !!user,
+      userRole: user?.role,
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      isRedirecting
+    })
+
     // Only redirect if:
     // 1. Auth loading is complete
     // 2. User exists
@@ -46,6 +56,7 @@ function SignInForm() {
       const redirectTo = searchParams.get('redirectTo')
       // Use the profile role (authoritative) instead of user.role (may be fallback)
       const defaultRoute = getDashboardForRole(profile.role)
+      console.log('[SignIn useEffect] Auto-redirecting authenticated user to:', defaultRoute, 'for role:', profile.role)
       // Use window.location.href for full page reload to ensure auth state is synced
       window.location.href = redirectTo || defaultRoute
     }
