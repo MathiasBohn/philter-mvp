@@ -228,8 +228,288 @@ export default function BrokerQAPage({ params }: { params: Promise<{ id: string 
                       </div>
                     </div>
                   )}
-                  {!["profile", "income", "financials"].includes(selectedSection) && (
-                    <p className="text-muted-foreground">Section data will display here</p>
+                  {selectedSection === "parties" && (
+                    <div className="space-y-3">
+                      {application.participants && application.participants.length > 0 ? (
+                        application.participants.map((participant: { id?: string; role?: string; name?: string; email?: string; company?: string; phone?: string }, idx: number) => (
+                          <div key={participant.id || idx} className="border-b pb-3 last:border-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-medium">{participant.role || "Participant"}</h3>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Name</label>
+                                <p className="text-base">{participant.name || "Not provided"}</p>
+                              </div>
+                              {participant.email && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Email</label>
+                                  <p className="text-base">{participant.email}</p>
+                                </div>
+                              )}
+                              {participant.company && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Company</label>
+                                  <p className="text-base">{participant.company}</p>
+                                </div>
+                              )}
+                              {participant.phone && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                                  <p className="text-base">{participant.phone}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground">No deal parties added yet</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "people" && (
+                    <div className="space-y-3">
+                      {application.people.length > 1 ? (
+                        application.people.slice(1).map((person, idx) => (
+                          <div key={person.id || idx} className="border-b pb-3 last:border-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-medium">{person.role || "Co-Applicant/Guarantor"} {idx + 1}</h3>
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                                <p className="text-base">{person.fullName || "Not provided"}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                                <p className="text-base">{person.email || "Not provided"}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-muted-foreground">Phone</label>
+                                <p className="text-base">{person.phone || "Not provided"}</p>
+                              </div>
+                              {(person as { relationship?: string }).relationship && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Relationship</label>
+                                  <p className="text-base">{(person as { relationship?: string }).relationship}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground">No co-applicants or guarantors added</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "real-estate" && (
+                    <div className="space-y-3">
+                      {application.realEstateProperties && application.realEstateProperties.length > 0 ? (
+                        application.realEstateProperties.map((property: { id?: string; propertyType?: string; address?: { street?: string; city?: string; state?: string; zip?: string }; marketValue?: number; ownershipPercentage?: number; monthlyRent?: number; mortgageBalance?: number }, idx: number) => (
+                          <div key={property.id || idx} className="border-b pb-3 last:border-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <h3 className="font-medium">Property {idx + 1}</h3>
+                              {property.propertyType && (
+                                <Badge variant="secondary">{property.propertyType}</Badge>
+                              )}
+                            </div>
+                            <div className="space-y-2">
+                              {property.address && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Address</label>
+                                  <p className="text-base">
+                                    {property.address.street}
+                                    {property.address.city && `, ${property.address.city}`}
+                                    {property.address.state && `, ${property.address.state}`}
+                                    {property.address.zip && ` ${property.address.zip}`}
+                                  </p>
+                                </div>
+                              )}
+                              {property.marketValue !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Market Value</label>
+                                  <p className="text-base">${property.marketValue.toLocaleString()}</p>
+                                </div>
+                              )}
+                              {property.ownershipPercentage !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Ownership</label>
+                                  <p className="text-base">{property.ownershipPercentage}%</p>
+                                </div>
+                              )}
+                              {property.monthlyRent !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Monthly Rent</label>
+                                  <p className="text-base">${property.monthlyRent.toLocaleString()}</p>
+                                </div>
+                              )}
+                              {property.mortgageBalance !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Mortgage Balance</label>
+                                  <p className="text-base">${property.mortgageBalance.toLocaleString()}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground">No real estate properties listed</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "lease-terms" && (
+                    <div className="space-y-3">
+                      {application.leaseTerms ? (
+                        (() => {
+                          const terms = application.leaseTerms as unknown as { monthlyRent?: number; securityDeposit?: number; leaseDuration?: number; startDate?: string; endDate?: string; moveInDate?: string };
+                          return (
+                            <div className="space-y-3">
+                              {terms.monthlyRent !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Monthly Rent</label>
+                                  <p className="text-base">${terms.monthlyRent.toLocaleString()}</p>
+                                </div>
+                              )}
+                              {terms.securityDeposit !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Security Deposit</label>
+                                  <p className="text-base">${terms.securityDeposit.toLocaleString()}</p>
+                                </div>
+                              )}
+                              {terms.leaseDuration !== undefined && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Lease Duration</label>
+                                  <p className="text-base">{terms.leaseDuration} months</p>
+                                </div>
+                              )}
+                              {terms.startDate && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Start Date</label>
+                                  <p className="text-base">{new Date(terms.startDate).toLocaleDateString()}</p>
+                                </div>
+                              )}
+                              {terms.endDate && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">End Date</label>
+                                  <p className="text-base">{new Date(terms.endDate).toLocaleDateString()}</p>
+                                </div>
+                              )}
+                              {terms.moveInDate && (
+                                <div>
+                                  <label className="text-sm font-medium text-muted-foreground">Move-in Date</label>
+                                  <p className="text-base">{new Date(terms.moveInDate).toLocaleDateString()}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <p className="text-muted-foreground">No lease terms provided</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "building-policies" && (
+                    <div className="space-y-3">
+                      {application.buildingPolicies ? (
+                        <div className="space-y-3">
+                          {application.buildingPolicies.acknowledgedAt && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Acknowledged</label>
+                              <p className="text-base">
+                                {new Date(application.buildingPolicies.acknowledgedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          )}
+                          {application.buildingPolicies.policies && application.buildingPolicies.policies.length > 0 && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Acknowledged Policies</label>
+                              <ul className="list-disc list-inside mt-1 space-y-1">
+                                {application.buildingPolicies.policies.map((policy, idx) => (
+                                  <li key={idx} className="text-sm">{policy}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {application.buildingPolicies.notes && (
+                            <div>
+                              <label className="text-sm font-medium text-muted-foreground">Notes</label>
+                              <p className="text-base">{application.buildingPolicies.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">Building policies not yet acknowledged</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "cover-letter" && (
+                    <div className="space-y-3">
+                      {application.coverLetter ? (
+                        <div className="prose prose-sm max-w-none">
+                          <p className="whitespace-pre-wrap">{application.coverLetter as string}</p>
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">No cover letter provided</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "disclosures" && (
+                    <div className="space-y-3">
+                      {application.disclosures && application.disclosures.length > 0 ? (
+                        application.disclosures.map((disclosure, idx) => (
+                          <div key={disclosure.id || idx} className="border-b pb-3 last:border-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">{disclosure.type || `Disclosure ${idx + 1}`}</span>
+                              <Badge variant={disclosure.acknowledged ? "default" : "secondary"}>
+                                {disclosure.acknowledged ? "Acknowledged" : "Pending"}
+                              </Badge>
+                            </div>
+                            {disclosure.acknowledgedAt && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Acknowledged on {new Date(disclosure.acknowledgedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground">No disclosures recorded</p>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "review" && (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Application Status</label>
+                        <div className="mt-1">
+                          <Badge variant={application.status === "SUBMITTED" || application.status === "APPROVED" ? "default" : "secondary"}>
+                            {application.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Completion</label>
+                        <p className="text-base">{application.completionPercentage}%</p>
+                      </div>
+                      {application.submittedAt && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Submitted</label>
+                          <p className="text-base">{new Date(application.submittedAt).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Created</label>
+                        <p className="text-base">{new Date(application.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      {application.updatedAt && (
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Last Updated</label>
+                          <p className="text-base">{new Date(application.updatedAt).toLocaleDateString()}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {selectedSection === "documents" && (
+                    <p className="text-muted-foreground">Switch to the Documents tab above to view uploaded documents</p>
                   )}
                 </TabsContent>
                 <TabsContent value="documents" className="mt-4">

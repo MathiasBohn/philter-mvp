@@ -547,6 +547,19 @@ export type Application = {
 
   // Cover letter / Personal introduction (Phase 2)
   coverLetter?: string;
+
+  // Building policies acknowledgment (from metadata)
+  buildingPolicies?: {
+    acknowledgedAt?: string;
+    policies?: string[];
+    notes?: string;
+  };
+
+  // Additional fields from database (for backward compatibility)
+  updatedAt?: Date;
+  currentSection?: string;
+  deletedAt?: Date;
+  metadata?: Record<string, unknown>;
 };
 
 export type DecisionRecord = {
