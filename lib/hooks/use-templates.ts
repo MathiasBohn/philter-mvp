@@ -38,7 +38,8 @@ export function useTemplates(): UseQueryResult<Template[], Error> {
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch templates')
       }
-      return response.json()
+      const data = await response.json()
+      return data.templates || []
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
@@ -65,7 +66,8 @@ export function useTemplate(
         const error = await response.json()
         throw new Error(error.message || 'Failed to fetch template')
       }
-      return response.json()
+      const data = await response.json()
+      return data.template || data
     },
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
